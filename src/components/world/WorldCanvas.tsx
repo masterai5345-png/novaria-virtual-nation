@@ -125,10 +125,71 @@ function makeOtter(scene: THREE.Scene) {
   tail.rotation.z = -0.35;
   tail.position.set(0, 0.45, -0.48);
   otter.add(tail);
+  otter.userData.furMaterial = fur;
+  otter.userData.outfitMaterial = hoodie;
+  otter.userData.accessory = null;
   otter.position.set(-0.3, 0, 2.6);
   otter.scale.setScalar(0.92);
   scene.add(otter);
   return otter;
+}
+
+type SavedOtterStyle = { furTone?: string; outfit?: string; accessory?: string };
+
+function applyOtterStyle(otter: THREE.Group, style: SavedOtterStyle) {
+  const fur = otter.userData.furMaterial as THREE.MeshStandardMaterial | undefined;
+  const outfit = otter.userData.outfitMaterial as THREE.MeshStandardMaterial | undefined;
+  if (fur) {
+    const tones: Record<string, string> = {
+      "river-brown": "#8d654b",
+      "warm-cocoa": "#684633",
+      silver: "#a7aaa6",
+      honey: "#bd8b50",
+    };
+    fur.color.set(tones[style.furTone ?? "river-brown"] ?? tones["river-brown"]);
+  }
+  if (outfit) {
+    const outfits: Record<string, string> = {
+      "citizen-teal": "#1c5555",
+      explorer: "#55734e",
+      builder: "#d18a3e",
+      "harbor-guard": "#263f61",
+    };
+    outfit.color.set(outfits[style.outfit ?? "citizen-teal"] ?? outfits["citizen-teal"]);
+  }
+
+  const previous = otter.userData.accessory as THREE.Group | undefined;
+  if (previous) {
+    otter.remove(previous);
+    previous.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.geometry.dispose();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach((entry) => entry.dispose());
+      }
+    });
+  }
+
+  const accessory = new THREE.Group();
+  if (style.accessory === "cap") {
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.29, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), material("#d7ad68"));
+    cap.position.set(0, 2.02, 0.06);
+    cap.scale.y = 0.42;
+    accessory.add(cap);
+    accessory.add(box(0.58, 0.055, 0.25, material("#b98e53"), 0, 1.98, 0.25));
+  } else if (style.accessory === "scarf") {
+    accessory.add(box(0.88, 0.17, 0.12, material("#d7ad68"), 0, 1.18, 0.3));
+    accessory.add(box(0.18, 0.43, 0.1, material("#c69756"), 0.28, 0.97, 0.31));
+  } else if (style.accessory === "backpack") {
+    accessory.add(box(0.48, 0.62, 0.28, material("#aa6d40"), 0, 0.91, -0.39));
+    accessory.add(box(0.32, 0.13, 0.06, material("#d7ad68"), 0, 0.87, -0.55));
+  }
+  if (accessory.children.length) {
+    otter.add(accessory);
+    otter.userData.accessory = accessory;
+  } else {
+    otter.userData.accessory = null;
+  }
 }
 
 export default function WorldCanvas() {
@@ -291,6 +352,18 @@ export default function WorldCanvas() {
     }
 
     const otter = makeOtter(scene);
+    let avatarAbort: AbortController | null = new AbortController();
+    fetch("/api/citizen/profile", { cache: "no-store", signal: avatarAbort.signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return await response.json() as { profile?: { avatarStyle?: SavedOtterStyle } };
+      })
+      .then((data) => {
+        if (data?.profile?.avatarStyle) applyOtterStyle(otter, data.profile.avatarStyle);
+      })
+      .catch(() => {
+        // Guests use the default founding Otter look.
+      });
 
     let dragging = false;
     let lastX = 0;
@@ -393,6 +466,8 @@ export default function WorldCanvas() {
       window.cancelAnimationFrame(frame);
       worldHomesAbort?.abort();
       worldHomesAbort = null;
+      avatarAbort?.abort();
+      avatarAbort = null;
       observer.disconnect();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
