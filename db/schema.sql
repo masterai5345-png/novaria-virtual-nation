@@ -295,3 +295,9 @@ CREATE TABLE IF NOT EXISTS wallet_ledger (
 
 CREATE INDEX IF NOT EXISTS wallet_ledger_citizen_idx
   ON wallet_ledger (citizen_id, created_at DESC);
+
+
+-- A citizen may own only one claimed community home at a time.
+CREATE UNIQUE INDEX IF NOT EXISTS houses_one_claimed_home_per_citizen_idx
+  ON houses (owner_citizen_id)
+  WHERE owner_citizen_id IS NOT NULL AND house_status = 'claimed';
