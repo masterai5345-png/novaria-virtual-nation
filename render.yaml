@@ -17,6 +17,16 @@ services:
           property: host
       - key: NEXT_PUBLIC_GOOGLE_AUTH_ENABLED
         value: "false"
+      - key: AUTH_SECRET
+        sync: false
+      - key: AUTH_GOOGLE_ID
+        sync: false
+      - key: AUTH_GOOGLE_SECRET
+        sync: false
+      - key: NOVARIA_OWNER_EMAIL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
       - key: OFFERWALL_ENABLED
         value: "false"
 
