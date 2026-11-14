@@ -22,3 +22,10 @@ The dashboard is a control plane. Agent work must run in server-side workers, no
 
 ## Current limitation
 This dashboard is a visual and architectural preview. It does not call Claude, execute city changes, read social accounts, publish content, reply to comments, or transfer money.
+
+## Citizen game economy
+- Mission definitions are seeded in `db/seed.sql`.
+- Citizen completion is stored in `citizen_missions` and protected by a unique citizen/mission constraint.
+- NOVA Coin is tracked in `citizen_wallets` and an idempotent `wallet_ledger`.
+- The public UI labels NOVA Coin as a non-cash game balance. No cash redemption or withdrawal endpoints exist.
+- Current mission completion is self-confirmed exploration; future interactive proof-of-action checks should be added before competitive rewards.
