@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "../../../auth";
-import { query } from "@/lib/db";
+import { query } from "@/lib/db";\nimport type { QueryResultRow } from "pg";
 
-type CitizenRow = {
+type CitizenRow = {\n  [key: string]: unknown;
   id: string;
   display_name: string;
   email: string | null;
