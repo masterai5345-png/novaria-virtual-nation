@@ -309,3 +309,18 @@ ALTER TABLE social_comment_inbox
 
 CREATE INDEX IF NOT EXISTS social_comment_reply_status_idx
   ON social_comment_inbox (reply_status, received_at DESC);
+
+
+-- Heartbeat records let the admin dashboard distinguish configured credentials
+-- from a worker process that is actually alive.
+CREATE TABLE IF NOT EXISTS worker_heartbeats (
+  worker_key TEXT PRIMARY KEY,
+  worker_type TEXT NOT NULL,
+  worker_status TEXT NOT NULL
+    CHECK (worker_status IN ('running', 'stopping', 'stopped', 'error')),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  details JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS worker_heartbeats_last_seen_idx
+  ON worker_heartbeats (last_seen_at DESC);
