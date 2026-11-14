@@ -246,3 +246,52 @@ CREATE TABLE IF NOT EXISTS audit_events (
 
 CREATE INDEX IF NOT EXISTS audit_events_created_idx ON audit_events (created_at DESC);
 CREATE INDEX IF NOT EXISTS audit_events_resource_idx ON audit_events (resource_type, resource_id, created_at DESC);
+
+
+-- Non-cash gameplay economy. NOVA Coin cannot be withdrawn or converted to money.
+CREATE TABLE IF NOT EXISTS mission_definitions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  mission_key TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  detail TEXT NOT NULL,
+  reward_nvc INTEGER NOT NULL DEFAULT 0 CHECK (reward_nvc BETWEEN 0 AND 100000),
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  requirement JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS citizen_missions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  citizen_id UUID NOT NULL REFERENCES citizens(id) ON DELETE CASCADE,
+  mission_id UUID NOT NULL REFERENCES mission_definitions(id),
+  mission_status TEXT NOT NULL DEFAULT 'available'
+    CHECK (mission_status IN ('started', 'completed')),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  CONSTRAINT citizen_mission_unique UNIQUE (citizen_id, mission_id)
+);
+
+CREATE INDEX IF NOT EXISTS citizen_missions_citizen_idx
+  ON citizen_missions (citizen_id, mission_status);
+
+CREATE TABLE IF NOT EXISTS citizen_wallets (
+  citizen_id UUID PRIMARY KEY REFERENCES citizens(id) ON DELETE CASCADE,
+  balance_nvc BIGINT NOT NULL DEFAULT 0 CHECK (balance_nvc >= 0),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS wallet_ledger (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  citizen_id UUID NOT NULL REFERENCES citizens(id) ON DELETE CASCADE,
+  idempotency_key TEXT NOT NULL UNIQUE,
+  entry_type TEXT NOT NULL CHECK (entry_type IN ('mission_reward', 'admin_adjustment', 'reversal')),
+  amount_delta BIGINT NOT NULL CHECK (amount_delta <> 0),
+  balance_after BIGINT NOT NULL CHECK (balance_after >= 0),
+  reference_type TEXT NOT NULL,
+  reference_id TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS wallet_ledger_citizen_idx
+  ON wallet_ledger (citizen_id, created_at DESC);
