@@ -149,8 +149,8 @@ export async function recordVerifiedAudienceSnapshot(input: VerifiedAudienceSnap
        VALUES ($1, 'community_growth', $2, $3, $4, $5::jsonb, 'public')`,
       [
         `audience-growth:${idempotencyKey}`,
-        homesCreated > 0 ? `NOVARIA builds ${housesCreated.toLocaleString("en-US")} new community homes` : "NOVARIA completes its daily community growth check",
-        homesCreated > 0
+        housesCreated > 0 ? `NOVARIA builds ${housesCreated.toLocaleString("en-US")} new community homes` : "NOVARIA completes its daily community growth check",
+        housesCreated > 0
           ? `A verified audience-growth snapshot created ${housesCreated} community homes in Harbor View.`
           : `The verified net audience change was ${netChange}; no new homes were required.`,
         eventId,
