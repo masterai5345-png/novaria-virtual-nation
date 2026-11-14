@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import WorldCanvas from "@/components/world/WorldCanvas";
 
@@ -34,10 +35,10 @@ export default function HomePage() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="NOVARIA home">
+        <Link className="brand" href="/" aria-label="NOVARIA home">
           <span className="brand-mark">N</span>
           <span><strong>NOVARIA</strong><small>A LIVING VIRTUAL NATION</small></span>
-        </a>
+        </Link>
         <div className="topbar-right">
           <span className="online-pill"><i /> WORLD PREVIEW</span>
           <button className="citizen-button" type="button" onClick={() => alert("Citizen sign-in will be enabled after the authentication provider is configured.")}>
