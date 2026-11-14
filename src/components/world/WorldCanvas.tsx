@@ -17,33 +17,62 @@ function box(w: number, h: number, d: number, mat: THREE.Material, x: number, y:
   return mesh;
 }
 
-function makeHouse(scene: THREE.Scene, x: number, z: number, palette: HousePalette, scale = 1) {
+function makeHouse(
+  parent: THREE.Scene | THREE.Group,
+  x: number,
+  z: number,
+  palette: HousePalette,
+  scale = 1,
+  homeType: string = "starter",
+) {
   const group = new THREE.Group();
   const wall = material(palette.wall);
   const roof = material(palette.roof);
   const trim = material(palette.trim);
-  const body = box(1.7 * scale, 1.05 * scale, 1.35 * scale, wall, 0, 0.55 * scale, 0);
-  group.add(body);
+  const glass = new THREE.MeshStandardMaterial({ color: "#9ed5d2", roughness: 0.22, metalness: 0.12 });
+  const dark = material("#52615c", 0.72);
+  const floors = homeType === "patron" ? 3 : homeType === "family" || homeType === "premium" ? 2 : 1;
+  const floorHeight = 0.68 * scale;
+  const width = 1.72 * scale;
+  const depth = 1.42 * scale;
 
-  const roofShape = new THREE.Mesh(new THREE.ConeGeometry(1.25 * scale, 0.85 * scale, 4), roof);
-  roofShape.rotation.y = Math.PI / 4;
-  roofShape.position.y = 1.47 * scale;
-  roofShape.scale.z = 0.78;
-  roofShape.castShadow = true;
-  group.add(roofShape);
+  group.add(box(width + 0.16 * scale, 0.12 * scale, depth + 0.16 * scale, dark, 0, 0.06 * scale, 0));
+  group.add(box(width, floorHeight * floors, depth, wall, 0, 0.12 * scale + (floorHeight * floors) / 2, 0));
 
-  const door = box(0.34 * scale, 0.67 * scale, 0.055 * scale, trim, 0, 0.35 * scale, 0.7 * scale);
-  group.add(door);
-  for (const wx of [-0.52, 0.52]) {
-    const window = new THREE.Mesh(new THREE.BoxGeometry(0.32 * scale, 0.3 * scale, 0.05 * scale), material("#9ed5d2", 0.35));
-    window.position.set(wx * scale, 0.7 * scale, 0.69 * scale);
-    group.add(window);
+  // Contemporary flat roof and a slightly offset upper volume for a varied silhouette.
+  group.add(box(width + 0.18 * scale, 0.14 * scale, depth + 0.18 * scale, roof, 0, 0.12 * scale + floorHeight * floors + 0.07 * scale, 0));
+  if (floors > 1) {
+    group.add(box(0.12 * scale, 0.8 * scale, 0.12 * scale, trim, -0.58 * scale, floorHeight * 1.8, depth / 2 + 0.08 * scale));
+    group.add(box(0.12 * scale, 0.8 * scale, 0.12 * scale, trim, 0.58 * scale, floorHeight * 1.8, depth / 2 + 0.08 * scale));
   }
+
+  const door = box(0.34 * scale, 0.58 * scale, 0.06 * scale, trim, -0.47 * scale, 0.12 * scale + 0.29 * scale, depth / 2 + 0.04 * scale);
+  group.add(door);
+  for (const floor of Array.from({ length: floors }, (_, index) => index)) {
+    const y = 0.12 * scale + floorHeight * (floor + 0.53);
+    for (const wx of [0.18, 0.83]) {
+      const window = new THREE.Mesh(new THREE.BoxGeometry(0.42 * scale, 0.34 * scale, 0.055 * scale), glass);
+      window.position.set((wx - 0.5) * width, y, depth / 2 + 0.035 * scale);
+      group.add(window);
+    }
+  }
+
+  if (homeType === "premium" || homeType === "patron") {
+    const balcony = box(0.9 * scale, 0.08 * scale, 0.5 * scale, trim, 0.28 * scale, floorHeight * 1.42, depth / 2 + 0.2 * scale);
+    group.add(balcony);
+    for (const xOffset of [-0.14, 0.14, 0.42, 0.7]) {
+      group.add(box(0.035 * scale, 0.32 * scale, 0.035 * scale, glass, xOffset * scale, floorHeight * 1.62, depth / 2 + 0.4 * scale));
+    }
+  }
+  if (homeType === "patron") {
+    group.add(box(0.7 * scale, 0.12 * scale, 0.75 * scale, roof, 0.56 * scale, floorHeight * 2.1, -0.08 * scale));
+    group.add(box(0.045 * scale, 0.42 * scale, 0.045 * scale, trim, 0.56 * scale, floorHeight * 2.35, 0.27 * scale));
+  }
+
   group.position.set(x, 0, z);
-  scene.add(group);
+  parent.add(group);
   return group;
 }
-
 function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
   const group = new THREE.Group();
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.09 * size, 0.14 * size, 0.72 * size, 7), material("#79523a"));
@@ -161,11 +190,11 @@ export default function WorldCanvas() {
     water.position.y = -0.16;
     scene.add(water);
 
-    const island = new THREE.Mesh(new THREE.CylinderGeometry(10.5, 11.4, 0.55, 64), material("#c7b68c"));
+    const island = new THREE.Mesh(new THREE.CylinderGeometry(17.5, 18.2, 0.55, 72), material("#c7b68c"));
     island.position.y = -0.02;
     island.receiveShadow = true;
     scene.add(island);
-    const grass = new THREE.Mesh(new THREE.CylinderGeometry(10.1, 10.7, 0.42, 64), material("#70916a"));
+    const grass = new THREE.Mesh(new THREE.CylinderGeometry(17.0, 17.5, 0.42, 72), material("#70916a"));
     grass.position.y = 0.29;
     grass.receiveShadow = true;
     scene.add(grass);
@@ -209,7 +238,48 @@ export default function WorldCanvas() {
       [5.8, -0.9, 0.9], [-5.6, 1.2, 0.95], [-3.8, 4.2, 0.86],
       [4.0, 4.2, 0.92], [6.5, 2.8, 0.84],
     ];
-    positions.forEach(([x, z, scale], i) => makeHouse(scene, x, z, palettes[i % palettes.length], scale));
+    const houseGroup = new THREE.Group();
+    scene.add(houseGroup);
+    const homeTypes = ["starter", "family", "starter", "premium", "starter", "family", "premium", "patron"];
+    positions.forEach(([x, z, scale], i) => makeHouse(houseGroup, x, z, palettes[i % palettes.length], scale, homeTypes[i % homeTypes.length]));
+
+    let worldHomesAbort: AbortController | null = new AbortController();
+    fetch("/api/city/world", { cache: "no-store", signal: worldHomesAbort.signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return await response.json() as {
+          source?: string;
+          homes?: { id: string; type: string; x: number; z: number; rotation: number }[];
+        };
+      })
+      .then((data) => {
+        if (!data || data.source !== "database" || !data.homes?.length) return;
+        // Replace the visual sample with the most recent persistent community homes.
+        for (const child of [...houseGroup.children]) {
+          houseGroup.remove(child);
+          child.traverse((object) => {
+            if (object instanceof THREE.Mesh) {
+              object.geometry.dispose();
+              const mats = Array.isArray(object.material) ? object.material : [object.material];
+              mats.forEach((entry) => entry.dispose());
+            }
+          });
+        }
+        data.homes?.forEach((home, index) => {
+          const palette = home.type === "patron"
+            ? { wall: "#e7dfcc", roof: "#435b59", trim: "#aa875d" }
+            : home.type === "premium"
+              ? { wall: "#e2e7df", roof: "#536c68", trim: "#8c755a" }
+              : home.type === "family"
+                ? { wall: "#eee4d4", roof: "#8b6a55", trim: "#6d5142" }
+                : palettes[index % 2];
+          const group = makeHouse(houseGroup, home.x * 0.25, home.z * 0.25, palette, 0.55, home.type);
+          group.rotation.y = home.rotation || 0;
+        });
+      })
+      .catch(() => {
+        // Keep the procedural founding neighborhood if the city API is unavailable.
+      });
 
     for (let i = 0; i < 28; i++) {
       const angle = (i / 28) * Math.PI * 2;
@@ -301,8 +371,8 @@ export default function WorldCanvas() {
       const isMoving = magnitude > 0.08;
       const speed = 3.6;
       if (isMoving) {
-        otter.position.x = THREE.MathUtils.clamp(otter.position.x + moveX * speed * delta, -7.6, 7.6);
-        otter.position.z = THREE.MathUtils.clamp(otter.position.z + moveZ * speed * delta, -7.6, 7.6);
+        otter.position.x = THREE.MathUtils.clamp(otter.position.x + moveX * speed * delta, -15.5, 15.5);
+        otter.position.z = THREE.MathUtils.clamp(otter.position.z + moveZ * speed * delta, -15.5, 15.5);
         otter.rotation.y = Math.atan2(moveX, moveZ);
       } else {
         otter.rotation.y += (Math.sin(time * 0.0007) * 0.08 - otter.rotation.y) * Math.min(delta * 2, 1);
@@ -321,6 +391,8 @@ export default function WorldCanvas() {
 
     return () => {
       window.cancelAnimationFrame(frame);
+      worldHomesAbort?.abort();
+      worldHomesAbort = null;
       observer.disconnect();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
