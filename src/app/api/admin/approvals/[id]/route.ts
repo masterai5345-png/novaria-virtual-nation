@@ -78,6 +78,20 @@ export async function POST(
       }
     }
 
+    if (row.action_type === "review_comment_reply") {
+      const commentId = row.action_payload?.commentId;
+      if (typeof commentId === "string") {
+        await client.query(
+          `UPDATE social_comment_inbox
+           SET reply_status = $2,
+               moderation_status = CASE WHEN $2 = 'approved' THEN 'safe' ELSE 'flagged' END,
+               reviewed_at = NOW()
+           WHERE id = $1 AND reply_status = 'awaiting_approval'`,
+          [commentId, decision === "approved" ? "approved" : "rejected"],
+        );
+      }
+    }
+
     if (row.job_id) {
       await client.query(
         `UPDATE agent_jobs
