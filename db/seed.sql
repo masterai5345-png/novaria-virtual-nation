@@ -60,3 +60,34 @@ VALUES (
   'public'
 )
 ON CONFLICT (event_key) DO NOTHING;
+
+
+-- Founding community homes give newly registered citizens somewhere to start.
+-- Stable plot keys and ON CONFLICT clauses make this seed safe to re-run.
+WITH harbor AS (
+  SELECT id FROM districts WHERE slug = 'harbor-view' LIMIT 1
+),
+new_plots AS (
+  INSERT INTO home_plots (district_id, plot_key, position_x, position_z, rotation_y, plot_status)
+  SELECT
+    harbor.id,
+    'founding:' || home_number::text,
+    (((home_number - 1) % 8) * 3.8 - 13.3)::numeric(10,3),
+    (floor((home_number - 1) / 8.0) * 3.6 - 4.0)::numeric(10,3),
+    0,
+    'built'
+  FROM harbor
+  CROSS JOIN generate_series(1, 16) AS home_number
+  ON CONFLICT (plot_key) DO NOTHING
+  RETURNING id
+)
+INSERT INTO houses (plot_id, house_type, design_key, house_status, visual_config)
+SELECT
+  plots.id,
+  CASE WHEN split_part(plots.plot_key, ':', 2)::integer % 4 = 0 THEN 'family' ELSE 'starter' END,
+  CASE WHEN split_part(plots.plot_key, ':', 2)::integer % 4 = 0 THEN 'modern-family-01' ELSE 'modern-starter-01' END,
+  'community',
+  jsonb_build_object('source', 'founding-neighborhood', 'model', 'procedural-modern-home')
+FROM home_plots AS plots
+WHERE plots.plot_key LIKE 'founding:%'
+ON CONFLICT (plot_id) DO NOTHING;
