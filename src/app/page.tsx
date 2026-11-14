@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import CitizenButton from "@/components/auth/CitizenButton";
 import WorldCanvas from "@/components/world/WorldCanvas";
 
 type Panel = "overview" | "missions" | "homes" | "citizens";
@@ -41,9 +42,7 @@ export default function HomePage() {
         </Link>
         <div className="topbar-right">
           <span className="online-pill"><i /> WORLD PREVIEW</span>
-          <button className="citizen-button" type="button" onClick={() => alert("Citizen sign-in will be enabled after the authentication provider is configured.")}>
-            Become a citizen
-          </button>
+          <CitizenButton />
         </div>
       </header>
 
@@ -60,7 +59,7 @@ export default function HomePage() {
               <span className="world-note">3D interactive preview · desktop & mobile</span>
             </div>
           </div>
-          <div className="world-chip chip-population"><span className="chip-icon">⌂</span><span><small>COMMUNITY POPULATION</small><b>1,284</b></span></div>
+          <div className="world-chip chip-population"><span className="chip-icon">⌂</span><span><small>DEMO POPULATION</small><b>1,284</b></span></div>
           <div className="world-chip chip-mayor"><span className="mayor-avatar">🦦</span><span><small>YOUR MAYOR</small><b>Mayor Otti</b></span></div>
           <div className="world-controls-hint">DRAG TO ROTATE · SCROLL TO ZOOM</div>
         </div>
@@ -83,8 +82,8 @@ export default function HomePage() {
           </div>
 
           <div className="quick-stats">
-            <div><small>HOMES</small><strong>842</strong></div>
-            <div><small>ACTIVE NPCs</small><strong>96</strong></div>
+            <div><small>SAMPLE HOMES</small><strong>842</strong></div>
+            <div><small>NPC PREVIEW</small><strong>96</strong></div>
             <div><small>OPEN QUESTS</small><strong>{missions.length - completed.length}</strong></div>
           </div>
         </aside>
@@ -93,7 +92,7 @@ export default function HomePage() {
       <section className="content-section">
         <div className="section-heading">
           <div><span className="eyebrow">YOUR NOVARIA</span><h2>Explore the town</h2></div>
-          <span className="section-caption">A living world, one day at a time.</span>
+          <span className="section-caption">A living world, one day at a time. Metrics shown are prototype values.</span>
         </div>
         <nav className="section-tabs" aria-label="Town sections">
           {nav.map((item) => (
