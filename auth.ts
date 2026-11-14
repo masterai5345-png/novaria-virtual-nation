@@ -29,7 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       const googleProfile = profile as { email_verified?: boolean } | undefined;
-      if (googleProfile?.email_verified === false) {
+      if (googleProfile?.email_verified !== true) {
         return false;
       }
 
