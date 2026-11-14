@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Activity, Bot, Building2, ChartNoAxesCombined, CheckCircle2, CircleDashed, Clock3, ShieldCheck, Video, Wallet } from "lucide-react";
 import CommandConsole from "@/components/admin/CommandConsole";
 import ApprovalInbox from "@/components/admin/ApprovalInbox";
+import RuntimeHealth from "@/components/admin/RuntimeHealth";
 import { requireOwner } from "@/lib/authz";
 
 const departments = [
@@ -68,7 +69,7 @@ export default async function AICommandCenterPage() {
           <h1>Good day, <em>Founder.</em></h1>
           <p>Supervise the city, the media operation and the NOVARIA AI workforce.</p>
         </div>
-        <div className="system-state"><span className="state-pulse" /><span><b>Owner session verified</b><small>Commands are queued for reviewable AI planning</small></span></div>
+        <RuntimeHealth />
       </section>
 
       <section className="admin-metrics">
