@@ -321,3 +321,74 @@ a { color: inherit; text-decoration: none; }
 .mission-feedback { margin: 5px 0; color: #71877e; font-size: 9px; line-height: 1.6; }
 .mission-success { margin: 4px 0; padding: 11px 13px; border-radius: 10px; background: #e0edde; color: #285b47; font-size: 10px; line-height: 1.5; }
 .mission-error { margin: 4px 0; padding: 11px 13px; border-radius: 10px; background: #f4e1dc; color: #8f473d; font-size: 10px; line-height: 1.5; }
+
+
+/* Persistent citizen avatar studio and community home claim */
+.citizen-tools-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); align-items: start; gap: 14px; margin-top: 16px; }
+.avatar-studio, .house-claim-card { border: 1px solid var(--line); border-radius: 19px; background: #fffdf7; padding: 21px; }
+.avatar-studio-heading { display: flex; align-items: center; gap: 10px; }
+.avatar-studio-heading > span { width: 34px; height: 34px; display: grid; place-items: center; color: var(--green); border-radius: 11px; background: #e4eee2; }
+.avatar-studio-heading b, .avatar-studio-heading small { display: block; }
+.avatar-studio-heading b { font: 800 14px Manrope; }
+.avatar-studio-heading small { margin-top: 4px; color: #7b8c84; font-size: 9px; }
+.avatar-preview-row { display: flex; align-items: center; gap: 17px; margin: 18px 0; padding: 15px; border-radius: 15px; background: #edf1e8; }
+.avatar-preview { position: relative; width: 104px; height: 123px; flex: 0 0 auto; border-radius: 15px; background: radial-gradient(circle at 50% 25%, #f7f1e6, #dce6d8); overflow: hidden; }
+.avatar-head { position: absolute; z-index: 2; width: 58px; height: 55px; left: 23px; top: 15px; border-radius: 48% 48% 43% 43%; box-shadow: inset -5px -5px 0 #00000010; }
+.avatar-ear { position: absolute; top: -5px; width: 16px; height: 16px; border-radius: 50%; background: inherit; border: 3px solid #e5d5c0; }
+.avatar-ear-left { left: 2px; }
+.avatar-ear-right { right: 2px; }
+.avatar-eye { position: absolute; top: 21px; width: 6px; height: 8px; border-radius: 50%; background: #211d1a; }
+.avatar-eye-left { left: 17px; }
+.avatar-eye-right { right: 17px; }
+.avatar-muzzle { position: absolute; left: 18px; bottom: 7px; width: 23px; height: 15px; border-radius: 50%; background: #ead8c3; }
+.avatar-body { position: absolute; left: 24px; bottom: -13px; width: 56px; height: 75px; border-radius: 23px 23px 11px 11px; box-shadow: inset -5px -5px 0 #00000012; }
+.avatar-tail { position: absolute; left: 52px; bottom: 7px; width: 14px; height: 48px; border-radius: 80% 40% 70% 50%; transform: rotate(-40deg); }
+.avatar-cap { position: absolute; left: 8px; top: -3px; width: 43px; height: 14px; border-radius: 17px 17px 4px 4px; background: #d7ad68; }
+.avatar-scarf { position: absolute; z-index: 3; left: 22px; bottom: 40px; width: 60px; height: 12px; border-radius: 8px; background: #d7ad68; }
+.avatar-backpack { position: absolute; left: 14px; bottom: 16px; width: 17px; height: 37px; border-radius: 8px; background: #aa6d40; border: 2px solid #f2e6d1; }
+.avatar-preview-copy h3 { margin: 6px 0 4px; font: 800 18px Manrope; }
+.avatar-preview-copy p { margin: 0 0 6px; color: #55756d; font-size: 10px; }
+.avatar-preview-copy small { color: #829189; font-size: 8px; line-height: 1.5; }
+.avatar-label { display: block; margin: 15px 0 6px; color: #48655c; font-size: 9px; font-weight: 800; }
+.avatar-name-input { width: 100%; padding: 10px 12px; border: 1px solid #d7e0d6; border-radius: 10px; outline: none; background: #fbfcf8; color: var(--ink); font: 11px 'DM Sans', sans-serif; }
+.avatar-name-input:focus { border-color: #4c8072; box-shadow: 0 0 0 3px #4c80721c; }
+.avatar-option-block { margin-top: 17px; }
+.avatar-option-block > b { display: block; color: #244941; font: 700 11px Manrope; margin-bottom: 9px; }
+.fur-options, .accessory-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.fur-options button { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 50%; border: 2px solid transparent; color: #244941; background: #eff2e9; }
+.fur-options button.selected { border-color: #315f52; }
+.fur-options button span { width: 22px; height: 22px; display: block; border-radius: 50%; }
+.avatar-current-option { display: block; margin-top: 7px; color: #7d8e84; font-size: 8px; }
+.outfit-options { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.outfit-options button { text-align: left; border: 1px solid #dce4d9; border-radius: 10px; padding: 10px; background: #fbfcf8; }
+.outfit-options button.selected { border-color: #477467; background: #e8f0e7; box-shadow: 0 0 0 2px #47746714; }
+.outfit-options span, .outfit-options small { display: block; }
+.outfit-options span { color: #244941; font-size: 9px; font-weight: 800; }
+.outfit-options small { margin-top: 4px; color: #7a8a80; font-size: 8px; }
+.accessory-options button { border: 1px solid #dce4d9; border-radius: 99px; padding: 8px 11px; color: #506b61; background: #fbfcf8; font-size: 9px; }
+.accessory-options button.selected { border-color: #477467; background: #e8f0e7; color: #244941; font-weight: 800; }
+.avatar-save { display: inline-flex; align-items: center; gap: 7px; margin-top: 19px; border: 0; border-radius: 99px; padding: 11px 16px; background: var(--green); color: white; font-size: 10px; font-weight: 800; }
+.avatar-save:disabled { opacity: .55; cursor: not-allowed; }
+.avatar-message, .avatar-error { margin: 10px 0 0; font-size: 9px; line-height: 1.5; }
+.avatar-message { color: #2d7255; }
+.avatar-error { color: #a24d43; }
+.house-claim-card { display: flex; gap: 12px; align-items: flex-start; }
+.house-claim-icon { width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 13px; background: #e9efe4; color: #315f52; }
+.house-claim-content { min-width: 0; flex: 1; }
+.house-claim-content h3 { margin: 6px 0; color: #1a3f39; font: 800 15px Manrope; }
+.house-claim-content p { color: #6d8177; font-size: 9px; line-height: 1.6; overflow-wrap: anywhere; }
+.house-claim-content > button { margin-top: 7px; border: 0; border-radius: 99px; padding: 10px 13px; background: #1b514b; color: #fff; font-size: 9px; font-weight: 800; }
+.house-claim-content > button:disabled { opacity: .5; cursor: not-allowed; }
+.house-claim-refresh { border: 0; background: transparent; color: #82968b; padding: 5px; }
+.house-claim-success, .house-claim-error { display: block; margin-top: 9px; font-size: 8px; line-height: 1.5; }
+.house-claim-success { color: #2d7255; }
+.house-claim-error { color: #a24d43; }
+@media (max-width: 760px) {
+  .citizen-tools-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .avatar-studio, .house-claim-card { padding: 15px; }
+  .avatar-preview-row { align-items: flex-start; gap: 12px; padding: 10px; }
+  .avatar-preview { width: 88px; height: 108px; transform: scale(.92); transform-origin: top left; margin-right: -7px; margin-bottom: -8px; }
+  .outfit-options { grid-template-columns: 1fr; }
+}
