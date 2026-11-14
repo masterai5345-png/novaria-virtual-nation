@@ -1,11 +1,15 @@
 import { auth } from "../../auth";
-import { isOwnerEmail, query } from "@/lib/db";
+import { databaseConfigured, isOwnerEmail, query } from "@/lib/db";
 
 export async function requireOwner() {
   const session = await auth();
   const email = session?.user?.email;
   if (!session?.user?.id || !isOwnerEmail(email)) {
     return { ok: false as const, status: 403 as const, reason: "Owner access required." };
+  }
+
+  if (!databaseConfigured) {
+    return { ok: false as const, status: 503 as const, reason: "Database is not configured." };
   }
 
   const result = await query<{ account_role: string; account_status: string }>(
