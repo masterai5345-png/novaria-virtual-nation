@@ -46,3 +46,15 @@ services:
         sync: false
       - key: WORKER_POLL_MS
         value: "5000"
+
+  - type: cron
+    name: novaria-daily-content-scheduler
+    runtime: node
+    plan: starter
+    branch: foundation/mvp
+    schedule: "0 1 * * *"
+    buildCommand: npm install
+    startCommand: npm run enqueue:daily-content
+    envVars:
+      - key: DATABASE_URL
+        sync: false
