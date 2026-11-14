@@ -68,7 +68,12 @@ export async function upsertGoogleCitizen(input: {
       process.env.NOVARIA_OWNER_EMAIL ?? "",
     ],
   );
-  return result.rows[0];
+  const citizen = result.rows[0];
+  await query(
+    "INSERT INTO citizen_wallets (citizen_id, balance_nvc) VALUES ($1, 0) ON CONFLICT (citizen_id) DO NOTHING",
+    [citizen.id],
+  );
+  return citizen;
 }
 
 export function isOwnerEmail(email?: string | null) {
