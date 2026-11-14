@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import CitizenButton from "@/components/auth/CitizenButton";
+import CityMetrics from "@/components/world/CityMetrics";
 import WorldCanvas from "@/components/world/WorldCanvas";
 
 type Panel = "overview" | "missions" | "homes" | "citizens";
@@ -81,11 +82,7 @@ export default function HomePage() {
             <p>Preview balance only · no cash value</p>
           </div>
 
-          <div className="quick-stats">
-            <div><small>SAMPLE HOMES</small><strong>842</strong></div>
-            <div><small>NPC PREVIEW</small><strong>96</strong></div>
-            <div><small>OPEN QUESTS</small><strong>{missions.length - completed.length}</strong></div>
-          </div>
+          <CityMetrics />
         </aside>
       </section>
 
