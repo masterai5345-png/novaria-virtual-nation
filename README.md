@@ -73,7 +73,7 @@ This queues at most one daily job and only when verified public city events exis
 - Non-cash NOVA Coin wallet and idempotent reward ledger
 - Mayor Otti and founding districts in seed data
 - Database-backed city counts when configured
-- Owner-only AI command queue and proposal inbox
+- Owner-only AI command queue and proposal inbox\n- Server-side Claude worker heartbeat monitored by an owner-only runtime status endpoint
 - Claude worker for owner plans and daily script drafts (requires Anthropic credentials)
 - Verified follower snapshot to idempotent community-house construction service (platform connector pending)\n- Signed social-comment ingestion endpoint with spam/sensitive-topic routing\n- Claude-generated reply drafts routed to the owner approval inbox (not publicly posted)
 
