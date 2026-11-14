@@ -301,3 +301,11 @@ CREATE INDEX IF NOT EXISTS wallet_ledger_citizen_idx
 CREATE UNIQUE INDEX IF NOT EXISTS houses_one_claimed_home_per_citizen_idx
   ON houses (owner_citizen_id)
   WHERE owner_citizen_id IS NOT NULL AND house_status = 'claimed';
+
+
+-- Review state for AI-drafted community replies. Approval does not publish externally.
+ALTER TABLE social_comment_inbox
+  ADD COLUMN IF NOT EXISTS reply_status TEXT NOT NULL DEFAULT 'not_drafted';
+
+CREATE INDEX IF NOT EXISTS social_comment_reply_status_idx
+  ON social_comment_inbox (reply_status, received_at DESC);
