@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import * as THREE from "three";
 
 type HousePalette = { wall: string; roof: string; trim: string };
@@ -104,6 +104,28 @@ function makeOtter(scene: THREE.Scene) {
 
 export default function WorldCanvas() {
   const hostRef = useRef<HTMLDivElement>(null);
+  const movementRef = useRef({ x: 0, z: 0 });
+  const [stickPosition, setStickPosition] = useState({ x: 0, y: 0 });
+  const [stickActive, setStickActive] = useState(false);
+
+  function updateStick(event: ReactPointerEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const radius = rect.width * 0.34;
+    const dx = event.clientX - (rect.left + rect.width / 2);
+    const dy = event.clientY - (rect.top + rect.height / 2);
+    const distance = Math.hypot(dx, dy);
+    const scale = distance > radius ? radius / distance : 1;
+    const x = dx * scale;
+    const y = dy * scale;
+    movementRef.current = { x: x / radius, z: y / radius };
+    setStickPosition({ x, y });
+  }
+
+  function resetStick() {
+    movementRef.current = { x: 0, z: 0 };
+    setStickPosition({ x: 0, y: 0 });
+    setStickActive(false);
+  }
 
   useEffect(() => {
     const host = hostRef.current;
@@ -206,6 +228,23 @@ export default function WorldCanvas() {
     let rotation = 0;
     let zoom = 1;
     let frame = 0;
+    let previousTime = 0;
+    const pressedKeys = new Set<string>();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select, [contenteditable=true]")) return;
+      const key = event.key.toLowerCase();
+      if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
+        event.preventDefault();
+        pressedKeys.add(key);
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => pressedKeys.delete(event.key.toLowerCase());
+    const onBlur = () => pressedKeys.clear();
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
 
     const onPointerDown = (event: PointerEvent) => {
       dragging = true;
@@ -244,14 +283,38 @@ export default function WorldCanvas() {
     observer.observe(host);
     resize();
 
-    const animate = () => {
+    const animate = (time: number) => {
       frame = window.requestAnimationFrame(animate);
+      const delta = previousTime === 0 ? 0 : Math.min((time - previousTime) / 1000, 0.05);
+      previousTime = time;
+
+      const keyX = (pressedKeys.has("d") || pressedKeys.has("arrowright") ? 1 : 0) - (pressedKeys.has("a") || pressedKeys.has("arrowleft") ? 1 : 0);
+      const keyZ = (pressedKeys.has("s") || pressedKeys.has("arrowdown") ? 1 : 0) - (pressedKeys.has("w") || pressedKeys.has("arrowup") ? 1 : 0);
+      let moveX = keyX + movementRef.current.x;
+      let moveZ = keyZ + movementRef.current.z;
+      const magnitude = Math.hypot(moveX, moveZ);
+      if (magnitude > 1) {
+        moveX /= magnitude;
+        moveZ /= magnitude;
+      }
+
+      const isMoving = magnitude > 0.08;
+      const speed = 3.6;
+      if (isMoving) {
+        otter.position.x = THREE.MathUtils.clamp(otter.position.x + moveX * speed * delta, -7.6, 7.6);
+        otter.position.z = THREE.MathUtils.clamp(otter.position.z + moveZ * speed * delta, -7.6, 7.6);
+        otter.rotation.y = Math.atan2(moveX, moveZ);
+      } else {
+        otter.rotation.y += (Math.sin(time * 0.0007) * 0.08 - otter.rotation.y) * Math.min(delta * 2, 1);
+      }
+
       const radius = 21 / zoom;
-      camera.position.x = Math.sin(rotation + 0.56) * radius * 0.58;
-      camera.position.z = Math.cos(rotation + 0.56) * radius * 0.68;
-      camera.lookAt(0, 0.65, 0);
-      otter.position.y = 0.03 + Math.sin(performance.now() * 0.0024) * 0.035;
-      otter.rotation.y = Math.sin(performance.now() * 0.0007) * 0.08;
+      const cameraX = Math.sin(rotation + 0.56) * radius * 0.58;
+      const cameraZ = Math.cos(rotation + 0.56) * radius * 0.68;
+      camera.position.x = otter.position.x + cameraX;
+      camera.position.z = otter.position.z + cameraZ;
+      camera.lookAt(otter.position.x, 0.65, otter.position.z);
+      otter.position.y = 0.03 + Math.sin(time * (isMoving ? 0.012 : 0.0024)) * (isMoving ? 0.075 : 0.035);
       renderer.render(scene, camera);
     };
     animate();
@@ -259,6 +322,9 @@ export default function WorldCanvas() {
     return () => {
       window.cancelAnimationFrame(frame);
       observer.disconnect();
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
@@ -276,5 +342,22 @@ export default function WorldCanvas() {
     };
   }, []);
 
-  return <div className="world-canvas-host" ref={hostRef} aria-label="Interactive 3D preview of NOVARIA town" />;
+  return (
+    <div className="world-canvas-host" ref={hostRef} aria-label="Interactive 3D preview of NOVARIA town">
+      <div
+        className={`joystick-shell${stickActive ? " is-active" : ""}`}
+        role="application"
+        aria-label="Touch joystick to move the otter character"
+        onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); setStickActive(true); updateStick(event); }}
+        onPointerMove={(event) => { if (stickActive) updateStick(event); }}
+        onPointerUp={resetStick}
+        onPointerCancel={resetStick}
+        onLostPointerCapture={resetStick}
+      >
+        <span className="joystick-label">MOVE</span>
+        <span className="joystick-thumb" style={{ transform: `translate(calc(-50% + ${stickPosition.x}px), calc(-50% + ${stickPosition.y}px))` }} />
+      </div>
+      <div className="desktop-move-hint">W A S D / ARROW KEYS TO WALK</div>
+    </div>
+  );
 }
