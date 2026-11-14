@@ -26,7 +26,7 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   return db.query<T>(text, values);
 }
 
-export type CitizenRecord = {
+export type CitizenRecord = {\n  [key: string]: unknown;
   id: string;
   email: string | null;
   display_name: string;
