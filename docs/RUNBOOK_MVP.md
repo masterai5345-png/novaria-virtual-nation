@@ -1,56 +1,43 @@
 # NOVARIA MVP Runbook
 
-This runbook configures the features currently present on branch `foundation/mvp`. A passing build does not mean that external accounts, providers, or 24/7 services are already active.
+This runbook configures the features on branch `foundation/mvp`. A passing build does not mean external credentials, providers, or public hosting have been activated.
 
-## 1. Database
-1. Create a managed PostgreSQL database.
-2. Set `DATABASE_URL` on the web service, worker, and daily scheduler.
-3. Run `npm run db:migrate` from a secure shell or local environment.
-4. Confirm `/api/health` reports database `ok`.
-5. Confirm `city_leaders` has one active `mayor-otti` record and `agent_definitions` contains `ceo-orchestrator` and `scriptwriter`.
+## 1. Deploy the Render Blueprint
+1. Connect `masterai5345-png/novaria-virtual-nation` to Render as a **Blueprint**.
+2. Use branch `foundation/mvp`.
+3. Review the paid web service, worker, cron, and PostgreSQL resources before confirming.
+4. During initial setup, provide `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `NOVARIA_OWNER_EMAIL`, `ANTHROPIC_API_KEY`, and `ANTHROPIC_MODEL`.
+5. Render generates `AUTH_SECRET` and `AUDIENCE_INGEST_SECRET`.
+6. The Blueprint connects `DATABASE_URL` to the web, worker, and cron services.
+7. The web service runs `npm run db:migrate` before starting, applying `db/schema.sql` and `db/seed.sql`.
 
-The migration is repeatable for the current schema and seed. Take a backup before applying future schema changes to a production database.
+Render uses `sync: false` prompts only during initial Blueprint creation; add any later secrets manually in the service Environment settings. Keep every credential out of GitHub and this chat.
 
 ## 2. Google citizen sign-in
-Create a Google OAuth Web client. Set on the web service:
-- `AUTH_SECRET` (a random value of at least 32 characters)
-- `AUTH_GOOGLE_ID`
-- `AUTH_GOOGLE_SECRET`
-- `NOVARIA_OWNER_EMAIL` (the exact Google email that owns the project)
-- `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`
+Create a Google OAuth Web client. Register:
+- Local redirect: `http://localhost:3000/api/auth/callback/google`
+- Production redirect: `https://YOUR_RENDER_HOST/api/auth/callback/google`
 
-Authorized redirect URIs:
-- Local: `http://localhost:3000/api/auth/callback/google`
-- Production: `https://YOUR_RENDER_HOST/api/auth/callback/google`
-
-Set `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=false` until the database and OAuth credentials work. Google email verification is required. The first owner sign-in creates an owner citizen record only when `NOVARIA_OWNER_EMAIL` matches. Verify the role in the database.
+After deployment, set `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` on the web service and redeploy. The Google email must be verified. A citizen record is created on first sign-in. The configured `NOVARIA_OWNER_EMAIL` receives the owner role; verify that database row before using owner tools.
 
 ## 3. Owner command queue and Claude worker
-Set on the worker service only:
-- `ANTHROPIC_API_KEY`
-- `ANTHROPIC_MODEL` (a model ID currently enabled for your Anthropic account)
-- `DATABASE_URL`
-
-The owner dashboard is at `/admin/ai` and requires the owner Google account and owner DB role. It accepts owner commands and stores them as jobs. The worker generates structured plans and creates approval requests. No external action is performed by the worker.
+The admin dashboard is at `/admin/ai` and requires the owner Google account and owner database role. Commands are stored as jobs. The always-on worker processes them with Claude and saves proposals for owner review. It does not have tools for public posting, external replies, money transfers, account bans, or destructive actions.
 
 ## 4. Citizen missions and NOVA Coin
-The founding missions are seeded from `db/seed.sql`. Once a citizen is signed in and PostgreSQL is connected, the homepage loads mission completion state and wallet balance from the database. Completing a mission creates one `citizen_missions` row, increments `citizen_wallets`, inserts a unique `wallet_ledger` entry, and records an anonymized public city event. A citizen cannot claim the same mission reward twice. These tasks are self-confirmed exploration in the current MVP; they are not proof-of-work or cash earning. NOVA Coin has no cash value and cannot be withdrawn.
+The founding missions are seeded from `db/seed.sql`. Signed-in citizens can complete each mission once. Completion is stored in `citizen_missions`, credits `citizen_wallets`, writes an idempotent `wallet_ledger` entry, and creates an anonymized city event. These tasks are currently self-confirmed exploration, not proof-of-work or cash earning. NOVA Coin has no cash value and cannot be withdrawn.
 
 ## 5. Daily content draft workflow
-The Render cron runs `npm run enqueue:daily-content` at 01:00 UTC (08:00 WIB). It creates at most one job for the UTC date and only when public city events exist in the previous seven days.
-
-The worker writes a script draft and shot list into `media_drafts`, then creates an owner approval request. This is not a video-rendering service; no actual video file is produced and no social post is published.
+The Render cron runs `npm run enqueue:daily-content` at 01:00 UTC (08:00 WIB). It queues one job per day only when unused, verified public city events exist in the previous seven days. The worker writes an English video-script draft and shot list into `media_drafts`, then creates an owner approval request. This is not a video-rendering or publishing service.
 
 ## 6. Verified follower-to-home logic
-The function `recordVerifiedAudienceSnapshot` in `src/lib/construction.ts` accepts source metrics after a trusted platform connector has verified them. It stores a dated snapshot, computes net growth as gained minus lost, creates one community home per positive net unit, and uses idempotency/transactions to prevent duplicate builds.
+`recordVerifiedAudienceSnapshot` stores a dated audience snapshot, computes net growth as gained minus lost, and creates one community home for each positive net unit. Unique snapshot/event keys and a transaction prevent repeated webhook deliveries from creating duplicate houses.
 
-Official platform polling, OAuth scopes, refresh-token storage and connector scheduling are still not implemented. The signed ingestion endpoint is ready for a trusted connector. Do not submit guessed values or manual estimates as verified follower data. Followers are audience metrics, not automatically registered NOVARIA citizens.
 ### Signed audience snapshot connector
-The ingestion route is `POST /api/integrations/audience`. It is not a social network connector by itself. An approved YouTube/Meta connector must first obtain metrics through the platform's official API and then sign the exact request body with `AUDIENCE_INGEST_SECRET`.
+The ingestion route is `POST /api/integrations/audience`. It is not a social network connector by itself. An approved YouTube/Meta connector must first obtain metrics through the platform's official API and then sign the exact request body with the generated `AUDIENCE_INGEST_SECRET`.
 
 Signature format:
-- `x-novaria-timestamp`: Unix timestamp in seconds
-- `x-novaria-signature`: lowercase hex HMAC-SHA256 of `<timestamp>.<exact raw JSON body>`
+- `x-novaria-timestamp`: Unix timestamp in seconds.
+- `x-novaria-signature`: lowercase hex HMAC-SHA256 of `<timestamp>.<exact raw JSON body>`.
 - The timestamp must be within five minutes of server time.
 
 Example Node.js signing snippet for a trusted server-side connector:
@@ -75,24 +62,21 @@ await fetch(`${process.env.NOVARIA_URL}/api/integrations/audience`, {
 });
 ```
 
-The route rejects stale or incorrectly signed requests and the database service prevents duplicate snapshots/builds for the same platform, source account, and date. The HMAC only authenticates the connector; it does not prove a number is genuine. The connector must use the approved platform API and preserve its source/account metadata.
+The HMAC authenticates the connector, not the truth of the metric. The connector must use official APIs and preserve account/source metadata. Platform API polling, OAuth permissions, token refresh and connector scheduling are still pending.
 
-
-## 7. Deployment
-1. Connect the private GitHub repository to Render.
-2. Apply `render.yaml` after reviewing service costs.
-3. Configure PostgreSQL, OAuth, and Claude environment variables in Render's secret settings.
-4. Run `npm run db:migrate` once.
-5. Test `/api/health`, Google sign-in, citizen profile, owner command queue, worker, and daily scheduler.
-6. Keep the site in a private/invite beta until privacy, security, performance, backups, moderation, and support processes have been reviewed.
+## 7. Verify the beta
+- `/api/health` should report database `ok`.
+- `/api/ai/status` should show configured Google/Claude integrations.
+- Test citizen sign-in, persistent mission status, wallet balance and owner command history.
+- Confirm the worker creates a proposal approval and daily script drafts only from unused public city events.
+- Test the mobile joystick and camera controls on a real device.
 
 ## 8. Still not implemented
-- YouTube/Meta official API polling, refresh-token storage, and platform-specific analytics reconciliation.
-- Real-time multiplayer, synchronized movement, and persistent real-time game state.
-- 3D model/animation asset pipeline and full avatar customization.
-- Video rendering, upload, scheduling, and social platform publishing.
-- Comment ingestion, moderation, and automated replies.
-- Offerwall, real-money ledger, payout rails, and withdrawal operations.
-- End-to-end security audit, comprehensive monitoring, database backup automation, and incident response.
+- Official YouTube/Meta follower polling, token refresh, and source-account configuration.
+- Real-time multiplayer, synchronized character movement, and full persistent game state.
+- Dynamic rendering of every stored home and advanced character GLB assets.
+- Video rendering, upload, public publishing, and automatic comment replies.
+- Offerwall, real-money reward ledger, payout rails, and withdrawals.
+- Comprehensive security review, backups, monitoring, alerts, and incident response.
 
-NOVA Coin in the public preview is illustrative and has no cash value. Cash rewards must remain disabled until a suitable provider approves the model and legal requirements are reviewed.
+NOVA Coin in the public preview is illustrative game currency and has no cash value. Keep all money withdrawal features disabled.
