@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { QueryResultRow } from "pg";
-import { auth } from "@/auth";
+import { auth } from "../../../../../../auth";
 import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
