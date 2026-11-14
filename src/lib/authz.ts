@@ -1,5 +1,6 @@
 import { auth } from "../../auth";
-import { databaseConfigured, isOwnerEmail, query } from "@/lib/db";\nimport type { QueryResultRow } from "pg";
+import { databaseConfigured, isOwnerEmail, query } from "@/lib/db";
+import type { QueryResultRow } from "pg";
 
 export async function requireOwner() {
   const session = await auth();
