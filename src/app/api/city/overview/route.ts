@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { databaseConfigured, query } from "@/lib/db";\nimport type { QueryResultRow } from "pg";
+import { databaseConfigured, query } from "@/lib/db";
+import type { QueryResultRow } from "pg";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export async function GET() {
       homes: string;
       districts: string;
       mayor_name: string | null;
-    }>(`SELECT
+    } & QueryResultRow>(`SELECT
       (SELECT COUNT(*) FROM citizens WHERE account_status = 'active')::text AS active_citizens,
       (SELECT COUNT(*) FROM houses WHERE house_status <> 'inactive')::text AS homes,
       (SELECT COUNT(*) FROM districts)::text AS districts,
