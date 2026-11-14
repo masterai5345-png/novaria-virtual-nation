@@ -12,7 +12,7 @@ type Approval = {
   result_payload?: { summary?: string; plan?: string[] };
   draft_title?: string | null;
   draft_script?: string | null;
-  draft_description?: string | null;
+  draft_description?: string | null;\n  source_comment?: string | null;\n  reply_draft?: string | null;\n  comment_platform?: string | null;
   job_status?: string | null;
 };
 
@@ -68,7 +68,7 @@ export default function ApprovalInbox() {
       {approvals.map((item) => (
         <article className="approval-card" key={item.id}>
           <div className="approval-topline">
-            <span className="approval-icon">{item.action_type === "review_media_draft" ? <FileText size={17}/> : <ShieldAlert size={17}/>}</span>
+            <span className="approval-icon">{item.action_type === "review_media_draft" || item.action_type === "review_comment_reply" ? <FileText size={17}/> : <ShieldAlert size={17}/>}</span>
             <span className="approval-kind">{item.action_type.replaceAll("_", " ")}</span>
             <small>{new Date(item.created_at).toLocaleString()}</small>
           </div>
@@ -86,7 +86,7 @@ export default function ApprovalInbox() {
           )}
           <div className="approval-actions">
             <button type="button" className="approval-reject" disabled={busyId === item.id} onClick={() => void decide(item.id, "rejected")}><X size={14}/> Reject</button>
-            <button type="button" className="approval-accept" disabled={busyId === item.id} onClick={() => void decide(item.id, "approved")}><Check size={14}/> Approve review</button>
+            <button type="button" className="approval-accept" disabled={busyId === item.id} onClick={() => void decide(item.id, "approved")}><Check size={14}/> {item.action_type === "review_comment_reply" ? "Approve reply draft" : "Approve review"}</button>
           </div>
         </article>
       ))}
