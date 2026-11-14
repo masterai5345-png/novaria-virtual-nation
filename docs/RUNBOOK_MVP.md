@@ -66,7 +66,7 @@ The HMAC authenticates the connector, not the truth of the metric. The connector
 
 ## 8. Signed community comment ingestion\nThe route `POST /api/integrations/comments` accepts comments from a trusted server-side connector that uses an official platform API. Sign the exact raw JSON body with `SOCIAL_INGEST_SECRET` using the same HMAC-SHA256 header format as the audience connector (`x-novaria-timestamp` and `x-novaria-signature`). The timestamp must be within five minutes.\n\nThe service flags comments containing links and escalates comments mentioning money, payouts, passwords, bank details, contact details, scams, or fraud. Safe comments are queued for Claude to draft a short reply. The draft appears in the owner approval inbox. Approval only marks the draft as approved for use; it does not publish a public reply. Direct platform polling, OAuth scopes, and reply publishing remain unconnected.\n\n## 9. Verify the beta
 - `/api/health` should report database `ok`.
-- `/api/ai/status` should show configured Google/Claude integrations.
+- `/api/ai/status` requires the owner session and shows Google/Claude configuration plus the actual worker heartbeat. The worker should show `online` only while it is heartbeating.
 - Test citizen sign-in, persistent mission status, wallet balance and owner command history.
 - Confirm the worker creates a proposal approval and daily script drafts only from unused public city events.
 - Test the mobile joystick and camera controls on a real device.
