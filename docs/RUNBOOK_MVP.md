@@ -33,17 +33,20 @@ Set on the worker service only:
 
 The owner dashboard is at `/admin/ai` and requires the owner Google account and owner DB role. It accepts owner commands and stores them as jobs. The worker generates structured plans and creates approval requests. No external action is performed by the worker.
 
-## 4. Daily content draft workflow
+## 4. Citizen missions and NOVA Coin
+The founding missions are seeded from `db/seed.sql`. Once a citizen is signed in and PostgreSQL is connected, the homepage loads mission completion state and wallet balance from the database. Completing a mission creates one `citizen_missions` row, increments `citizen_wallets`, inserts a unique `wallet_ledger` entry, and records an anonymized public city event. A citizen cannot claim the same mission reward twice. These tasks are self-confirmed exploration in the current MVP; they are not proof-of-work or cash earning. NOVA Coin has no cash value and cannot be withdrawn.
+
+## 5. Daily content draft workflow
 The Render cron runs `npm run enqueue:daily-content` at 01:00 UTC (08:00 WIB). It creates at most one job for the UTC date and only when public city events exist in the previous seven days.
 
 The worker writes a script draft and shot list into `media_drafts`, then creates an owner approval request. This is not a video-rendering service; no actual video file is produced and no social post is published.
 
-## 5. Verified follower-to-home logic
+## 6. Verified follower-to-home logic
 The function `recordVerifiedAudienceSnapshot` in `src/lib/construction.ts` accepts source metrics after a trusted platform connector has verified them. It stores a dated snapshot, computes net growth as gained minus lost, creates one community home per positive net unit, and uses idempotency/transactions to prevent duplicate builds.
 
 The platform connector and its permissions are not implemented yet. Do not submit guessed values or manual estimates as verified follower data. Followers are audience metrics, not automatically registered NOVARIA citizens.
 
-## 6. Deployment
+## 7. Deployment
 1. Connect the private GitHub repository to Render.
 2. Apply `render.yaml` after reviewing service costs.
 3. Configure PostgreSQL, OAuth, and Claude environment variables in Render's secret settings.
@@ -51,7 +54,7 @@ The platform connector and its permissions are not implemented yet. Do not submi
 5. Test `/api/health`, Google sign-in, citizen profile, owner command queue, worker, and daily scheduler.
 6. Keep the site in a private/invite beta until privacy, security, performance, backups, moderation, and support processes have been reviewed.
 
-## 7. Still not implemented
+## 8. Still not implemented
 - YouTube/Meta official API polling, refresh-token storage, and platform-specific analytics reconciliation.
 - Real-time multiplayer, synchronized movement, and persistent real-time game state.
 - 3D model/animation asset pipeline and full avatar customization.
