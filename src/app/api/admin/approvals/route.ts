@@ -20,11 +20,16 @@ export async function GET() {
        jobs.result_payload,
        drafts.title AS draft_title,
        drafts.script AS draft_script,
-       drafts.description AS draft_description
+       drafts.description AS draft_description,
+       comments.comment_text AS source_comment,
+       comments.reply_draft AS reply_draft,
+       comments.platform AS comment_platform
      FROM approval_requests AS approvals
      LEFT JOIN agent_jobs AS jobs ON jobs.id = approvals.job_id
      LEFT JOIN media_drafts AS drafts
        ON drafts.id::text = approvals.action_payload->>'draftId'
+     LEFT JOIN social_comment_inbox AS comments
+       ON comments.id::text = approvals.action_payload->>'commentId'
      WHERE approvals.approval_status = 'pending'
      ORDER BY approvals.created_at DESC
      LIMIT 50`,
