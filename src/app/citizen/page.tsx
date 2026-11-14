@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "../../../auth";
-import { query } from "@/lib/db";\nimport type { QueryResultRow } from "pg";
+import { query } from "@/lib/db";
+import type { QueryResultRow } from "pg";
 
-type CitizenRow = {\n  [key: string]: unknown;
+type CitizenRow = {
+  [key: string]: unknown;
   id: string;
   display_name: string;
   email: string | null;
@@ -18,7 +20,7 @@ export default async function CitizenPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
-  const result = await query<CitizenRow>(
+  const result = await query<CitizenRow & QueryResultRow>(
     `SELECT id, display_name, email, account_role, avatar_species, created_at
      FROM citizens
      WHERE id = $1 AND account_status = 'active'
