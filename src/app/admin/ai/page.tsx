@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Activity, Bot, Building2, ChartNoAxesCombined, CheckCircle2, CircleDashed, Clock3, ShieldCheck, Video, Wallet } from "lucide-react";
 import CommandConsole from "@/components/admin/CommandConsole";
+import ApprovalInbox from "@/components/admin/ApprovalInbox";
 import { requireOwner } from "@/lib/authz";
 
 const departments = [
@@ -80,6 +81,11 @@ export default async function AICommandCenterPage() {
       <section className="command-card">
         <div className="command-heading"><span className="command-icon"><Bot size={20}/></span><div><span className="admin-eyebrow">CEO ORCHESTRATOR</span><h2>Give NOVARIA a direction</h2><p>Your request is stored in PostgreSQL. The Claude worker will prepare a plan for review; this worker cannot execute external actions.</p></div></div>
         <CommandConsole />
+      </section>
+
+      <section className="admin-section">
+        <div className="admin-section-title"><div><span className="admin-eyebrow">REVIEW QUEUE</span><h2>Approval inbox</h2></div><span className="section-caption">Review AI plans and content drafts before any public action</span></div>
+        <ApprovalInbox />
       </section>
 
       <section className="admin-section">
