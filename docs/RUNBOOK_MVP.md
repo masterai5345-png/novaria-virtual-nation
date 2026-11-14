@@ -44,7 +44,39 @@ The worker writes a script draft and shot list into `media_drafts`, then creates
 ## 6. Verified follower-to-home logic
 The function `recordVerifiedAudienceSnapshot` in `src/lib/construction.ts` accepts source metrics after a trusted platform connector has verified them. It stores a dated snapshot, computes net growth as gained minus lost, creates one community home per positive net unit, and uses idempotency/transactions to prevent duplicate builds.
 
-The platform connector and its permissions are not implemented yet. Do not submit guessed values or manual estimates as verified follower data. Followers are audience metrics, not automatically registered NOVARIA citizens.
+Official platform polling, OAuth scopes, refresh-token storage and connector scheduling are still not implemented. The signed ingestion endpoint is ready for a trusted connector. Do not submit guessed values or manual estimates as verified follower data. Followers are audience metrics, not automatically registered NOVARIA citizens.
+### Signed audience snapshot connector
+The ingestion route is `POST /api/integrations/audience`. It is not a social network connector by itself. An approved YouTube/Meta connector must first obtain metrics through the platform's official API and then sign the exact request body with `AUDIENCE_INGEST_SECRET`.
+
+Signature format:
+- `x-novaria-timestamp`: Unix timestamp in seconds
+- `x-novaria-signature`: lowercase hex HMAC-SHA256 of `<timestamp>.<exact raw JSON body>`
+- The timestamp must be within five minutes of server time.
+
+Example Node.js signing snippet for a trusted server-side connector:
+
+```js
+import { createHmac } from "node:crypto";
+
+const timestamp = Math.floor(Date.now() / 1000).toString();
+const rawBody = JSON.stringify(snapshot);
+const signature = createHmac("sha256", process.env.AUDIENCE_INGEST_SECRET)
+  .update(`${timestamp}.${rawBody}`)
+  .digest("hex");
+
+await fetch(`${process.env.NOVARIA_URL}/api/integrations/audience`, {
+  method: "POST",
+  headers: {
+    "content-type": "application/json",
+    "x-novaria-timestamp": timestamp,
+    "x-novaria-signature": signature,
+  },
+  body: rawBody,
+});
+```
+
+The route rejects stale or incorrectly signed requests and the database service prevents duplicate snapshots/builds for the same platform, source account, and date. The HMAC only authenticates the connector; it does not prove a number is genuine. The connector must use the approved platform API and preserve its source/account metadata.
+
 
 ## 7. Deployment
 1. Connect the private GitHub repository to Render.
