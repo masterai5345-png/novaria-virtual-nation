@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { databaseConfigured, query } from "@/lib/db";
+import { databaseConfigured, query } from "@/lib/db";\nimport type { QueryResultRow } from "pg";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
