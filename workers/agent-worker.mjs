@@ -154,7 +154,12 @@ async function processDailyContent(client, job, runId) {
   const facts = await client.query(
     `SELECT id, event_type, title, description, public_facts, occurred_at
      FROM city_events
-     WHERE visibility = 'public' AND occurred_at >= NOW() - INTERVAL '7 days'
+     WHERE visibility = 'public'
+       AND occurred_at >= NOW() - INTERVAL '7 days'
+       AND NOT EXISTS (
+         SELECT 1 FROM media_drafts AS used
+         WHERE city_events.id = ANY(used.source_city_event_ids)
+       )
      ORDER BY occurred_at DESC
      LIMIT 30`,
   );
