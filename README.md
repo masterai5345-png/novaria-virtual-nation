@@ -68,21 +68,21 @@ This queues at most one daily job and only when verified public city events exis
 - Responsive town landing page and Three.js procedural 3D preview
 - Keyboard and touch joystick movement
 - Google OAuth citizen registration (requires OAuth and PostgreSQL configuration)
-- Permanent citizen profile in PostgreSQL
+- Permanent citizen profile in PostgreSQL\n- Persistent Otter avatar customization (fur tone, outfit, accessory, and display name)\n- One-time community home claim with a database lock and one-home-per-citizen constraint\n- Founding starter/family homes seeded for new citizens\n- Dynamic rendering of recent database-backed community homes in the 3D town
 - Database-backed citizen missions with one-time completion
 - Non-cash NOVA Coin wallet and idempotent reward ledger
 - Mayor Otti and founding districts in seed data
 - Database-backed city counts when configured
 - Owner-only AI command queue and proposal inbox
 - Claude worker for owner plans and daily script drafts (requires Anthropic credentials)
-- Verified follower snapshot to idempotent community-house construction service (platform connector pending)
+- Verified follower snapshot to idempotent community-house construction service (platform connector pending)\n- Signed social-comment ingestion endpoint with spam/sensitive-topic routing\n- Claude-generated reply drafts routed to the owner approval inbox (not publicly posted)
 
 ## Not connected / not production-ready
 
 - Official YouTube/Meta API polling and token refresh
 - Real-time multiplayer
 - Actual video rendering or platform publishing
-- Automatic public comment ingestion/replies
+- Direct YouTube/Meta public comment polling and reply publishing
 - Offerwall, cash reward ledger, and withdrawals
 - Full monitoring, backups, and security audit
 
