@@ -343,7 +343,8 @@ export default function WorldCanvas() {
   }, []);
 
   return (
-    <div className="world-canvas-host" ref={hostRef} aria-label="Interactive 3D preview of NOVARIA town">
+    <>
+      <div className="world-canvas-host" ref={hostRef} aria-label="Interactive 3D preview of NOVARIA town" />
       <div
         className={`joystick-shell${stickActive ? " is-active" : ""}`}
         role="application"
@@ -358,6 +359,6 @@ export default function WorldCanvas() {
         <span className="joystick-thumb" style={{ transform: `translate(calc(-50% + ${stickPosition.x}px), calc(-50% + ${stickPosition.y}px))` }} />
       </div>
       <div className="desktop-move-hint">W A S D / ARROW KEYS TO WALK</div>
-    </div>
+    </>
   );
 }
