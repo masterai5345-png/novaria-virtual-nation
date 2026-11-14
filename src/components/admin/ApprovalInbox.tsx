@@ -12,7 +12,10 @@ type Approval = {
   result_payload?: { summary?: string; plan?: string[] };
   draft_title?: string | null;
   draft_script?: string | null;
-  draft_description?: string | null;\n  source_comment?: string | null;\n  reply_draft?: string | null;\n  comment_platform?: string | null;
+  draft_description?: string | null;
+  source_comment?: string | null;
+  reply_draft?: string | null;
+  comment_platform?: string | null;
   job_status?: string | null;
 };
 
@@ -77,6 +80,12 @@ export default function ApprovalInbox() {
               <h3>{item.draft_title || String(item.action_payload.title || "Daily video draft")}</h3>
               <p className="approval-script">{item.draft_script || "Draft script is unavailable."}</p>
               {item.draft_description ? <p className="approval-description">{item.draft_description}</p> : null}
+            </>
+          ) : item.action_type === "review_comment_reply" ? (
+            <>
+              <h3>Suggested reply · {item.comment_platform || "social"} comment</h3>
+              <p className="approval-description"><b>Original comment:</b> {item.source_comment || "Comment text unavailable."}</p>
+              <p className="approval-script">{item.reply_draft || String(item.action_payload.reply || "Reply draft unavailable.")}</p>
             </>
           ) : (
             <>
