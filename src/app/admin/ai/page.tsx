@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Activity, Bot, Building2, ChartNoAxesCombined, CheckCircle2, CircleDashed, Clock3, Command, Cpu, MessageSquareText, ShieldCheck, Video, Wallet } from "lucide-react";
+import { Activity, Bot, Building2, ChartNoAxesCombined, CheckCircle2, CircleDashed, Clock3, Command, ShieldCheck, Video, Wallet } from "lucide-react";
 
 const departments = [
   {
@@ -52,8 +53,8 @@ export default function AICommandCenterPage() {
   return (
     <main className="admin-shell">
       <header className="admin-header">
-        <a className="admin-brand" href="/"><span className="admin-brand-mark">N</span><span><b>NOVARIA</b><small>AI COMMAND CENTER</small></span></a>
-        <div className="admin-header-right"><span className="dev-pill"><i /> DEVELOPMENT PREVIEW</span><a href="/">Back to town ↗</a></div>
+        <Link className="admin-brand" href="/"><span className="admin-brand-mark">N</span><span><b>NOVARIA</b><small>AI COMMAND CENTER</small></span></Link>
+        <div className="admin-header-right"><span className="dev-pill"><i /> DEVELOPMENT PREVIEW</span><Link href="/">Back to town ↗</Link></div>
       </header>
 
       <section className="admin-welcome">
