@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { auth } from "../../../auth";
 import { query } from "@/lib/db";
 import type { QueryResultRow } from "pg";
+import AvatarStudio from "@/components/citizen/AvatarStudio";
+import HouseClaimCard from "@/components/citizen/HouseClaimCard";
 
-type CitizenRow = {
-  [key: string]: unknown;
+type CitizenRow = QueryResultRow & {
   id: string;
   display_name: string;
   email: string | null;
@@ -20,7 +21,7 @@ export default async function CitizenPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
-  const result = await query<CitizenRow & QueryResultRow>(
+  const result = await query<CitizenRow>(
     `SELECT id, display_name, email, account_role, avatar_species, created_at
      FROM citizens
      WHERE id = $1 AND account_status = 'active'
@@ -47,8 +48,13 @@ export default async function CitizenPage() {
           <div><small>ACCOUNT ROLE</small><strong>{citizen.account_role}</strong></div>
           <div><small>REGISTERED EMAIL</small><strong>{citizen.email}</strong></div>
         </div>
-        <p className="citizen-next-step">Avatar customization, house claiming, and multiplayer visits will be enabled as the next game systems are connected.</p>
+        <p className="citizen-next-step">Choose your Otter look and claim your first community home in Harbor View.</p>
       </section>
+
+      <div className="citizen-tools-grid">
+        <AvatarStudio />
+        <HouseClaimCard />
+      </div>
     </main>
   );
 }
