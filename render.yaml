@@ -5,6 +5,7 @@ services:
     plan: starter
     region: singapore
     branch: foundation/mvp
+    autoDeployTrigger: checksPass
     buildCommand: npm install && npm run build
     preDeployCommand: npm run db:migrate
     startCommand: npm start
@@ -12,11 +13,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NEXT_PUBLIC_APP_URL
-        fromService:
-          type: web
-          name: novaria-web
-          property: host
       - key: NEXT_PUBLIC_GOOGLE_AUTH_ENABLED
         value: "false"
       - key: AUTH_SECRET
@@ -42,6 +38,7 @@ services:
     plan: starter
     region: singapore
     branch: foundation/mvp
+    autoDeployTrigger: checksPass
     buildCommand: npm install
     startCommand: npm run worker
     envVars:
