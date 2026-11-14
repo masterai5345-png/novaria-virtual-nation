@@ -49,3 +49,14 @@ SET title = EXCLUDED.title,
     detail = EXCLUDED.detail,
     reward_nvc = EXCLUDED.reward_nvc,
     requirement = EXCLUDED.requirement;
+
+INSERT INTO city_events (event_key, event_type, title, description, public_facts, visibility)
+VALUES (
+  'novaria-founding-town-preview-v1',
+  'city_founding',
+  'NOVARIA opens its founding town',
+  'The first NOVARIA coastal town preview introduces Mayor Otti, the founding districts, and the modern starter-home neighborhood.',
+  '{"mayor":"Mayor Otti","world_status":"browser-based 3D prototype","citizens_are_fictional":"true","money_rewards_enabled":false}'::jsonb,
+  'public'
+)
+ON CONFLICT (event_key) DO NOTHING;
