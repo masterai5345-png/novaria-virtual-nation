@@ -317,7 +317,7 @@ export default function WorldCanvas() {
       otter.position.y = 0.03 + Math.sin(time * (isMoving ? 0.012 : 0.0024)) * (isMoving ? 0.075 : 0.035);
       renderer.render(scene, camera);
     };
-    animate();
+    animate(performance.now());
 
     return () => {
       window.cancelAnimationFrame(frame);
