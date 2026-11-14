@@ -22,6 +22,20 @@ const pool = new Pool({
   application_name: "novaria-agent-worker",
 });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const workerKey = process.env.WORKER_KEY || "novaria-agent-worker";
+
+async function writeHeartbeat(status = "running") {
+  await pool.query(
+    `INSERT INTO worker_heartbeats (worker_key, worker_type, worker_status, last_seen_at, details)
+     VALUES ($1, 'claude-agent-worker', $2, NOW(), $3::jsonb)
+     ON CONFLICT (worker_key)
+     DO UPDATE SET worker_type = EXCLUDED.worker_type,
+                   worker_status = EXCLUDED.worker_status,
+                   last_seen_at = NOW(),
+                   details = EXCLUDED.details`,
+    [workerKey, status, JSON.stringify({ model, supportedJobTypes: ["owner_command", "daily_content", "comment_reply"] })],
+  );
+}
 
 const ownerSystem = `You are the NOVARIA CEO Orchestrator. NOVARIA is a virtual coastal town led by Mayor Otti, an otter mayor. Prepare careful, actionable plans for the owner.
 Return JSON only: {"summary":"short summary","plan":["step 1","step 2"],"missingInputs":["..."]}.
@@ -368,6 +382,13 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 }
 
 console.log("NOVARIA proposal-only Claude worker started.");
+await writeHeartbeat("running");
+const heartbeatTimer = setInterval(() => {
+  void writeHeartbeat("running").catch((error) => {
+    console.error("Could not write NOVARIA worker heartbeat", error);
+  });
+}, 10_000);
+heartbeatTimer.unref();
 while (!stopping) {
   const client = await pool.connect();
   let job = null;
@@ -385,5 +406,9 @@ while (!stopping) {
   else await sleep(Number(process.env.WORKER_POLL_MS ?? 5000));
 }
 
+clearInterval(heartbeatTimer);
+await writeHeartbeat("stopped").catch((error) => {
+  console.error("Could not mark NOVARIA worker stopped", error);
+});
 await pool.end();
 console.log("NOVARIA worker stopped.");
