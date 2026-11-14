@@ -10,10 +10,15 @@ try {
   const events = await pool.query(
     `SELECT COUNT(*)::integer AS count
      FROM city_events
-     WHERE visibility = 'public' AND occurred_at >= NOW() - INTERVAL '7 days'`,
+     WHERE visibility = 'public'
+       AND occurred_at >= NOW() - INTERVAL '7 days'
+       AND NOT EXISTS (
+         SELECT 1 FROM media_drafts AS used
+         WHERE city_events.id = ANY(used.source_city_event_ids)
+       )`,
   );
   if (Number(events.rows[0]?.count ?? 0) < 1) {
-    console.log("No verified public city events in the last 7 days. No daily video draft was queued.");
+    console.log("No unused verified public city events in the last 7 days. No daily video draft was queued.");
     process.exit(0);
   }
 
