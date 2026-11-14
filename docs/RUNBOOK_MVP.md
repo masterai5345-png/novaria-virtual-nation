@@ -7,7 +7,7 @@ This runbook configures the features on branch `foundation/mvp`. A passing build
 2. Use branch `foundation/mvp`.
 3. Review the paid web service, worker, cron, and PostgreSQL resources before confirming.
 4. During initial setup, provide `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `NOVARIA_OWNER_EMAIL`, `ANTHROPIC_API_KEY`, and `ANTHROPIC_MODEL`.
-5. Render generates `AUTH_SECRET` and `AUDIENCE_INGEST_SECRET`.
+5. Render generates `AUTH_SECRET`, `AUDIENCE_INGEST_SECRET`, and `SOCIAL_INGEST_SECRET`.
 6. The Blueprint connects `DATABASE_URL` to the web, worker, and cron services.
 7. The web service runs `npm run db:migrate` before starting, applying `db/schema.sql` and `db/seed.sql`.
 
@@ -23,13 +23,13 @@ After deployment, set `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` on the web service 
 ## 3. Owner command queue and Claude worker
 The admin dashboard is at `/admin/ai` and requires the owner Google account and owner database role. Commands are stored as jobs. The always-on worker processes them with Claude and saves proposals for owner review. It does not have tools for public posting, external replies, money transfers, account bans, or destructive actions.
 
-## 4. Citizen missions and NOVA Coin
+## 4. Citizen profile, Otter avatar, and home claim\nThe `/citizen` profile page lets an authenticated citizen choose a display name, fur tone, outfit, and accessory. Preferences are stored in `citizens.avatar_style` and loaded into the browser 3D Otter avatar. The founding seed creates 16 community homes in Harbor View. Each citizen can claim one community home; the database uses a transaction, row locking, and a partial unique index to prevent two claims or multiple claimed homes per citizen.\n\n## 5. Citizen missions and NOVA Coin
 The founding missions are seeded from `db/seed.sql`. Signed-in citizens can complete each mission once. Completion is stored in `citizen_missions`, credits `citizen_wallets`, writes an idempotent `wallet_ledger` entry, and creates an anonymized city event. These tasks are currently self-confirmed exploration, not proof-of-work or cash earning. NOVA Coin has no cash value and cannot be withdrawn.
 
-## 5. Daily content draft workflow
+## 6. Daily content draft workflow
 The Render cron runs `npm run enqueue:daily-content` at 01:00 UTC (08:00 WIB). It queues one job per day only when unused, verified public city events exist in the previous seven days. The worker writes an English video-script draft and shot list into `media_drafts`, then creates an owner approval request. This is not a video-rendering or publishing service.
 
-## 6. Verified follower-to-home logic
+## 7. Verified follower-to-home logic
 `recordVerifiedAudienceSnapshot` stores a dated audience snapshot, computes net growth as gained minus lost, and creates one community home for each positive net unit. Unique snapshot/event keys and a transaction prevent repeated webhook deliveries from creating duplicate houses.
 
 ### Signed audience snapshot connector
@@ -64,18 +64,18 @@ await fetch(`${process.env.NOVARIA_URL}/api/integrations/audience`, {
 
 The HMAC authenticates the connector, not the truth of the metric. The connector must use official APIs and preserve account/source metadata. Platform API polling, OAuth permissions, token refresh and connector scheduling are still pending.
 
-## 7. Verify the beta
+## 8. Signed community comment ingestion\nThe route `POST /api/integrations/comments` accepts comments from a trusted server-side connector that uses an official platform API. Sign the exact raw JSON body with `SOCIAL_INGEST_SECRET` using the same HMAC-SHA256 header format as the audience connector (`x-novaria-timestamp` and `x-novaria-signature`). The timestamp must be within five minutes.\n\nThe service flags comments containing links and escalates comments mentioning money, payouts, passwords, bank details, contact details, scams, or fraud. Safe comments are queued for Claude to draft a short reply. The draft appears in the owner approval inbox. Approval only marks the draft as approved for use; it does not publish a public reply. Direct platform polling, OAuth scopes, and reply publishing remain unconnected.\n\n## 9. Verify the beta
 - `/api/health` should report database `ok`.
 - `/api/ai/status` should show configured Google/Claude integrations.
 - Test citizen sign-in, persistent mission status, wallet balance and owner command history.
 - Confirm the worker creates a proposal approval and daily script drafts only from unused public city events.
 - Test the mobile joystick and camera controls on a real device.
 
-## 8. Still not implemented
+## 10. Still not implemented
 - Official YouTube/Meta follower polling, token refresh, and source-account configuration.
 - Real-time multiplayer, synchronized character movement, and full persistent game state.
 - Dynamic rendering of every stored home and advanced character GLB assets.
-- Video rendering, upload, public publishing, and automatic comment replies.
+- Video rendering, upload, public publishing, direct social comment polling, and automatic public comment replies.
 - Offerwall, real-money reward ledger, payout rails, and withdrawals.
 - Comprehensive security review, backups, monitoring, alerts, and incident response.
 
