@@ -13,6 +13,19 @@ export async function POST(
   if (!owner.ok) return NextResponse.json({ error: owner.reason }, { status: owner.status });
   if (!db) return NextResponse.json({ error: "Database is not configured." }, { status: 503 });
 
+  const origin = request.headers.get("origin");
+  try {
+    if (!origin || new URL(origin).origin !== request.nextUrl.origin) {
+      return NextResponse.json({ error: "Cross-origin approval is not allowed." }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
+
+  if (!(request.headers.get("content-type") || "").includes("application/json")) {
+    return NextResponse.json({ error: "Expected application/json." }, { status: 415 });
+  }
+
   const { id } = await context.params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) {
     return NextResponse.json({ error: "Invalid approval ID." }, { status: 400 });
