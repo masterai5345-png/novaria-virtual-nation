@@ -27,6 +27,8 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
+      - key: AUDIENCE_INGEST_SECRET
+        sync: false
       - key: OFFERWALL_ENABLED
         value: "false"
 
