@@ -69,6 +69,8 @@ This queues at most one daily job and only when verified public city events exis
 - Keyboard and touch joystick movement
 - Google OAuth citizen registration (requires OAuth and PostgreSQL configuration)
 - Permanent citizen profile in PostgreSQL
+- Database-backed citizen missions with one-time completion
+- Non-cash NOVA Coin wallet and idempotent reward ledger
 - Mayor Otti and founding districts in seed data
 - Database-backed city counts when configured
 - Owner-only AI command queue and proposal inbox
