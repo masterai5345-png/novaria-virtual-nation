@@ -1,0 +1,280 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
+
+type HousePalette = { wall: string; roof: string; trim: string };
+
+function material(color: string, roughness = 0.86) {
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.02 });
+}
+
+function box(w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function makeHouse(scene: THREE.Scene, x: number, z: number, palette: HousePalette, scale = 1) {
+  const group = new THREE.Group();
+  const wall = material(palette.wall);
+  const roof = material(palette.roof);
+  const trim = material(palette.trim);
+  const body = box(1.7 * scale, 1.05 * scale, 1.35 * scale, wall, 0, 0.55 * scale, 0);
+  group.add(body);
+
+  const roofShape = new THREE.Mesh(new THREE.ConeGeometry(1.25 * scale, 0.85 * scale, 4), roof);
+  roofShape.rotation.y = Math.PI / 4;
+  roofShape.position.y = 1.47 * scale;
+  roofShape.scale.z = 0.78;
+  roofShape.castShadow = true;
+  group.add(roofShape);
+
+  const door = box(0.34 * scale, 0.67 * scale, 0.055 * scale, trim, 0, 0.35 * scale, 0.7 * scale);
+  group.add(door);
+  for (const wx of [-0.52, 0.52]) {
+    const window = new THREE.Mesh(new THREE.BoxGeometry(0.32 * scale, 0.3 * scale, 0.05 * scale), material("#9ed5d2", 0.35));
+    window.position.set(wx * scale, 0.7 * scale, 0.69 * scale);
+    group.add(window);
+  }
+  group.position.set(x, 0, z);
+  scene.add(group);
+  return group;
+}
+
+function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
+  const group = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.09 * size, 0.14 * size, 0.72 * size, 7), material("#79523a"));
+  trunk.position.y = 0.36 * size;
+  trunk.castShadow = true;
+  group.add(trunk);
+  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55 * size, 1), material("#397b59"));
+  crown.position.y = 0.92 * size;
+  crown.scale.set(1, 1.18, 0.92);
+  crown.castShadow = true;
+  group.add(crown);
+  scene.add(group);
+}
+
+function makeOtter(scene: THREE.Scene) {
+  const otter = new THREE.Group();
+  const fur = material("#8d654b");
+  const cream = material("#e8d7bf");
+  const hoodie = material("#1c5555");
+  const dark = material("#241e1b");
+  const eyeWhite = material("#f9f4ea");
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.48, 24, 18), hoodie);
+  body.scale.set(0.82, 1.05, 0.62);
+  body.position.y = 0.76;
+  otter.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.48, 28, 22), fur);
+  head.scale.set(1.06, 0.92, 0.9);
+  head.position.set(0, 1.62, 0.02);
+  otter.add(head);
+  for (const side of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), fur);
+    ear.position.set(side * 0.39, 1.96, 0.02);
+    otter.add(ear);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), eyeWhite);
+    eye.position.set(side * 0.17, 1.7, 0.42);
+    otter.add(eye);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), dark);
+    pupil.position.set(side * 0.17, 1.7, 0.48);
+    otter.add(pupil);
+  }
+  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.23, 20, 16), cream);
+  muzzle.scale.set(1.2, 0.72, 0.8);
+  muzzle.position.set(0, 1.48, 0.41);
+  otter.add(muzzle);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), dark);
+  nose.position.set(0, 1.56, 0.59);
+  otter.add(nose);
+  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.62, 4, 8), fur);
+  tail.rotation.x = Math.PI / 2.5;
+  tail.rotation.z = -0.35;
+  tail.position.set(0, 0.45, -0.48);
+  otter.add(tail);
+  otter.position.set(-0.3, 0, 2.6);
+  otter.scale.setScalar(0.92);
+  scene.add(otter);
+  return otter;
+}
+
+export default function WorldCanvas() {
+  const hostRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#9cc8c3");
+    scene.fog = new THREE.Fog("#9cc8c3", 20, 48);
+
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(13, 13, 17);
+    camera.lookAt(0, 0.6, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.domElement.className = "world-canvas";
+    host.appendChild(renderer.domElement);
+
+    scene.add(new THREE.HemisphereLight("#e7f6ef", "#63715b", 2.0));
+    const sun = new THREE.DirectionalLight("#fff1d1", 3.2);
+    sun.position.set(-8, 16, 10);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    scene.add(sun);
+
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), material("#4c9fa5", 0.35));
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = -0.16;
+    scene.add(water);
+
+    const island = new THREE.Mesh(new THREE.CylinderGeometry(10.5, 11.4, 0.55, 64), material("#c7b68c"));
+    island.position.y = -0.02;
+    island.receiveShadow = true;
+    scene.add(island);
+    const grass = new THREE.Mesh(new THREE.CylinderGeometry(10.1, 10.7, 0.42, 64), material("#70916a"));
+    grass.position.y = 0.29;
+    grass.receiveShadow = true;
+    scene.add(grass);
+
+    const roadMat = material("#b9b6a8");
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(15, 1.15), roadMat);
+    road.rotation.x = -Math.PI / 2;
+    road.position.set(0, 0.51, -1.5);
+    scene.add(road);
+    const path = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 8), roadMat);
+    path.rotation.x = -Math.PI / 2;
+    path.position.set(0.3, 0.515, 1.2);
+    scene.add(path);
+    const plaza = new THREE.Mesh(new THREE.CircleGeometry(2.1, 48), material("#d8c8a3"));
+    plaza.rotation.x = -Math.PI / 2;
+    plaza.position.set(0, 0.535, 0);
+    scene.add(plaza);
+
+    // Town hall
+    const hall = new THREE.Group();
+    hall.add(box(3.1, 1.9, 2.3, material("#eee4d2"), 0, 1.15, 0));
+    hall.add(box(3.5, 0.2, 2.65, material("#315b58"), 0, 2.15, 0));
+    hall.add(box(0.9, 1.25, 0.12, material("#8c6547"), 0, 0.65, 1.2));
+    for (const x of [-1.1, -0.38, 0.38, 1.1]) {
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 1.35, 12), material("#fff7e9"));
+      pillar.position.set(x, 0.82, 1.22);
+      hall.add(pillar);
+    }
+    hall.position.set(0, 0.52, -4.4);
+    scene.add(hall);
+
+    const palettes: HousePalette[] = [
+      { wall: "#f0e6d6", roof: "#a95e4d", trim: "#77513f" },
+      { wall: "#d9e5dc", roof: "#405c59", trim: "#8b6b4c" },
+      { wall: "#e7d9c5", roof: "#697d75", trim: "#72523d" },
+      { wall: "#f4eadb", roof: "#876c59", trim: "#8d624b" },
+      { wall: "#d6e1df", roof: "#385d62", trim: "#694c3a" },
+    ];
+    const positions: [number, number, number][] = [
+      [-5.2, -3.2, 1], [-3.3, -5.1, 0.9], [4.6, -3.7, 1.05],
+      [5.8, -0.9, 0.9], [-5.6, 1.2, 0.95], [-3.8, 4.2, 0.86],
+      [4.0, 4.2, 0.92], [6.5, 2.8, 0.84],
+    ];
+    positions.forEach(([x, z, scale], i) => makeHouse(scene, x, z, palettes[i % palettes.length], scale));
+
+    for (let i = 0; i < 28; i++) {
+      const angle = (i / 28) * Math.PI * 2;
+      const radius = 8.5 + Math.sin(i * 2.3) * 0.4;
+      makeTree(scene, Math.cos(angle) * radius, Math.sin(angle) * radius, 0.7 + (i % 4) * 0.09);
+    }
+    for (const [x, z] of [[-2.5, 1.5], [2.6, 1.9], [-7, -1.5], [7.1, -4.8]] as [number, number][]) {
+      makeTree(scene, x, z, 0.75);
+    }
+
+    const otter = makeOtter(scene);
+
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let rotation = 0;
+    let zoom = 1;
+    let frame = 0;
+
+    const onPointerDown = (event: PointerEvent) => {
+      dragging = true;
+      lastX = event.clientX;
+      lastY = event.clientY;
+      renderer.domElement.setPointerCapture?.(event.pointerId);
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (!dragging) return;
+      const dx = event.clientX - lastX;
+      const dy = event.clientY - lastY;
+      rotation += dx * 0.006;
+      camera.position.y = THREE.MathUtils.clamp(camera.position.y + dy * 0.025, 8, 20);
+      lastX = event.clientX;
+      lastY = event.clientY;
+    };
+    const onPointerUp = () => { dragging = false; };
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      zoom = THREE.MathUtils.clamp(zoom + event.deltaY * 0.001, 0.72, 1.45);
+    };
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
+    renderer.domElement.addEventListener("pointercancel", onPointerUp);
+    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
+
+    const resize = () => {
+      const width = Math.max(1, host.clientWidth);
+      const height = Math.max(1, host.clientHeight);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(host);
+    resize();
+
+    const animate = () => {
+      frame = window.requestAnimationFrame(animate);
+      const radius = 21 / zoom;
+      camera.position.x = Math.sin(rotation + 0.56) * radius * 0.58;
+      camera.position.z = Math.cos(rotation + 0.56) * radius * 0.68;
+      camera.lookAt(0, 0.65, 0);
+      otter.position.y = 0.03 + Math.sin(performance.now() * 0.0024) * 0.035;
+      otter.rotation.y = Math.sin(performance.now() * 0.0007) * 0.08;
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
+      renderer.domElement.removeEventListener("pointerup", onPointerUp);
+      renderer.domElement.removeEventListener("pointercancel", onPointerUp);
+      renderer.domElement.removeEventListener("wheel", onWheel);
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          object.geometry.dispose();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach((entry) => entry.dispose());
+        }
+      });
+      renderer.dispose();
+      renderer.domElement.remove();
+    };
+  }, []);
+
+  return <div className="world-canvas-host" ref={hostRef} aria-label="Interactive 3D preview of NOVARIA town" />;
+}
