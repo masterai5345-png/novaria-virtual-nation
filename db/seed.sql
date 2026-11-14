@@ -37,3 +37,15 @@ VALUES
   ('community-reply', 'Community Reply', 'community', 'Drafts relevant replies and escalates sensitive topics.', FALSE),
   ('fraud-detection', 'Fraud Detection', 'trust', 'Flags suspicious activity for human review.', FALSE)
 ON CONFLICT (agent_key) DO NOTHING;
+
+
+INSERT INTO mission_definitions (mission_key, title, detail, reward_nvc, requirement)
+VALUES
+  ('welcome-to-novaria', 'Welcome to NOVARIA', 'Explore the town square and meet Mayor Otti.', 120, '{"type":"self-confirmed-exploration"}'::jsonb),
+  ('visit-the-harbor', 'Visit the Harbor', 'Explore the waterfront district and discover the harbor.', 180, '{"type":"self-confirmed-exploration"}'::jsonb),
+  ('help-the-town', 'Help the Town', 'Visit City Hall and review the latest town proposal.', 250, '{"type":"self-confirmed-exploration"}'::jsonb)
+ON CONFLICT (mission_key) DO UPDATE
+SET title = EXCLUDED.title,
+    detail = EXCLUDED.detail,
+    reward_nvc = EXCLUDED.reward_nvc,
+    requirement = EXCLUDED.requirement;
