@@ -1981,6 +1981,8 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
     const car = createCar(scene, -21 + index * 10, 2.75, ["#d94b43", "#2f8295", "#d5a43e", "#e8e6de", "#3e505d"][index]);
     car.userData.speed = 1.4 + (index % 3) * 0.35;
     car.userData.startX = car.position.x;
+    const vehicles = (scene.userData.movingVehicles ??= []) as THREE.Group[];
+    vehicles.push(car);
   }
 
 }
@@ -2022,9 +2024,22 @@ export default function WorldCanvas() {
     camera.position.set(0, 26, 34);
     camera.lookAt(0, 0.6, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
-    renderer.shadowMap.enabled = true;
+    // Adaptive rendering profile: retain detail on desktop, reduce fill-rate and shadow cost on phones.
+    const device = navigator as Navigator & { deviceMemory?: number };
+    const compactDevice = window.matchMedia("(max-width: 760px)").matches;
+    const lowPowerDevice = (device.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    const reducedQuality = compactDevice || lowPowerDevice;
+    const maxPixelRatio = lowPowerDevice ? 1 : compactDevice ? 1.15 : 1.45;
+    const frameInterval = lowPowerDevice ? 1000 / 30 : compactDevice ? 1000 / 45 : 0;
+    const renderer = new THREE.WebGLRenderer({
+      antialias: !lowPowerDevice,
+      alpha: false,
+      powerPreference: "high-performance",
+      stencil: false,
+      depth: true,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
+    renderer.shadowMap.enabled = !lowPowerDevice;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2036,8 +2051,8 @@ export default function WorldCanvas() {
     scene.add(new THREE.AmbientLight("#f0e9db", 0.34));
     const sun = new THREE.DirectionalLight("#ffe3bb", 3.35);
     sun.position.set(-15, 28, 16);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.castShadow = !lowPowerDevice;
+    sun.shadow.mapSize.set(lowPowerDevice ? 512 : reducedQuality ? 1024 : 1536, lowPowerDevice ? 512 : reducedQuality ? 1024 : 1536);
     sun.shadow.bias = -0.00016;
     sun.shadow.normalBias = 0.035;
     sun.shadow.radius = 4;
@@ -2050,6 +2065,7 @@ export default function WorldCanvas() {
     const houseGroup = new THREE.Group();
     scene.add(houseGroup);
     makeCity(scene, houseGroup);
+    const movingVehicles = (scene.userData.movingVehicles ?? []) as THREE.Group[];
 
     let homesAbort: AbortController | null = new AbortController();
     fetch("/api/city/world", { cache: "no-store", signal: homesAbort.signal })
@@ -2204,8 +2220,15 @@ export default function WorldCanvas() {
     observer.observe(host);
     resize();
 
+    let lastRenderedAt = 0;
     const animate = (time: number) => {
+      if (document.hidden) {
+        frame = 0;
+        return;
+      }
       frame = window.requestAnimationFrame(animate);
+      if (frameInterval > 0 && time - lastRenderedAt < frameInterval) return;
+      lastRenderedAt = time;
       const delta = previousTime === 0 ? 0 : Math.min((time - previousTime) / 1000, 0.05);
       previousTime = time;
       const keyX = (pressedKeys.has("d") || pressedKeys.has("arrowright") ? 1 : 0) - (pressedKeys.has("a") || pressedKeys.has("arrowleft") ? 1 : 0);
@@ -2244,14 +2267,12 @@ export default function WorldCanvas() {
         animateMascot(npc, time * 0.009 + phase, 0.15);
       });
 
-      scene.traverse((object) => {
-        if (object instanceof THREE.Group && typeof object.userData.speed === "number") {
-          const speed = Number(object.userData.speed);
-          object.position.x += speed * delta;
-          if (object.position.x > 25) object.position.x = -25;
-          const wheels = object.userData.wheels as THREE.Group[] | undefined;
-          wheels?.forEach((wheel) => { wheel.rotation.z -= speed * delta / 0.19; });
-        }
+      movingVehicles.forEach((vehicle) => {
+        const speed = Number(vehicle.userData.speed ?? 0);
+        vehicle.position.x += speed * delta;
+        if (vehicle.position.x > 25) vehicle.position.x = -25;
+        const wheels = vehicle.userData.wheels as THREE.Group[] | undefined;
+        wheels?.forEach((wheel) => { wheel.rotation.x -= speed * delta / 0.19; });
       });
 
       const radius = 34 / zoom;
@@ -2260,7 +2281,17 @@ export default function WorldCanvas() {
       camera.lookAt(player.position.x, 0.45, player.position.z);
       renderer.render(scene, camera);
     };
-    animate(performance.now());
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        if (frame) window.cancelAnimationFrame(frame);
+        frame = 0;
+      } else if (!frame) {
+        previousTime = 0;
+        frame = window.requestAnimationFrame(animate);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    frame = window.requestAnimationFrame(animate);
 
     return () => {
       window.cancelAnimationFrame(frame);
@@ -2272,16 +2303,19 @@ export default function WorldCanvas() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("pointercancel", onPointerUp);
       renderer.domElement.removeEventListener("wheel", onWheel);
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
-          object.geometry.dispose();
+        if (object instanceof THREE.Mesh || object instanceof THREE.InstancedMesh) {
+          if (!sharedGeometries.has(object.geometry)) object.geometry.dispose();
           const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.forEach((entry) => entry.dispose());
+          materials.forEach((entry) => {
+            if (!sharedMaterials.has(entry)) entry.dispose();
+          });
         }
         if (object instanceof THREE.Sprite) {
           object.material.map?.dispose();
