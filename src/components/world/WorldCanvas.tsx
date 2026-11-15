@@ -450,24 +450,24 @@ function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
 }
 function createFacadeMaterial(baseColor: string, seed: number, rounded = false) {
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 1024;
+  canvas.width = 512;
+  canvas.height = 512;
   const context = canvas.getContext("2d");
   if (!context) return mat(baseColor, 0.3, 0.55);
 
   const palette = ["#36505c", "#48616d", "#637a82", "#8c8c83", "#5d7077"];
   const base = palette[seed % palette.length];
   context.fillStyle = base;
-  context.fillRect(0, 0, 1024, 1024);
+  context.fillRect(0, 0, 512, 512);
   const columns = rounded ? 9 : 8;
   const rows = 22;
-  const cellW = 1024 / columns;
-  const cellH = 1024 / rows;
+  const cellW = 512 / columns;
+  const cellH = 512 / rows;
 
   for (let row = 0; row < rows; row++) {
     const floorY = row * cellH;
     context.fillStyle = row % 4 === 0 ? "rgba(18,31,37,.56)" : "rgba(20,33,39,.35)";
-    context.fillRect(0, floorY, 1024, 8);
+    context.fillRect(0, floorY, 512, 4);
     for (let column = 0; column < columns; column++) {
       const x = column * cellW;
       const lit = ((row * 17 + column * 29 + seed * 13) % 11) < 3;
@@ -488,11 +488,11 @@ function createFacadeMaterial(baseColor: string, seed: number, rounded = false) 
   // Vertical anodised mullions and a subtle stone / metal spandrel grid.
   context.fillStyle = "rgba(18,31,37,.72)";
   for (let column = 0; column <= columns; column++) {
-    context.fillRect(column * cellW - 4, 0, 8, 1024);
+    context.fillRect(column * cellW - 4, 0, 4, 512);
   }
   context.fillStyle = "rgba(216,194,151,.36)";
   for (let row = 0; row <= rows; row++) {
-    context.fillRect(0, row * cellH - 2, 1024, 4);
+    context.fillRect(0, row * cellH - 2, 512, 2);
   }
 
   // Fine, non-repeating facade grain prevents the glass tower from looking like flat plastic.
@@ -501,9 +501,9 @@ function createFacadeMaterial(baseColor: string, seed: number, rounded = false) 
     random = (random * 16807) % 2147483647;
     return random / 2147483647;
   };
-  for (let i = 0; i < 2600; i++) {
-    const x = next() * 1024;
-    const y = next() * 1024;
+  for (let i = 0; i < 1500; i++) {
+    const x = next() * 512;
+    const y = next() * 512;
     context.fillStyle = next() > 0.5 ? "rgba(255,255,255,.045)" : "rgba(0,0,0,.05)";
     context.fillRect(x, y, 1 + next() * 2, 1 + next() * 3);
   }
@@ -722,11 +722,52 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
   group.position.set(x, 0, z);
   scene.add(group);
 }
+function createStuccoMaterial(color: string, seed: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  if (!context) return mat(color, 0.96);
+  context.fillStyle = color;
+  context.fillRect(0, 0, 256, 256);
+  let randomSeed = (seed + 17) * 3911;
+  const random = () => {
+    randomSeed = (randomSeed * 16807) % 2147483647;
+    return randomSeed / 2147483647;
+  };
+  for (let index = 0; index < 5500; index++) {
+    const light = random() > 0.48;
+    context.fillStyle = light ? "rgba(255,255,255,.12)" : "rgba(46,54,52,.095)";
+    const radius = 0.4 + random() * 1.4;
+    context.beginPath();
+    context.arc(random() * 256, random() * 256, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+  // Fine horizontal plaster variation and a lightly irregular mineral grain.
+  for (let line = 0; line < 36; line++) {
+    context.fillStyle = line % 2 ? "rgba(255,255,255,.035)" : "rgba(45,52,50,.025)";
+    context.fillRect(0, random() * 256, 256, 0.5 + random() * 1.2);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1.6, 1.6);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return new THREE.MeshStandardMaterial({
+    color: "#ffffff",
+    map: texture,
+    bumpMap: texture,
+    bumpScale: 0.014,
+    roughness: 0.94,
+  });
+}
+
 function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number) {
   const group = new THREE.Group();
   const walls = ["#e8e1d4", "#d9e3df", "#e5d6c4", "#d5e0e0"];
   const roofs = ["#3e5b5a", "#786657", "#4e6671", "#9b7256"];
-  const wall = mat(walls[variant % walls.length], 0.88);
+  const wall = createStuccoMaterial(walls[variant % walls.length], variant);
   const roof = mat(roofs[variant % roofs.length], 0.58, 0.2);
   const glass = new THREE.MeshStandardMaterial({ color: "#9ac5c8", roughness: 0.14, metalness: 0.42 });
   const frame = mat("#f3eee3", 0.65, 0.08);
