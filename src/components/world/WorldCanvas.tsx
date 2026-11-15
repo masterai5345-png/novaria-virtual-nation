@@ -825,6 +825,37 @@ function addRoadMarkings(scene: THREE.Scene) {
     verticalCurb.position.set(side * 2.0, 0.48, 0);
     scene.add(verticalCurb);
   }
+
+  // Flush cast-iron manholes and storm drains make the streets read as built infrastructure.
+  const iron = mat("#424b4c", 0.78, 0.32);
+  const drain = mat("#252f32", 0.72, 0.24);
+  for (const [x, z] of [[-5.4, 1.8], [5.6, 1.8], [0, -6.8], [0, 8.3]] as [number, number][]) {
+    const cover = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.035, 28), iron);
+    cover.position.set(x, 0.43, z);
+    scene.add(cover);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.025, 7, 28), mat("#9b9d91", 0.62, 0.4));
+    rim.rotation.x = Math.PI / 2;
+    rim.position.set(x, 0.452, z);
+    scene.add(rim);
+    for (let mark = 0; mark < 7; mark++) {
+      const groove = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.012, 0.42), drain);
+      groove.position.set(x - 0.17 + mark * 0.056, 0.453, z);
+      scene.add(groove);
+    }
+  }
+  for (const [x, z, horizontalDrain] of [[-3.1, -2.06, true], [3.1, -2.06, true], [-2.06, -3.1, false], [-2.06, 3.1, false]] as [number, number, boolean][]) {
+    const grate = new THREE.Mesh(new THREE.BoxGeometry(horizontalDrain ? 0.8 : 0.16, 0.028, horizontalDrain ? 0.16 : 0.8), drain);
+    grate.position.set(x, 0.455, z);
+    scene.add(grate);
+    for (let bar = 0; bar < 8; bar++) {
+      const slot = new THREE.Mesh(
+        new THREE.BoxGeometry(horizontalDrain ? 0.035 : 0.18, 0.012, horizontalDrain ? 0.18 : 0.035),
+        mat("#8c9690", 0.7, 0.22),
+      );
+      slot.position.set(x + (horizontalDrain ? -0.34 + bar * 0.095 : 0), 0.472, z + (horizontalDrain ? 0 : -0.34 + bar * 0.095));
+      scene.add(slot);
+    }
+  }
 }
 
 function makeTreeCluster(scene: THREE.Scene, centerX: number, centerZ: number, width: number, depth: number, count: number) {
@@ -1221,6 +1252,10 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
     [16, 17, 4.2, 4.2, 12, "#7d6b5a", false],
     [21, 17, 3.8, 3.7, 9, "#435b65", true],
     [1, 19, 4.0, 3.8, 9, "#5e7477", false],
+    [-20, -5, 3.2, 3.3, 8, "#657780", true],
+    [20, -6, 3.1, 3.2, 9, "#927b60", false],
+    [-20, 10, 3.3, 3.1, 7, "#526c78", false],
+    [20, 12, 3.2, 3.2, 8, "#7b776b", true],
   ];
   for (const [x, z, width, depth, floors, hue, rounded] of towers) {
     makeTower(scene, x, z, width, depth, floors, hue, rounded);
@@ -1340,8 +1375,8 @@ export default function WorldCanvas() {
     scene.background = new THREE.Color("#b9c9c7");
     scene.fog = new THREE.Fog("#b9c9c7", 58, 118);
 
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 160);
-    camera.position.set(0, 27, 34);
+    const camera = new THREE.PerspectiveCamera(39, 1, 0.1, 220);
+    camera.position.set(0, 20, 34);
     camera.lookAt(0, 0.6, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
