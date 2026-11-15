@@ -14,13 +14,24 @@ import {
   Trophy,
   Users,
   X,
+  Moon,
+  Sun,
+  Zap,
+  Bot,
+  Search,
+  Shuffle,
+  IdCard,
+  Send,
+  Download,
 } from "lucide-react";
 import CitizenButton from "@/components/auth/CitizenButton";
 import CityMetrics from "@/components/world/CityMetrics";
-import WorldCanvas from "@/components/world/WorldCanvas";
+import WorldCanvas, { type WorldResident } from "@/components/world/WorldCanvas";
 import { ANIMAL_EMOJI, ANIMAL_LABELS, CITIZEN_SPECIES, isCitizenSpecies } from "@/lib/animals";
 
 type TownPanel = "overview" | "missions" | "districts" | "residents" | null;
+type CityChatMessage = { role: "user" | "assistant"; content: string };
+type ResidentSearchResponse = { source: "database" | "preview"; residents: WorldResident[]; message?: string; error?: string };
 type Mission = {
   missionKey: string;
   title: string;
@@ -60,6 +71,20 @@ export default function NovariaWorldExperience() {
   const [missionMessage, setMissionMessage] = useState("");
   const [missionError, setMissionError] = useState("");
   const [residentMascot, setResidentMascot] = useState<{ citizenId: string; displayName: string; species: string } | null>(null);
+  const [isNight, setIsNight] = useState(false);
+  const [quality, setQuality] = useState<"high" | "low">("high");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<WorldResident[]>([]);
+  const [selectedResident, setSelectedResident] = useState<WorldResident | null>(null);
+  const [searchBusy, setSearchBusy] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatMessages, setChatMessages] = useState<CityChatMessage[]>([
+    { role: "assistant", content: "Halo warga! Aku Pak Wali Kota Otti 🦦. Mau mencari maskot, menjelajahi distrik, atau bertanya tentang NOVARIA?" },
+  ]);
+  const [cardOpen, setCardOpen] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -150,6 +175,162 @@ export default function NovariaWorldExperience() {
     }
   }
 
+  async function searchResidents(random = false) {
+    if (!random && searchTerm.trim().replace(/^@/, "").length < 2) {
+      setSearchError("Masukkan username Instagram minimal 2 karakter.");
+      setSearchResults([]);
+      return;
+    }
+    setSearchBusy(true);
+    setSearchError("");
+    try {
+      const endpoint = random
+        ? "/api/citizens/search?random=1"
+        : `/api/citizens/search?handle=${encodeURIComponent(searchTerm.trim().replace(/^@/, ""))}`;
+      const response = await fetch(endpoint, { cache: "no-store" });
+      const data = await response.json() as ResidentSearchResponse;
+      if (!response.ok) throw new Error(data.error || "Pencarian warga gagal.");
+      if (!data.residents?.length) {
+        setSearchResults([]);
+        setSearchError(data.source === "preview"
+          ? "Pencarian warga aktif setelah database kota tersambung."
+          : "Belum ditemukan. Warga harus menambahkan username Instagram publik di Profil Warga terlebih dahulu.");
+        return;
+      }
+      if (random || data.residents.length === 1) {
+        setSelectedResident(data.residents[0]);
+        setSearchResults([]);
+        setSearchTerm(data.residents[0].publicHandle);
+        setSearchError("");
+      } else {
+        setSearchResults(data.residents);
+      }
+    } catch (caught) {
+      setSearchError(caught instanceof Error ? caught.message : "Pencarian warga gagal.");
+      setSearchResults([]);
+    } finally {
+      setSearchBusy(false);
+    }
+  }
+
+  function chooseResident(resident: WorldResident) {
+    setSelectedResident(resident);
+    setSearchTerm(resident.publicHandle);
+    setSearchResults([]);
+    setSearchError("");
+  }
+
+  function downloadCitizenCard() {
+    if (!selectedResident) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = 720;
+    canvas.height = 1040;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const species = isCitizenSpecies(selectedResident.species) ? selectedResident.species : "fox";
+    const emoji = ANIMAL_EMOJI[species];
+    const speciesName = ANIMAL_LABELS[species];
+    const gradient = context.createLinearGradient(0, 0, 720, 1040);
+    gradient.addColorStop(0, "#173c3d");
+    gradient.addColorStop(0.55, "#234f4a");
+    gradient.addColorStop(1, "#b58b57");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 720, 1040);
+
+    context.fillStyle = "rgba(9,24,28,.22)";
+    context.beginPath();
+    context.arc(600, 120, 240, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = "#f8f2e5";
+    context.beginPath();
+    context.roundRect(34, 34, 652, 972, 34);
+    context.fill();
+
+    context.textAlign = "center";
+    context.fillStyle = "#1d4543";
+    context.font = "800 36px Arial";
+    context.fillText("NOVARIA", 360, 100);
+    context.fillStyle = "#af8750";
+    context.font = "700 18px Arial";
+    context.fillText("VIRTUAL CITIZEN CARD", 360, 136);
+
+    context.fillStyle = "#e3d8c0";
+    context.beginPath();
+    context.arc(360, 350, 152, 0, Math.PI * 2);
+    context.fill();
+    context.font = "170px serif";
+    context.fillStyle = "#20292a";
+    context.fillText(emoji, 360, 410);
+
+    context.fillStyle = "#1f3738";
+    context.font = "800 38px Arial";
+    context.fillText(selectedResident.displayName.slice(0, 30), 360, 570);
+    context.fillStyle = "#b1844f";
+    context.font = "700 23px Arial";
+    context.fillText(`@${selectedResident.publicHandle}`, 360, 612);
+
+    const rows = [
+      ["MASCOT SPECIES", speciesName],
+      ["CITY", "NOVARIA"],
+      ["MEMBERSHIP", "VERIFIED CITY PROFILE"],
+    ];
+    rows.forEach(([label, value], index) => {
+      const y = 700 + index * 76;
+      context.textAlign = "left";
+      context.fillStyle = "#8b9188";
+      context.font = "700 15px Arial";
+      context.fillText(label, 92, y);
+      context.fillStyle = "#223d3b";
+      context.font = "700 23px Arial";
+      context.fillText(value, 92, y + 31);
+    });
+
+    context.textAlign = "center";
+    context.fillStyle = "#9a927e";
+    context.font = "15px Arial";
+    context.fillText("A virtual community identity — not a government-issued ID", 360, 950);
+
+    const link = document.createElement("a");
+    link.download = `novaria-citizen-${selectedResident.publicHandle}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+
+  async function sendMayorMessage() {
+    const message = chatInput.trim();
+    if (!message || chatBusy) return;
+    const nextMessages: CityChatMessage[] = [...chatMessages, { role: "user", content: message }];
+    setChatMessages(nextMessages);
+    setChatInput("");
+    setChatBusy(true);
+    try {
+      const response = await fetch("/api/ai/city-assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: nextMessages.slice(-8),
+          resident: selectedResident ? {
+            displayName: selectedResident.displayName,
+            publicHandle: selectedResident.publicHandle,
+            species: selectedResident.species,
+          } : undefined,
+        }),
+      });
+      const data = await response.json() as { reply?: string; error?: string };
+      if (!response.ok) throw new Error(data.error || "Pak Wali Kota belum bisa menjawab.");
+      setChatMessages((current) => [...current, { role: "assistant", content: data.reply || "Maaf, aku belum punya jawaban." }]);
+    } catch (caught) {
+      setChatMessages((current) => [...current, {
+        role: "assistant",
+        content: caught instanceof Error ? caught.message : "Pak Wali Kota sedang sibuk. Coba lagi.",
+      }]);
+    } finally {
+      setChatBusy(false);
+    }
+  }
+
   function openPanel(next: TownPanel) {
     setPanel((current) => current === next ? null : next);
     setMissionError("");
@@ -158,7 +339,7 @@ export default function NovariaWorldExperience() {
 
   return (
     <main className="town-experience">
-      <WorldCanvas />
+      <WorldCanvas isNight={isNight} quality={quality} focusResident={selectedResident} />
       <div className="town-world-shade" aria-hidden="true" />
 
       <header className="town-topbar">
@@ -171,6 +352,15 @@ export default function NovariaWorldExperience() {
           <span>YOUR WORLD IS WAITING</span>
         </div>
         <div className="town-topbar-actions">
+          <button type="button" className="town-icon-control" onClick={() => setIsNight((value) => !value)} aria-label={isNight ? "Switch to daytime" : "Switch to nighttime"} title={isNight ? "Daytime" : "Nighttime"}>
+            {isNight ? <Sun size={17}/> : <Moon size={17}/>}
+          </button>
+          <button type="button" className="town-icon-control" onClick={() => setQuality((value) => value === "high" ? "low" : "high")} aria-label={quality === "high" ? "Switch to low graphics" : "Switch to high graphics"} title={quality === "high" ? "High quality" : "Lightweight quality"}>
+            {quality === "high" ? <Sparkles size={17}/> : <Zap size={17}/>}
+          </button>
+          <button type="button" className={`town-icon-control${assistantOpen ? " active" : ""}`} onClick={() => setAssistantOpen((value) => !value)} aria-label="Open Mayor Otti assistant" title="Ask Mayor Otti">
+            <Bot size={17}/>
+          </button>
           {session?.user?.id ? (
             <Link href="/citizen" className="town-profile-link">
               <PawPrint size={15}/>
@@ -201,6 +391,102 @@ export default function NovariaWorldExperience() {
         <span className="town-mayor-copy"><small>YOUR MAYOR</small><b>Mayor Otti</b><em>Welcome to our city!</em></span>
         <button type="button" onClick={() => openPanel("residents")} aria-label="Meet the residents">→</button>
       </aside>
+
+      <section className="town-search-dock" aria-label="Mascot resident search">
+        <div className="town-search-input-wrap">
+          <Search size={16}/>
+          <input
+            value={searchTerm}
+            onChange={(event) => { setSearchTerm(event.target.value); setSearchError(""); }}
+            onKeyDown={(event) => { if (event.key === "Enter") void searchResidents(false); }}
+            placeholder="Ketik username Instagram warga"
+            autoCapitalize="none"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Instagram username"
+          />
+        </div>
+        <button type="button" className="town-search-button" disabled={searchBusy} onClick={() => void searchResidents(false)}>
+          <Search size={15}/> {searchBusy ? "Mencari…" : "Cari"}
+        </button>
+        <button type="button" className="town-random-button" disabled={searchBusy} onClick={() => void searchResidents(true)} aria-label="Pilih warga acak" title="Warga acak">
+          <Shuffle size={16}/>
+        </button>
+      </section>
+
+      {searchError ? <div className="town-search-feedback" role="status">{searchError}</div> : null}
+      {searchResults.length > 0 ? (
+        <section className="town-resident-results" aria-label="Search results">
+          <div className="town-resident-results-heading">
+            <b>Warga ditemukan</b>
+            <button type="button" onClick={() => setSearchResults([])} aria-label="Close search results"><X size={15}/></button>
+          </div>
+          {searchResults.map((resident) => {
+            const species = isCitizenSpecies(resident.species) ? resident.species : "fox";
+            return (
+              <button className="town-resident-result" type="button" key={resident.id} onClick={() => chooseResident(resident)}>
+                <span className="town-resident-result-emoji">{ANIMAL_EMOJI[species]}</span>
+                <span><b>{resident.displayName}</b><small>@{resident.publicHandle} · {ANIMAL_LABELS[species]}</small></span>
+                <span className="town-resident-result-arrow">↗</span>
+              </button>
+            );
+          })}
+        </section>
+      ) : null}
+
+      {selectedResident ? (
+        <section className="town-selected-resident" aria-label="Selected mascot resident">
+          <span className="town-selected-emoji">{ANIMAL_EMOJI[isCitizenSpecies(selectedResident.species) ? selectedResident.species : "fox"]}</span>
+          <span className="town-selected-copy">
+            <small>WARGA TERPILIH · @ {selectedResident.publicHandle}</small>
+            <b>{selectedResident.displayName}</b>
+          </span>
+          <button type="button" onClick={() => setCardOpen(true)}><IdCard size={15}/> Lihat KTP</button>
+          <button type="button" className="town-close-selected" onClick={() => setSelectedResident(null)} aria-label="Clear selected resident"><X size={16}/></button>
+        </section>
+      ) : null}
+
+      {assistantOpen ? (
+        <section className="town-assistant-panel" aria-label="Mayor Otti assistant">
+          <header>
+            <span className="town-assistant-avatar">🦦</span>
+            <span><small>ASISTEN KOTA NOVARIA</small><b>Pak Wali Kota Otti</b></span>
+            <button type="button" onClick={() => setAssistantOpen(false)} aria-label="Close assistant"><X size={17}/></button>
+          </header>
+          <div className="town-chat-log" aria-live="polite">
+            {chatMessages.map((item, index) => (
+              <div className={`town-chat-message ${item.role === "user" ? "user" : "assistant"}`} key={index}>{item.content}</div>
+            ))}
+            {chatBusy ? <div className="town-chat-message assistant">Otti sedang berpikir…</div> : null}
+          </div>
+          <form className="town-chat-form" onSubmit={(event) => { event.preventDefault(); void sendMayorMessage(); }}>
+            <input value={chatInput} onChange={(event) => setChatInput(event.target.value)} placeholder="Tanya Pak Wali Kota…" maxLength={1200} />
+            <button type="submit" disabled={!chatInput.trim() || chatBusy} aria-label="Send message"><Send size={16}/></button>
+          </form>
+          <small className="town-assistant-footnote">Asisten dapat memakai panduan lokal; AI provider aktif jika dikonfigurasi admin.</small>
+        </section>
+      ) : null}
+
+      {cardOpen && selectedResident ? (
+        <div className="town-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCardOpen(false); }}>
+          <section className="town-ktp-modal" role="dialog" aria-modal="true" aria-label="NOVARIA virtual citizen card">
+            <button type="button" className="town-modal-close" onClick={() => setCardOpen(false)} aria-label="Close card"><X size={18}/></button>
+            <div className="town-ktp-card">
+              <div className="town-ktp-brand"><span>N</span><div><b>NOVARIA</b><small>VIRTUAL CITIZEN CARD</small></div></div>
+              <div className="town-ktp-avatar">{ANIMAL_EMOJI[isCitizenSpecies(selectedResident.species) ? selectedResident.species : "fox"]}</div>
+              <h2>{selectedResident.displayName}</h2>
+              <p className="town-ktp-handle">@{selectedResident.publicHandle}</p>
+              <div className="town-ktp-details">
+                <div><small>SPECIES</small><b>{ANIMAL_LABELS[isCitizenSpecies(selectedResident.species) ? selectedResident.species : "fox"]}</b></div>
+                <div><small>COMMUNITY</small><b>NOVARIA</b></div>
+                <div><small>MEMBERSHIP</small><b>PUBLIC CITIZEN PROFILE</b></div>
+              </div>
+              <small className="town-ktp-disclaimer">Virtual community identity — not a government-issued ID.</small>
+            </div>
+            <button type="button" className="town-ktp-download" onClick={downloadCitizenCard}><Download size={16}/> Download card</button>
+          </section>
+        </div>
+      ) : null}
 
       <div className="town-bottom-hint">
         <span>W A S D</span> MOVE
@@ -260,7 +546,7 @@ export default function NovariaWorldExperience() {
                   <div><small>{district.category}</small><b>{district.name}</b><p>{district.description}</p></div>
                 </article>;
               })}
-              <p className="town-muted">The city map is a live 3D preview. New districts will be added as NOVARIA expands.</p>
+              <p className="town-muted">Use the city controls to explore the districts, then select a resident from the public mascot finder.</p>
             </div>
           ) : null}
 
