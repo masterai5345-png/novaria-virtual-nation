@@ -531,25 +531,66 @@ function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number
   const group = new THREE.Group();
   const walls = ["#e8e1d4", "#d9e3df", "#e5d6c4", "#d5e0e0"];
   const roofs = ["#3e5b5a", "#786657", "#4e6671", "#9b7256"];
-  const wall = mat(walls[variant % walls.length]);
-  const roof = mat(roofs[variant % roofs.length]);
-  const glass = mat("#93c5c9", 0.18, 0.24);
-  addBox(group, 2.1, 0.12, 1.7, mat("#555e5a"), 0, 0.08, 0);
-  addBox(group, 1.9, 1.16 + (variant % 3) * 0.24, 1.5, wall, 0, 0.68 + (variant % 3) * 0.12, 0);
-  const levels = 1 + (variant % 3);
-  for (let floor = 0; floor < levels; floor++) {
-    for (const wx of [-0.58, 0.42]) addBox(group, 0.36, 0.27, 0.045, glass, wx, 0.54 + floor * 0.45, 0.77, false);
+  const wall = mat(walls[variant % walls.length], 0.88);
+  const roof = mat(roofs[variant % roofs.length], 0.58, 0.2);
+  const glass = new THREE.MeshStandardMaterial({ color: "#9ac5c8", roughness: 0.14, metalness: 0.42 });
+  const frame = mat("#f3eee3", 0.65, 0.08);
+  const bronze = mat("#9a7653", 0.42, 0.38);
+  const floors = 1 + (variant % 3);
+  const floorHeight = 0.72;
+  const width = 2.15;
+  const depth = 1.72;
+  const height = floors * floorHeight;
+
+  addBox(group, width + 0.42, 0.16, depth + 0.42, mat("#77796f"), 0, 0.08, 0);
+  addBox(group, width + 0.08, 0.12, depth + 0.08, bronze, 0, 0.18, 0);
+  addBox(group, width, height, depth, wall, 0, 0.22 + height / 2, 0);
+
+  // Raised roof slab with a warm timber soffit and a clean architectural parapet.
+  addBox(group, width + 0.32, 0.17, depth + 0.32, roof, 0, 0.22 + height + 0.08, 0);
+  addBox(group, width + 0.18, 0.07, depth + 0.18, bronze, 0, 0.22 + height + 0.2, 0);
+  addBox(group, width * 0.34, 0.16, depth * 0.36, roof, width * 0.23, 0.22 + height + 0.31, -depth * 0.2);
+
+  for (let floor = 0; floor < floors; floor++) {
+    const y = 0.34 + floor * floorHeight;
+    addBox(group, width + 0.1, 0.045, depth + 0.1, frame, 0, y, 0, false);
+    for (const windowX of [-0.65, 0.0, 0.65]) {
+      addBox(group, 0.43, 0.42, 0.045, bronze, windowX, y + 0.35, depth / 2 + 0.035, false);
+      addBox(group, 0.34, 0.34, 0.035, glass, windowX, y + 0.36, depth / 2 + 0.065, false);
+      addBox(group, 0.035, 0.36, 0.035, frame, windowX, y + 0.36, depth / 2 + 0.09, false);
+    }
   }
-  addBox(group, 2.05, 0.14, 1.65, roof, 0, 1.3 + (variant % 3) * 0.24, 0);
-  addBox(group, 0.32, 0.58, 0.06, mat("#9b7658"), -0.52, 0.36, 0.78);
-  if (variant % 2 === 0) {
-    addBox(group, 0.9, 0.06, 0.4, roof, 0.28, 0.86, 0.98);
+
+  // Recessed entrance, glass door, side lights and front steps.
+  addBox(group, 0.58, 0.7, 0.07, bronze, -0.72, 0.58, depth / 2 + 0.05);
+  addBox(group, 0.42, 0.58, 0.035, glass, -0.72, 0.59, depth / 2 + 0.1, false);
+  addBox(group, 0.16, 0.65, 0.055, frame, -0.72, 0.6, depth / 2 + 0.13, false);
+  addBox(group, 0.45, 0.13, 0.5, frame, -0.72, 0.25, depth / 2 + 0.28);
+  addBox(group, 0.6, 0.1, 0.68, bronze, -0.72, 0.08, depth / 2 + 0.34);
+
+  if (floors > 1) {
+    // A full-width balcony with slim metal balustrade.
+    addBox(group, 1.18, 0.09, 0.48, frame, 0.36, floorHeight + 0.38, depth / 2 + 0.22);
+    addBox(group, 1.18, 0.045, 0.045, bronze, 0.36, floorHeight + 0.72, depth / 2 + 0.43, false);
+    for (let post = 0; post < 6; post++) {
+      addBox(group, 0.035, 0.31, 0.035, bronze, -0.2 + post * 0.22, floorHeight + 0.55, depth / 2 + 0.43, false);
+    }
   }
+  if (floors > 2) {
+    addBox(group, width * 0.42, 0.08, 0.62, roof, -0.42, floorHeight * 2 + 0.44, depth / 2 + 0.18);
+    addBox(group, 0.055, 0.31, 0.055, bronze, -0.42, floorHeight * 2 + 0.61, depth / 2 + 0.49);
+  }
+
+  // Landscape strip and entry lighting make every home feel occupied.
+  addBox(group, 0.44, 0.3, 0.3, mat("#718d66"), 0.78, 0.33, depth / 2 + 0.34);
+  addSphere(group, 0.15, mat("#56835d"), 0.78, 0.52, depth / 2 + 0.34, 1.1, 1.1, 0.9);
+  const doorLight = new THREE.MeshStandardMaterial({ color: "#f7dfab", emissive: "#dca958", emissiveIntensity: 0.6 });
+  addSphere(group, 0.045, doorLight, -1.1, 0.86, depth / 2 + 0.1, 0.75, 0.75, 0.75);
+
   group.position.set(x, 0.42, z);
   parent.add(group);
   return group;
 }
-
 function addRoadMarkings(scene: THREE.Scene) {
   const asphalt = mat("#343a42", 0.94);
   const sidewalk = mat("#c4c4bc");
