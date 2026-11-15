@@ -411,43 +411,114 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
 }
 function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
   const group = new THREE.Group();
-  const bark = mat("#745139", 0.98);
-  const leaves = [
-    mat("#367c59", 0.98),
-    mat("#438b62", 0.97),
-    mat("#2f704f", 0.98),
+  const bark = mat("#6b4c35", 0.98);
+  const barkLight = mat("#886547", 0.96);
+  const leafMaterials = [
+    mat("#477f56", 0.98), mat("#588f60", 0.98),
+    mat("#39734e", 0.98), mat("#69976a", 0.98),
   ];
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.075 * size, 0.16 * size, 0.82 * size, 12), bark);
-  trunk.position.y = 0.42 * size;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.095 * size, 0.19 * size, 1.0 * size, 10), bark);
+  trunk.position.y = 0.5 * size;
   trunk.castShadow = true;
   group.add(trunk);
   for (const side of [-1, 1]) {
-    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.035 * size, 0.055 * size, 0.5 * size, 8), bark);
-    branch.position.set(side * 0.2 * size, 0.72 * size, 0);
-    branch.rotation.z = side * -0.62;
+    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.035 * size, 0.075 * size, 0.68 * size, 8), barkLight);
+    branch.position.set(side * 0.22 * size, 0.84 * size, 0);
+    branch.rotation.z = side * -0.7;
     group.add(branch);
   }
-  const crown = new THREE.Mesh(new THREE.SphereGeometry(0.58 * size, 22, 18), leaves[0]);
-  crown.position.y = 1.18 * size;
-  crown.scale.set(1.02, 1.12, 0.96);
-  crown.castShadow = true;
-  group.add(crown);
-  const clusters: [number, number, number, number][] = [
-    [-0.32, 1.04, 0.04, 0.72],
-    [0.33, 1.08, -0.02, 0.7],
-    [-0.12, 1.43, -0.09, 0.68],
-    [0.23, 1.42, 0.08, 0.64],
+  // Layered, irregular low-poly foliage instead of a single perfect sphere.
+  const seed = Math.abs(Math.round(x * 13 + z * 19));
+  const clusters: [number, number, number, number, number, number][] = [
+    [-0.38, 1.24, 0.02, 0.52, 0.48, 0.47],
+    [0.36, 1.28, -0.06, 0.54, 0.46, 0.52],
+    [-0.12, 1.63, -0.12, 0.52, 0.48, 0.48],
+    [0.28, 1.68, 0.11, 0.49, 0.45, 0.5],
+    [-0.45, 1.55, 0.22, 0.42, 0.4, 0.46],
+    [0.48, 1.43, -0.2, 0.43, 0.45, 0.46],
+    [0.0, 1.94, 0.02, 0.42, 0.42, 0.4],
+    [0.02, 1.28, -0.32, 0.4, 0.45, 0.42],
   ];
-  clusters.forEach(([cx, cy, cz, scale], index) => {
-    const cluster = new THREE.Mesh(new THREE.SphereGeometry(0.39 * size, 16, 13), leaves[(index + 1) % leaves.length]);
-    cluster.position.set(cx * size, cy * size, cz * size);
-    cluster.scale.setScalar(scale);
-    cluster.castShadow = true;
-    group.add(cluster);
+  clusters.forEach(([cx, cy, cz, sx, sy, sz], index) => {
+    const geometry = new THREE.IcosahedronGeometry((0.45 + ((seed + index * 7) % 9) * 0.012) * size, 1);
+    const crown = new THREE.Mesh(geometry, leafMaterials[(seed + index) % leafMaterials.length]);
+    crown.position.set(cx * size, cy * size, cz * size);
+    crown.scale.set(sx * 2.05, sy * 2.05, sz * 2.05);
+    crown.rotation.set(index * 0.23, index * 0.41, index * 0.17);
+    crown.castShadow = true;
+    group.add(crown);
   });
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.48 * size, 0.54 * size, 0.07, 20), mat("#75684f", 1));
+  soil.position.y = 0.045;
+  group.add(soil);
   group.position.set(x, 0.4, z);
   scene.add(group);
 }
+
+function makePalmTree(scene: THREE.Scene, x: number, z: number, size = 1) {
+  const palm = new THREE.Group();
+  const trunkMaterial = mat("#8a6748", 0.94);
+  const leafMaterials = [mat("#397956", 0.98), mat("#4b9065", 0.98), mat("#2f694b", 0.98)];
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * size, 0.17 * size, 2.2 * size, 12), trunkMaterial);
+  trunk.position.y = 1.1 * size;
+  trunk.rotation.z = -0.06;
+  trunk.castShadow = true;
+  palm.add(trunk);
+  for (let ring = 0; ring < 7; ring++) {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.12 * size, 0.018 * size, 5, 14), mat("#b28a5b", 0.9));
+    band.position.y = (0.35 + ring * 0.25) * size;
+    band.rotation.x = Math.PI / 2;
+    palm.add(band);
+  }
+  for (let index = 0; index < 8; index++) {
+    const angle = (index / 8) * Math.PI * 2;
+    const direction = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+    const points = [
+      new THREE.Vector3(0, 2.2 * size, 0),
+      new THREE.Vector3(direction.x * 0.48 * size, 2.65 * size, direction.z * 0.48 * size),
+      new THREE.Vector3(direction.x * 1.05 * size, 2.45 * size, direction.z * 1.05 * size),
+      new THREE.Vector3(direction.x * 1.48 * size, 1.95 * size, direction.z * 1.48 * size),
+    ];
+    const vein = new THREE.CatmullRomCurve3(points);
+    palm.add(new THREE.Mesh(new THREE.TubeGeometry(vein, 12, 0.025 * size, 6, false), mat("#a5b77b", 0.95)));
+    for (let leaf = 0; leaf < 9; leaf++) {
+      const t = (leaf + 1) / 10;
+      const center = vein.getPoint(t);
+      const taper = (1 - t) * 0.26 * size;
+      for (const side of [-1, 1]) {
+        const leaflet = new THREE.Mesh(
+          new THREE.ConeGeometry(Math.max(0.025 * size, taper * 0.24), Math.max(0.16 * size, taper * 1.8), 5),
+          leafMaterials[(index + leaf) % leafMaterials.length],
+        );
+        leaflet.position.set(center.x - side * taper * 0.45, center.y - 0.015 * size, center.z + side * taper * 0.45);
+        leaflet.rotation.z = side * -0.9;
+        leaflet.rotation.y = angle;
+        palm.add(leaflet);
+      }
+    }
+  }
+  palm.position.set(x, 0.4, z);
+  palm.scale.setScalar(size);
+  scene.add(palm);
+}
+
+function makeHedge(scene: THREE.Scene, x: number, z: number, width = 1.4, depth = 0.55) {
+  const hedge = new THREE.Group();
+  addBox(hedge, width + 0.18, 0.14, depth + 0.18, mat("#685540", 1), 0, 0.07, 0);
+  const count = Math.max(3, Math.floor(width * 4));
+  for (let index = 0; index < count; index++) {
+    const plant = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.23, 1),
+      mat(index % 2 ? "#44784f" : "#57885b", 0.99),
+    );
+    plant.position.set(-width / 2 + 0.15 + index * (width - 0.3) / Math.max(1, count - 1), 0.3 + (index % 3) * 0.035, Math.sin(index * 2) * 0.12);
+    plant.scale.set(1.15, 0.82, 1.0);
+    hedge.add(plant);
+  }
+  hedge.position.set(x, 0.4, z);
+  scene.add(hedge);
+}
+
 function createFacadeMaterial(baseColor: string, seed: number, rounded = false) {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -1472,28 +1543,32 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   createPlanter(scene, 13.1, 6.3, 1.35);
   addDistrictLabel(scene, "Green Park", -10, 14);
   addDistrictLabel(scene, "Modern Market", 10, 14);
-  addDistrictLabel(scene, "Green Park", -10, 14);
-  addDistrictLabel(scene, "Modern Market", 10, 14);
 
   // A denser skyline around the civic and commercial center.
   const towers: [number, number, number, number, number, string, boolean][] = [
-    [-20, -17, 4.4, 4.1, 18, "#344b57", false],
-    [-14, -18, 4.0, 4.0, 13, "#7d735f", true],
-    [-8, -18, 3.8, 3.8, 10, "#536875", false],
-    [7, -18, 4.0, 4.1, 16, "#51636c", false],
-    [13, -17, 4.1, 4.0, 13, "#89745a", true],
-    [20, -15, 4.6, 4.4, 19, "#2d4658", false],
-    [-21, 4, 4.1, 4.0, 12, "#596d75", true],
-    [20, 6, 4.1, 4.1, 16, "#516b73", false],
-    [-19, 16, 4.0, 4.0, 10, "#8b775e", false],
-    [-14, 18, 4.3, 4.0, 14, "#435c6b", true],
-    [16, 17, 4.2, 4.2, 12, "#7d6b5a", false],
-    [21, 17, 3.8, 3.7, 9, "#435b65", true],
-    [1, 19, 4.0, 3.8, 9, "#5e7477", false],
-    [-20, -5, 3.2, 3.3, 8, "#657780", true],
-    [20, -6, 3.1, 3.2, 9, "#927b60", false],
-    [-20, 10, 3.3, 3.1, 7, "#526c78", false],
-    [20, 12, 3.2, 3.2, 8, "#7b776b", true],
+    [-20, -18, 4.4, 4.1, 21, "#344b57", false],
+    [-14, -18, 4.0, 4.0, 15, "#7d735f", true],
+    [-8, -18, 3.8, 3.8, 11, "#536875", false],
+    [7, -18, 4.0, 4.1, 18, "#51636c", false],
+    [13, -17, 4.1, 4.0, 15, "#89745a", true],
+    [20, -15, 4.6, 4.4, 22, "#2d4658", false],
+    [-21, 4, 4.1, 4.0, 13, "#596d75", true],
+    [20, 6, 4.1, 4.1, 18, "#516b73", false],
+    [-19, 16, 4.0, 4.0, 11, "#8b775e", false],
+    [-14, 18, 4.3, 4.0, 15, "#435c6b", true],
+    [16, 17, 4.2, 4.2, 13, "#7d6b5a", false],
+    [21, 17, 3.8, 3.7, 10, "#435b65", true],
+    [1, 19, 4.0, 3.8, 10, "#5e7477", false],
+    [-20, -5, 3.2, 3.3, 9, "#657780", true],
+    [20, -6, 3.1, 3.2, 10, "#927b60", false],
+    [-20, 10, 3.3, 3.1, 8, "#526c78", false],
+    [20, 12, 3.2, 3.2, 9, "#7b776b", true],
+    [-22, -24, 3.0, 3.1, 14, "#627982", true],
+    [-15, -24, 3.3, 3.0, 9, "#a18a6e", false],
+    [-7.5, -24, 3.0, 3.2, 12, "#486671", true],
+    [1.5, -24, 3.3, 3.0, 17, "#536b77", false],
+    [10, -23, 3.2, 3.1, 11, "#a28c6b", true],
+    [17, -22, 3.2, 3.2, 16, "#405b67", false],
   ];
   for (const [x, z, width, depth, floors, hue, rounded] of towers) {
     makeTower(scene, x, z, width, depth, floors, hue, rounded);
@@ -1513,6 +1588,16 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
     makeTree(scene, x, 21.2, 0.58 + (index % 3) * 0.08);
   }
   createWaterfrontPier(scene);
+  // Tropical waterfront planting and layered hedgerows soften the hard urban edges.
+  for (const [x, z, size] of [[7.6, 21.8, 1.02], [13.4, 22.3, 0.9], [17.1, 20.8, 0.82], [5.2, 24.2, 0.82]] as [number, number, number][]) {
+    makePalmTree(scene, x, z, size);
+  }
+  makeHedge(scene, -15.1, 7.1, 2.1, 0.52);
+  makeHedge(scene, -4.9, 7.1, 2.1, 0.52);
+  makeHedge(scene, -15.1, 11.4, 2.1, 0.52);
+  makeHedge(scene, -4.9, 11.4, 2.1, 0.52);
+  makeHedge(scene, 6.1, 5.3, 1.7, 0.48);
+  makeHedge(scene, 14.1, 12.8, 1.7, 0.48);
 
   // Premium street furniture, park benches, planters and traffic controls.
   addStreetFurniture(scene);
