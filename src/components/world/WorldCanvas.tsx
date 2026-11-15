@@ -2320,6 +2320,8 @@ export default function WorldCanvas() {
     resize();
 
     let lastRenderedAt = 0;
+    let slowFrameStreak = 0;
+    let adaptiveReduced = false;
     const animate = (time: number) => {
       if (document.hidden) {
         frame = 0;
@@ -2328,8 +2330,20 @@ export default function WorldCanvas() {
       frame = window.requestAnimationFrame(animate);
       if (frameInterval > 0 && time - lastRenderedAt < frameInterval) return;
       lastRenderedAt = time;
-      const delta = previousTime === 0 ? 0 : Math.min((time - previousTime) / 1000, 0.05);
+      const frameDuration = previousTime === 0 ? 0 : time - previousTime;
+      const delta = previousTime === 0 ? 0 : Math.min(frameDuration / 1000, 0.05);
       previousTime = time;
+      // One-time fallback for devices that still struggle: lower fill-rate, remove dynamic shadows,
+      // and trim a few distant citizens instead of letting the frame rate collapse.
+      if (!lowPowerDevice && !adaptiveReduced && frameDuration > 25) slowFrameStreak++;
+      else if (frameDuration < 21) slowFrameStreak = Math.max(0, slowFrameStreak - 2);
+      if (!lowPowerDevice && !adaptiveReduced && slowFrameStreak >= 18) {
+        adaptiveReduced = true;
+        renderer.setPixelRatio(Math.max(1, renderer.getPixelRatio() * 0.82));
+        renderer.shadowMap.enabled = false;
+        sun.castShadow = false;
+        npcGroups.slice(20).forEach((npc) => { npc.visible = false; });
+      }
       const keyX = (pressedKeys.has("d") || pressedKeys.has("arrowright") ? 1 : 0) - (pressedKeys.has("a") || pressedKeys.has("arrowleft") ? 1 : 0);
       const keyZ = (pressedKeys.has("s") || pressedKeys.has("arrowdown") ? 1 : 0) - (pressedKeys.has("w") || pressedKeys.has("arrowup") ? 1 : 0);
       let moveX = keyX + movementRef.current.x;
