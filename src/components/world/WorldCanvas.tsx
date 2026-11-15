@@ -1117,13 +1117,13 @@ function createStuccoMaterial(color: string, seed: number) {
   });
 }
 
-function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number) {
+function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number, detail: "full" | "simple" = "full") {
   const group = new THREE.Group();
   const walls = ["#e8e1d4", "#d9e3df", "#e5d6c4", "#d5e0e0"];
   const roofs = ["#3e5b5a", "#786657", "#4e6671", "#9b7256"];
   const wall = createStuccoMaterial(walls[variant % walls.length], variant);
   const roof = mat(roofs[variant % roofs.length], 0.58, 0.2);
-  const glass = new THREE.MeshStandardMaterial({ color: "#9ac5c8", roughness: 0.14, metalness: 0.42 });
+  const glass = cachedMaterial("house-glass", () => new THREE.MeshPhysicalMaterial({ color: "#9ac5c8", roughness: 0.14, metalness: 0.42, clearcoat: 0.78 }));
   const frame = mat("#f3eee3", 0.65, 0.08);
   const bronze = mat("#9a7653", 0.42, 0.38);
   const floors = 1 + (variant % 3);
@@ -1131,6 +1131,29 @@ function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number
   const width = 2.15;
   const depth = 1.72;
   const height = floors * floorHeight;
+
+  if (detail === "simple") {
+    // Residential LOD: preserve architectural identity while keeping large neighbourhoods inexpensive.
+    addBox(group, width + 0.34, 0.14, depth + 0.34, mat("#77796f"), 0, 0.07, 0);
+    addBox(group, width, height, depth, wall, 0, 0.14 + height / 2, 0);
+    addBox(group, width + 0.28, 0.16, depth + 0.28, roof, 0, 0.14 + height + 0.08, 0);
+    addBox(group, width + 0.16, 0.05, depth + 0.16, bronze, 0, 0.14 + height + 0.18, 0, false);
+    const windowTransforms: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+    for (let floor = 0; floor < floors; floor++) {
+      const y = 0.34 + floor * floorHeight + 0.2;
+      for (const windowX of [-0.65, 0, 0.65]) {
+        windowTransforms.push({ position: [windowX, y, depth / 2 + 0.035], scale: [0.36, 0.32, 0.04] });
+      }
+    }
+    addInstancedBoxes(group, glass, windowTransforms);
+    addBox(group, 0.48, 0.68, 0.08, bronze, -0.72, 0.52, depth / 2 + 0.05);
+    addBox(group, 0.38, 0.58, 0.04, glass, -0.72, 0.53, depth / 2 + 0.1, false);
+    addBox(group, 0.75, 0.075, 0.38, frame, 0.38, 0.76, depth / 2 + 0.2);
+    addBox(group, 0.5, 0.06, 0.34, mat("#6f8b68"), 0.8, 0.24, depth / 2 + 0.25);
+    group.position.set(x, 0.42, z);
+    parent.add(group);
+    return group;
+  }
 
   addBox(group, width + 0.42, 0.16, depth + 0.42, mat("#77796f"), 0, 0.08, 0);
   addBox(group, width + 0.08, 0.12, depth + 0.08, bronze, 0, 0.18, 0);
@@ -1142,7 +1165,7 @@ function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number
   addBox(group, width * 0.34, 0.16, depth * 0.36, roof, width * 0.23, 0.22 + height + 0.31, -depth * 0.2);
   // Roof garden, skylight and solar panels add believable residential utility details.
   addBox(group, 0.6, 0.06, 0.48, mat("#7ca0a2", 0.18, 0.5), -0.58, 0.22 + height + 0.28, -0.24, false);
-  const solar = new THREE.MeshStandardMaterial({ color: "#294b59", roughness: 0.2, metalness: 0.58 });
+  const solar = cachedMaterial("house-solar", () => new THREE.MeshStandardMaterial({ color: "#294b59", roughness: 0.2, metalness: 0.58 }));
   for (let panel = 0; panel < 2; panel++) {
     const solarPanel = addBox(group, 0.44, 0.045, 0.54, solar, 0.35 + panel * 0.48, 0.22 + height + 0.32, -0.28, false);
     solarPanel.rotation.x = -0.12;
@@ -1190,7 +1213,7 @@ function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number
   // Landscape strip and entry lighting make every home feel occupied.
   addBox(group, 0.44, 0.3, 0.3, mat("#718d66"), 0.78, 0.33, depth / 2 + 0.34);
   addSphere(group, 0.15, mat("#56835d"), 0.78, 0.52, depth / 2 + 0.34, 1.1, 1.1, 0.9);
-  const doorLight = new THREE.MeshStandardMaterial({ color: "#f7dfab", emissive: "#dca958", emissiveIntensity: 0.6 });
+  const doorLight = cachedMaterial("house-door-light", () => new THREE.MeshStandardMaterial({ color: "#f7dfab", emissive: "#dca958", emissiveIntensity: 0.6 }));
   addSphere(group, 0.045, doorLight, -1.1, 0.86, depth / 2 + 0.1, 0.75, 0.75, 0.75);
 
   group.position.set(x, 0.42, z);
@@ -1833,7 +1856,7 @@ function createWaterfrontPier(scene: THREE.Scene) {
   scene.add(boat);
 }
 
-function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
+function makeCity(scene: THREE.Scene, houseGroup: THREE.Group, lowPowerDevice = false) {
   createSkyDome(scene);
   const sea = new THREE.Mesh(
     new THREE.PlaneGeometry(150, 150, 48, 48),
@@ -2050,7 +2073,7 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   scene.add(hall);
   addDistrictLabel(scene, "City Hall", 0, -5.1);
 
-  for (let index = 0; index < 5; index++) {
+  for (let index = 0; index < (lowPowerDevice ? 2 : 5); index++) {
     const car = createCar(scene, -21 + index * 10, 2.75, ["#d94b43", "#2f8295", "#d5a43e", "#e8e6de", "#3e505d"][index]);
     car.userData.speed = 1.4 + (index % 3) * 0.35;
     car.userData.startX = car.position.x;
@@ -2137,7 +2160,7 @@ export default function WorldCanvas() {
 
     const houseGroup = new THREE.Group();
     scene.add(houseGroup);
-    makeCity(scene, houseGroup);
+    makeCity(scene, houseGroup, lowPowerDevice);
     const movingVehicles = (scene.userData.movingVehicles ?? []) as THREE.Group[];
 
     let homesAbort: AbortController | null = new AbortController();
@@ -2152,11 +2175,13 @@ export default function WorldCanvas() {
       .then((data) => {
         if (!data || data.source !== "database" || !data.homes?.length) return;
         clearGroup(houseGroup);
-        data.homes.forEach((home, index) => {
+        const visibleHomes = data.homes.slice(0, lowPowerDevice ? 18 : 48);
+        visibleHomes.forEach((home, index) => {
           const x = home.x * 0.4 - 10;
           const z = home.z * 0.55 - 8.5;
           const variant = home.type === "premium" ? 2 : home.type === "patron" ? 3 : index % 4;
-          const homeModel = makeHouse(houseGroup, x, z, variant);
+          const detail = !lowPowerDevice && index < 12 ? "full" : "simple";
+          const homeModel = makeHouse(houseGroup, x, z, variant, detail);
           homeModel.rotation.y = home.rotation || 0;
         });
       })
