@@ -2289,14 +2289,27 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
     player.scale.setScalar(1.02);
     scene.add(player);
 
-    // Mayor Otti remains the one and only official otter mayor.
+    // The city leader is a bear; the wider citizen population remains a diverse mix of animal species.
     const mayor = new THREE.Group();
-    createMascot(mayor, "otter", { outfit: "harbor-guard", accessory: "cap" }, "#155b59");
+    createMascot(mayor, "bear", { outfit: "harbor-guard", accessory: "none" }, "#244e49");
     mayor.scale.setScalar(1.0);
     mayor.position.set(2.1, 0.42, -5.0);
     const mayorBadge = new THREE.Mesh(new THREE.CircleGeometry(0.11, 16), mat("#e9c16d", 0.35, 0.28));
     mayorBadge.position.set(0.16, 0.82, 0.31);
     mayor.add(mayorBadge);
+    const mayorTie = new THREE.Mesh(
+      new THREE.ConeGeometry(0.095, 0.27, 4),
+      mat("#b94b42", 0.48, 0.08),
+    );
+    mayorTie.position.set(0, 0.92, 0.39);
+    mayorTie.rotation.x = Math.PI;
+    mayor.add(mayorTie);
+    const mayorTieKnot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.075, 10, 8),
+      mat("#d7b36e", 0.36, 0.24),
+    );
+    mayorTieKnot.position.set(0, 1.1, 0.39);
+    mayor.add(mayorTieKnot);
     scene.add(mayor);
 
     // A dedicated model is reused when a public citizen is selected from the uploaded-style finder.
