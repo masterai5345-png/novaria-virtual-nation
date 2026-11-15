@@ -274,345 +274,173 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   clearGroup(group);
   const species = ANIMAL_LOOKS[speciesName] ? speciesName : "fox";
   const look = ANIMAL_LOOKS[species];
-  // Citizens can personalise coat colour while their species silhouette and markings remain recognisable.
   const coatColor = COAT_COLORS[style.furTone ?? ""] ?? look.coat;
-  const coat = createFurMaterial(coatColor);
-  const belly = mat(look.belly, 0.96);
-  const muzzle = mat(look.muzzle, 0.88);
-  const dark = mat("#20282b", 0.42);
-  const eyeWhite = mat("#fffaf0", 0.24);
-  const iris = mat(species === "frog" ? "#6b8e44" : species === "wolf" || species === "cat" ? "#79a6a1" : "#9a6840", 0.25);
+  const coat = mat(coatColor, 0.94, 0);
+  const belly = mat(look.belly, 0.98, 0);
+  const muzzle = mat(look.muzzle, 0.96, 0);
+  const dark = mat("#252a32", 0.38, 0.02);
+  const eyeWhite = mat("#fffaf1", 0.26, 0);
+  const iris = mat(species === "frog" ? "#75a84c" : species === "wolf" || species === "cat" ? "#76a8b2" : "#65452f", 0.3, 0);
   const outfitColor = outfitOverride ?? OUTFIT_COLORS[style.outfit ?? "citizen-teal"] ?? OUTFIT_COLORS["citizen-teal"];
-  const outfit = cachedMaterial(`outfit:${outfitColor}`, () => new THREE.MeshPhysicalMaterial({
-    color: outfitColor,
-    roughness: 0.82,
-    metalness: 0.02,
-    sheen: 0.38,
-    sheenColor: new THREE.Color(outfitColor).multiplyScalar(1.1),
-    sheenRoughness: 0.9,
-  }));
-  const trim = mat("#e9d1a0", 0.48, 0.12);
-  const gold = mat("#d6ad68", 0.36, 0.32);
-  const sole = mat("#263238", 0.9);
+  const outfit = mat(outfitColor, 0.88, 0.01);
+  const shoe = mat("#343944", 0.8, 0);
+  const accent = mat("#f0c878", 0.44, 0.22);
+  const smoothSphere = cachedGeometry("mascot-reference-sphere", () => new THREE.SphereGeometry(1, 22, 16));
   const animatedArms: THREE.Object3D[] = [];
   const animatedLegs: THREE.Object3D[] = [];
+  const sphere = (radius: number, material: THREE.Material, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1) => {
+    const mesh = new THREE.Mesh(smoothSphere, material);
+    mesh.position.set(x, y, z);
+    mesh.scale.set(radius * sx, radius * sy, radius * sz);
+    group.add(mesh);
+    return mesh;
+  };
+  const capsule = (key: string, radius: number, length: number, material: THREE.Material, x: number, y: number, z: number) => {
+    const geometry = cachedGeometry(key, () => new THREE.CapsuleGeometry(radius, length, 4, 9));
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    group.add(mesh);
+    return mesh;
+  };
 
-  if (detail === "crowd") {
-    // Distant citizens use a compact silhouette: recognisable species, expression and clothing,
-    // but far fewer draw calls than the hero character.
-    const body = new THREE.Mesh(
-      cachedGeometry("crowd-body-capsule", () => new THREE.CapsuleGeometry(0.29, 0.42, 4, 8)),
-      outfit,
-    );
-    body.position.set(0, 0.68, 0);
-    body.scale.set(1, 1, 0.84);
-    group.add(body);
-
-    addSphere(group, 0.43, coat, 0, 1.45, 0.02, 1.02, 0.98, 0.88);
-    addSphere(group, 0.2, belly, 0, 0.64, 0.245, 0.84, 1, 0.36);
-    addSphere(group, 0.13, trim, 0, 1.02, 0.04, 1.25, 0.26, 0.7);
-
-    const legGeometry = cachedGeometry("crowd-leg-capsule", () => new THREE.CapsuleGeometry(0.095, 0.2, 3, 7));
-    const armGeometry = cachedGeometry("crowd-arm-capsule", () => new THREE.CapsuleGeometry(0.075, 0.24, 3, 7));
-    for (const side of [-1, 1]) {
-      const leg = new THREE.Mesh(legGeometry, coat);
-      leg.position.set(side * 0.16, 0.27, 0.02);
-      group.add(leg);
-      animatedLegs.push(leg);
-      addSphere(group, 0.105, sole, side * 0.16, 0.1, 0.12, 1.3, 0.58, 1.45);
-
-      const arm = new THREE.Mesh(armGeometry, coat);
-      arm.position.set(side * 0.34, 0.78, 0.01);
-      arm.rotation.z = side * -0.32;
-      group.add(arm);
-      animatedArms.push(arm);
-    }
-
-    // Species-defining ear silhouette, without high-poly inner-ear geometry.
-    for (const side of [-1, 1]) {
-      if (look.ears === "point") {
-        const ear = new THREE.Mesh(cachedGeometry("crowd-point-ear", () => new THREE.ConeGeometry(0.13, 0.35, 8)), coat);
-        ear.position.set(side * 0.28, 1.8, 0);
-        ear.rotation.z = side * -0.18;
-        group.add(ear);
-      } else if (look.ears === "long") {
-        const ear = new THREE.Mesh(cachedGeometry("crowd-long-ear", () => new THREE.CapsuleGeometry(0.075, 0.42, 3, 7)), coat);
-        ear.position.set(side * 0.18, 1.91, 0);
-        ear.rotation.z = side * -0.1;
-        group.add(ear);
-      } else if (look.ears === "floppy") {
-        const ear = new THREE.Mesh(cachedGeometry("crowd-floppy-ear", () => new THREE.CapsuleGeometry(0.09, 0.3, 3, 7)), coat);
-        ear.position.set(side * 0.35, 1.52, 0);
-        ear.rotation.z = side * -0.68;
-        group.add(ear);
-      } else if (look.ears === "round" || look.ears === "antler") {
-        addSphere(group, look.ears === "antler" ? 0.12 : 0.14, coat, side * 0.32, 1.74, 0);
-      }
-    }
-
-    const eyeY = look.face === "frog" ? 1.78 : 1.48;
-    for (const side of [-1, 1]) {
-      if (look.face === "panda" || look.face === "raccoon") {
-        addSphere(group, 0.12, dark, side * 0.17, eyeY, 0.34, 1.2, 0.9, 0.45);
-      }
-      addSphere(group, 0.062, eyeWhite, side * 0.16, eyeY, 0.37, 1, 1.05, 0.5);
-      addSphere(group, 0.034, iris, side * 0.155, eyeY - 0.005, 0.4, 1, 1.1, 0.48);
-    }
-    if (look.special === "beak") {
-      addSphere(group, 0.12, mat("#e99a32", 0.35), 0, 1.3, 0.42, 1.2, 0.55, 0.85);
-    } else if (look.special === "trunk") {
-      const trunk = new THREE.Mesh(cachedGeometry("crowd-trunk", () => new THREE.CapsuleGeometry(0.075, 0.34, 3, 7)), coat);
-      trunk.position.set(0, 1.16, 0.42);
-      trunk.rotation.x = -0.15;
-      group.add(trunk);
-    } else {
-      addSphere(group, 0.13, muzzle, 0, 1.28, 0.35, 1.25, 0.75, 0.72);
-      addSphere(group, 0.045, dark, 0, 1.38, 0.45, 1.1, 0.85, 0.7);
-    }
-
-    if (look.tail === "bushy") addSphere(group, 0.23, coat, 0, 0.45, -0.42, 0.92, 0.9, 1.35);
-    else if (look.tail === "long") {
-      const tail = new THREE.Mesh(cachedGeometry("crowd-tail", () => new THREE.CapsuleGeometry(0.07, 0.42, 3, 7)), coat);
-      tail.position.set(0, 0.43, -0.49);
-      tail.rotation.x = Math.PI / 2.3;
-      group.add(tail);
-    }
-    if (look.special === "mane") addSphere(group, 0.49, mat("#9a5e2d", 0.98), 0, 1.43, -0.06, 1.1, 1.08, 0.76);
-    if (look.special === "spines") {
-      const quills = new THREE.Mesh(cachedGeometry("crowd-quills", () => new THREE.ConeGeometry(0.36, 0.28, 8)), mat("#65452f", 0.97));
-      quills.position.set(0, 1.76, -0.12);
-      quills.rotation.x = -Math.PI / 2;
-      group.add(quills);
-    }
-    if (look.face === "tiger") {
-      for (const side of [-1, 1]) addBox(group, 0.035, 0.13, 0.025, dark, side * 0.27, 1.7, 0.3, false);
-    }
-    if (style.accessory === "cap") addSphere(group, 0.22, gold, 0, 1.83, 0.02, 1.2, 0.32, 1);
-    if (style.accessory === "scarf") addBox(group, 0.58, 0.1, 0.13, gold, 0, 1.02, 0.16, false);
-    group.userData.species = species;
-    group.userData.coatMaterial = coat;
-    group.userData.outfitMaterial = outfit;
-    group.userData.animatedArms = animatedArms;
-    group.userData.animatedLegs = animatedLegs;
-    return;
-  }
-
-  // Tail is placed behind the body first so it sits naturally in the silhouette.
   if (look.tail === "bushy") {
-    const tailRoot = addSphere(group, 0.26, coat, 0.02, 0.48, -0.4, 0.9, 0.92, 1.45);
-    tailRoot.rotation.x = -0.25;
-    addSphere(group, 0.17, belly, 0.02, 0.5, -0.72, 0.82, 0.82, 0.8);
+    sphere(0.25, coat, 0.02, 0.45, -0.39, 0.94, 0.92, 1.42);
+    sphere(0.14, belly, 0.02, 0.47, -0.65, 0.9, 0.9, 0.82);
   } else if (look.tail === "long") {
-    const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.55, 5, 10), coat);
-    tail.position.set(0, 0.43, -0.5);
-    tail.rotation.x = Math.PI / 2.6;
-    tail.rotation.z = -0.22;
-    group.add(tail);
-    addSphere(group, 0.09, coat, 0, 0.42, -0.82, 1, 0.9, 1.25);
+    const tail = capsule("mascot-tail-capsule", 0.075, 0.5, coat, 0, 0.44, -0.52);
+    tail.rotation.x = Math.PI / 2.55;
+    tail.rotation.z = -0.14;
+    sphere(0.075, coat, 0, 0.43, -0.82);
   } else if (look.tail === "short") {
-    addSphere(group, 0.11, coat, 0, 0.43, -0.39, 1, 0.88, 1);
+    sphere(0.105, coat, 0, 0.43, -0.39);
   }
 
-  // Soft rounded legs, tailored jacket and detailed shoes.
+  // Reference proportions: small round torso, oversized head, short arms and legs.
+  sphere(0.39, outfit, 0, 0.66, 0, 1.02, 1.13, 0.9);
+  sphere(0.23, belly, 0, 0.66, 0.31, 0.9, 1.05, 0.38);
+
   for (const side of [-1, 1]) {
-    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.23, 4, 9), coat);
-    leg.position.set(side * 0.18, 0.27, 0.015);
-    group.add(leg);
+    const leg = capsule("mascot-reference-leg", 0.09, 0.2, coat, side * 0.17, 0.27, 0.02);
     animatedLegs.push(leg);
-    addSphere(group, 0.135, sole, side * 0.19, 0.105, 0.11, 1.18, 0.55, 1.45);
-    addSphere(group, 0.105, outfit, side * 0.19, 0.16, 0.18, 1.05, 0.48, 1.2);
+    sphere(0.12, shoe, side * 0.18, 0.1, 0.13, 1.2, 0.58, 1.42);
 
-    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.31, 5, 9), coat);
-    arm.position.set(side * 0.36, 0.78, 0.015);
-    arm.rotation.z = side * -0.36;
-    group.add(arm);
+    const arm = capsule("mascot-reference-arm", 0.085, 0.27, coat, side * 0.36, 0.78, 0.02);
+    arm.rotation.z = side * -0.33;
     animatedArms.push(arm);
-    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.092, 0.092, 0.105, 16), trim);
-    cuff.position.set(side * 0.465, 0.64, 0.04);
-    cuff.rotation.z = side * -0.36;
-    group.add(cuff);
-    addSphere(group, 0.105, coat, side * 0.48, 0.55, 0.055, 1, 0.94, 0.95);
+    sphere(0.095, coat, side * 0.47, 0.58, 0.055);
   }
 
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.31, 0.46, 6, 12), outfit);
-  torso.position.set(0, 0.67, 0);
-  torso.scale.set(1.02, 1.0, 0.86);
-  torso.castShadow = true;
-  group.add(torso);
-
-  // Tailored chest panel, lapels, buttons, pockets and a fine gold waist line.
-  addSphere(group, 0.255, belly, 0, 0.69, 0.245, 0.83, 1.05, 0.38);
-  addBox(group, 0.48, 0.055, 0.045, trim, 0, 1.025, 0.286, false);
-  addBox(group, 0.17, 0.13, 0.035, outfit, -0.19, 0.88, 0.292, false);
-  addBox(group, 0.17, 0.13, 0.035, outfit, 0.19, 0.88, 0.292, false);
-  addBox(group, 0.075, 0.23, 0.045, trim, -0.18, 0.83, 0.31, false);
-  addBox(group, 0.075, 0.23, 0.045, trim, 0.18, 0.83, 0.31, false);
-  for (const y of [0.73, 0.86]) addSphere(group, 0.027, gold, 0.045, y, 0.325, 1, 1, 0.48);
-  addBox(group, 0.18, 0.16, 0.035, outfit, -0.19, 0.57, 0.28, false);
-  addBox(group, 0.18, 0.16, 0.035, outfit, 0.19, 0.57, 0.28, false);
-  addBox(group, 0.2, 0.025, 0.04, gold, 0.19, 0.66, 0.302, false);
-
-  // Neckline and a small official-style enamel badge make clothing feel finished.
-  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.035, 7, 24), trim);
-  collar.position.set(0, 1.02, 0.035);
-  collar.rotation.x = Math.PI / 2;
-  group.add(collar);
-  addSphere(group, 0.072, gold, 0.235, 0.91, 0.29, 1, 1, 0.55);
-  addSphere(group, 0.033, mat("#fff0c4", 0.28, 0.28), 0.235, 0.91, 0.33, 1, 1, 0.45);
-
-  // Lion's mane and the head are layered, giving the face a soft silhouette.
   if (look.special === "mane") {
-    const mane = mat("#9a5e2d", 0.98);
-    addSphere(group, 0.55, mane, 0, 1.47, -0.055, 1.14, 1.1, 0.82);
-    for (let index = 0; index < 9; index++) {
-      const angle = (index / 9) * Math.PI * 2;
-      addSphere(group, 0.13, mane, Math.cos(angle) * 0.43, 1.47 + Math.sin(angle) * 0.42, -0.015, 0.9, 1.18, 0.8);
+    const mane = mat("#a9672f", 0.96, 0);
+    sphere(0.62, mane, 0, 1.38, -0.06, 1.16, 1.08, 0.82);
+    for (let index = 0; index < 8; index++) {
+      const angle = (index / 8) * Math.PI * 2;
+      sphere(0.14, mane, Math.cos(angle) * 0.49, 1.38 + Math.sin(angle) * 0.43, -0.02, 0.9, 1.1, 0.8);
     }
   }
-  const head = addSphere(group, 0.45, coat, 0, 1.47, 0.035, 1.04, 0.98, 0.9);
-  head.castShadow = true;
+  sphere(0.57, coat, 0, 1.4, 0.025, 1.05, 1, 0.94);
 
-  // Species-specific ears with inset inner-ear details.
   for (const side of [-1, 1]) {
     if (look.ears === "point") {
-      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.145, 0.4, 12), coat);
-      ear.position.set(side * 0.29, 1.83, 0.015);
+      const ear = new THREE.Mesh(cachedGeometry("mascot-point-ear", () => new THREE.ConeGeometry(0.145, 0.37, 10)), coat);
+      ear.position.set(side * 0.32, 1.86, -0.01);
       ear.rotation.z = side * -0.18;
       group.add(ear);
-      const inner = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.25, 10), muzzle);
-      inner.position.set(side * 0.29, 1.84, 0.12);
-      inner.rotation.z = side * -0.18;
-      group.add(inner);
+      sphere(0.065, muzzle, side * 0.32, 1.85, 0.075, 0.9, 1.1, 0.5);
     } else if (look.ears === "long") {
-      const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.5, 5, 10), coat);
-      ear.position.set(side * 0.2, 1.94, 0.01);
-      ear.rotation.z = side * -0.12;
-      group.add(ear);
-      const inner = new THREE.Mesh(new THREE.CapsuleGeometry(0.043, 0.34, 4, 8), muzzle);
-      inner.position.set(side * 0.2, 1.96, 0.095);
-      inner.rotation.z = side * -0.12;
-      group.add(inner);
+      const ear = capsule("mascot-long-ear", 0.085, 0.48, coat, side * 0.2, 1.94, -0.02);
+      ear.rotation.z = side * -0.1;
+      const inner = capsule("mascot-long-ear-inner", 0.04, 0.34, muzzle, side * 0.2, 1.95, 0.06);
+      inner.rotation.z = side * -0.1;
     } else if (look.ears === "floppy") {
-      const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.37, 5, 9), coat);
-      ear.position.set(side * 0.37, 1.58, 0.015);
-      ear.rotation.z = side * -0.76;
-      group.add(ear);
-      addSphere(group, 0.055, muzzle, side * 0.4, 1.57, 0.105, 0.8, 1.2, 0.55);
+      const ear = capsule("mascot-floppy-ear", 0.1, 0.32, coat, side * 0.39, 1.53, -0.015);
+      ear.rotation.z = side * -0.72;
     } else if (look.ears === "round" || look.ears === "antler") {
-      addSphere(group, look.ears === "antler" ? 0.13 : 0.15, coat, side * 0.34, 1.76, 0.015, 1, 1, 0.72);
-      addSphere(group, 0.07, muzzle, side * 0.34, 1.765, 0.12, 1, 1, 0.4);
+      sphere(look.ears === "antler" ? 0.14 : 0.17, coat, side * 0.38, 1.78, -0.02, 1.05, 1, 0.8);
+      if (look.ears === "round") sphere(0.075, muzzle, side * 0.38, 1.78, 0.085, 1, 1, 0.45);
     }
   }
 
-  // Deer antlers, frog eye turrets, elephant ears and owl wings.
   if (look.ears === "antler") {
     for (const side of [-1, 1]) {
-      const antler = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.045, 0.38, 9), gold);
-      antler.position.set(side * 0.22, 2.04, 0);
-      antler.rotation.z = side * 0.36;
+      const antler = new THREE.Mesh(cachedGeometry("mascot-antler", () => new THREE.CylinderGeometry(0.025, 0.04, 0.34, 7)), accent);
+      antler.position.set(side * 0.22, 2.07, -0.02);
+      antler.rotation.z = side * 0.34;
       group.add(antler);
-      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.028, 0.22, 8), gold);
-      branch.position.set(side * 0.34, 2.15, 0.015);
-      branch.rotation.z = side * -0.66;
+      const branch = new THREE.Mesh(cachedGeometry("mascot-antler-branch", () => new THREE.CylinderGeometry(0.018, 0.026, 0.2, 7)), accent);
+      branch.position.set(side * 0.33, 2.17, 0);
+      branch.rotation.z = side * -0.58;
       group.add(branch);
     }
   }
   if (look.face === "frog") {
-    for (const side of [-1, 1]) addSphere(group, 0.16, coat, side * 0.22, 1.82, 0.14);
+    for (const side of [-1, 1]) sphere(0.17, coat, side * 0.23, 1.79, 0.17);
   }
   if (look.special === "trunk") {
-    for (const side of [-1, 1]) addSphere(group, 0.24, coat, side * 0.42, 1.47, -0.005, 1, 1.12, 0.45);
+    for (const side of [-1, 1]) sphere(0.23, coat, side * 0.43, 1.4, -0.02, 1, 1.08, 0.48);
   }
   if (look.special === "wings") {
-    for (const side of [-1, 1]) addSphere(group, 0.2, coat, side * 0.4, 0.83, -0.015, 0.68, 1.28, 0.48);
+    for (const side of [-1, 1]) sphere(0.22, coat, side * 0.42, 0.78, -0.08, 0.68, 1.25, 0.48);
   }
 
-  // Expressive eyes: dark socket, warm iris, glossy pupil and tiny catchlight.
-  const eyeY = look.face === "frog" ? 1.83 : 1.53;
+  const eyeY = look.face === "frog" ? 1.82 : 1.48;
   for (const side of [-1, 1]) {
-    if (look.face === "panda") addSphere(group, 0.125, dark, side * 0.175, eyeY, 0.36, 1, 1.18, 0.42);
-    if (look.face === "raccoon") addSphere(group, 0.12, dark, side * 0.175, eyeY, 0.365, 1.36, 0.78, 0.36);
-    const socket = addSphere(group, 0.093, dark, side * 0.165, eyeY, 0.37, 1, 1.12, 0.5);
-    const sclera = addSphere(group, 0.073, eyeWhite, side * 0.165, eyeY, 0.415, 1, 1.08, 0.45);
-    addSphere(group, 0.047, iris, side * 0.155, eyeY - 0.005, 0.451, 1, 1.08, 0.46);
-    addSphere(group, 0.027, dark, side * 0.155, eyeY - 0.006, 0.471, 1, 1.1, 0.42);
-    addSphere(group, 0.014, eyeWhite, side * 0.17 - 0.012, eyeY + 0.019, 0.49, 1, 1, 0.45);
-    addTube(group, [
-      new THREE.Vector3(side * 0.255, eyeY + 0.115, 0.38),
-      new THREE.Vector3(side * 0.17, eyeY + 0.145, 0.4),
-      new THREE.Vector3(side * 0.085, eyeY + 0.11, 0.38),
-    ], 0.018, coat);
-    socket.castShadow = false;
-    sclera.castShadow = false;
+    if (look.face === "panda") sphere(0.13, dark, side * 0.2, eyeY, 0.48, 1.1, 1.14, 0.55);
+    if (look.face === "raccoon") sphere(0.13, dark, side * 0.2, eyeY, 0.48, 1.3, 0.84, 0.48);
+    sphere(0.105, eyeWhite, side * 0.205, eyeY, 0.49, 1, 1.05, 0.52);
+    sphere(0.06, dark, side * 0.205, eyeY - 0.005, 0.545, 1, 1.08, 0.48);
+    sphere(0.022, eyeWhite, side * 0.18, eyeY + 0.028, 0.57);
   }
 
-  // Cheeks, muzzle, nose and a curved smile add a friendly character expression.
-  addSphere(group, 0.16, muzzle, -0.105, 1.3, 0.36, 1.03, 0.78, 0.72);
-  addSphere(group, 0.16, muzzle, 0.105, 1.3, 0.36, 1.03, 0.78, 0.72);
-  const noseColor = look.special === "beak" ? mat("#e99a32", 0.35) : dark;
   if (look.special === "beak") {
-    const upperBeak = new THREE.Mesh(new THREE.ConeGeometry(0.145, 0.24, 8), noseColor);
-    upperBeak.position.set(0, 1.34, 0.49);
-    upperBeak.rotation.x = Math.PI / 2;
-    group.add(upperBeak);
-    addSphere(group, 0.09, noseColor, 0, 1.27, 0.46, 1.25, 0.45, 0.9);
+    sphere(0.13, mat("#e9a12e", 0.52), 0, 1.27, 0.51, 1.2, 0.68, 0.92);
   } else if (look.special === "trunk") {
-    const trunk = new THREE.Mesh(new THREE.CapsuleGeometry(0.082, 0.43, 6, 10), coat);
-    trunk.position.set(0, 1.18, 0.47);
-    trunk.rotation.x = -0.16;
-    group.add(trunk);
-    addSphere(group, 0.086, muzzle, 0, 0.96, 0.51, 1, 0.7, 0.85);
+    const trunk = capsule("mascot-trunk", 0.085, 0.4, coat, 0, 1.16, 0.53);
+    trunk.rotation.x = -0.12;
+    sphere(0.075, muzzle, 0, 0.94, 0.56, 1, 0.75, 0.9);
   } else {
-    addSphere(group, 0.052, noseColor, 0, 1.39, 0.51, 1.15, 0.83, 0.75);
-    addTube(group, [
-      new THREE.Vector3(0, 1.35, 0.51),
-      new THREE.Vector3(0, 1.29, 0.53),
-      new THREE.Vector3(-0.075, 1.25, 0.5),
-    ], 0.012, dark);
-    addTube(group, [
-      new THREE.Vector3(0, 1.29, 0.53),
-      new THREE.Vector3(0.075, 1.25, 0.5),
-    ], 0.012, dark);
+    sphere(0.15, muzzle, -0.12, 1.27, 0.46, 1.05, 0.78, 0.8);
+    sphere(0.15, muzzle, 0.12, 1.27, 0.46, 1.05, 0.78, 0.8);
+    sphere(0.055, dark, 0, 1.36, 0.565, 1.15, 0.82, 0.65);
+    const smile = new THREE.Mesh(
+      cachedGeometry("mascot-smile-curve", () => new THREE.TorusGeometry(0.09, 0.012, 5, 14, Math.PI)),
+      dark,
+    );
+    smile.position.set(0, 1.205, 0.55);
+    smile.rotation.z = Math.PI;
+    group.add(smile);
   }
 
-  // Whisker pores and species markings.
-  if (["cat", "fox", "otter", "tiger", "raccoon"].includes(species)) {
-    for (const side of [-1, 1]) {
-      for (let dot = 0; dot < 3; dot++) addSphere(group, 0.012, dark, side * (0.16 + (dot % 2) * 0.025), 1.27 - Math.floor(dot / 2) * 0.035, 0.49, 1, 1, 0.6);
-    }
-  }
   if (look.face === "tiger") {
     for (const side of [-1, 1]) {
-      for (let stripe = 0; stripe < 3; stripe++) {
-        const mark = addBox(group, 0.045, 0.18, 0.026, dark, side * (0.29 + stripe * 0.055), 1.77 - stripe * 0.1, 0.32, false);
-        mark.rotation.z = side * (0.17 + stripe * 0.08);
+      for (let stripe = 0; stripe < 2; stripe++) {
+        const mark = addBox(group, 0.045, 0.15, 0.025, dark, side * (0.34 + stripe * 0.065), 1.72 - stripe * 0.08, 0.41, false);
+        mark.rotation.z = side * (0.16 + stripe * 0.08);
       }
     }
   }
   if (look.face === "cow") {
-    addSphere(group, 0.13, dark, -0.25, 1.6, -0.03, 1, 1.2, 0.45);
-    addSphere(group, 0.09, dark, 0.24, 1.26, -0.03, 1.2, 0.8, 0.45);
+    sphere(0.13, dark, -0.31, 1.6, -0.05, 1, 1.2, 0.45);
+    sphere(0.1, dark, 0.29, 1.27, -0.06, 1.15, 0.8, 0.45);
   }
   if (look.special === "spines") {
-    for (let index = 0; index < 9; index++) {
-      const x = (index - 4) * 0.08;
-      const spine = new THREE.Mesh(new THREE.ConeGeometry(0.047, 0.2, 7), mat("#65452f", 0.97));
-      spine.position.set(x, 1.82 - Math.abs(4 - index) * 0.012, -0.14);
-      spine.rotation.z = x * 0.62;
+    for (let index = 0; index < 7; index++) {
+      const x = (index - 3) * 0.1;
+      const spine = new THREE.Mesh(cachedGeometry("mascot-spine", () => new THREE.ConeGeometry(0.055, 0.18, 7)), mat("#65452f", 0.96, 0));
+      spine.position.set(x, 1.84 - Math.abs(3 - index) * 0.015, -0.16);
+      spine.rotation.z = x * 0.5;
       group.add(spine);
     }
   }
 
-  // Optional accessory. Metal and fabric tones are shared with the city design system.
   if (style.accessory === "cap") {
-    addSphere(group, 0.26, gold, 0, 1.91, 0.025, 1.22, 0.34, 1);
-    addBox(group, 0.5, 0.05, 0.23, mat("#b98d52", 0.52), 0, 1.88, 0.22, false);
+    sphere(0.24, accent, 0, 1.91, 0.02, 1.22, 0.34, 1);
+    addBox(group, 0.48, 0.05, 0.22, mat("#b98d52", 0.52), 0, 1.89, 0.2, false);
   } else if (style.accessory === "scarf") {
-    addBox(group, 0.67, 0.12, 0.15, gold, 0, 1.09, 0.2);
-    addBox(group, 0.14, 0.31, 0.1, trim, 0.2, 0.91, 0.24);
+    addBox(group, 0.62, 0.11, 0.14, accent, 0, 1.08, 0.2, false);
+    addBox(group, 0.13, 0.27, 0.1, accent, 0.18, 0.91, 0.24, false);
   } else if (style.accessory === "backpack") {
-    addBox(group, 0.39, 0.48, 0.22, mat("#98633e"), 0, 0.72, -0.34);
-    addBox(group, 0.24, 0.08, 0.035, gold, 0, 0.77, -0.47, false);
+    addBox(group, 0.36, 0.42, 0.2, mat("#98633e"), 0, 0.72, -0.32, false);
   }
 
   group.userData.species = species;
@@ -662,17 +490,18 @@ function createTreeForest(scene: THREE.Scene) {
   scene.add(branch);
 
   const foliageMaterial = cachedMaterial("instanced-tree-foliage", () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.99 }));
-  const foliage = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), foliageMaterial, placements.length * 8);
-  const colorOptions = ["#477f56", "#588f60", "#39734e", "#69976a"].map((color) => new THREE.Color(color));
+  const foliage = new THREE.InstancedMesh(
+    cachedGeometry("reference-tree-crown", () => new THREE.SphereGeometry(1, 16, 12)),
+    foliageMaterial,
+    placements.length * 5,
+  );
+  const colorOptions = ["#4f9961", "#61a96d", "#3f8855", "#79b77b"].map((color) => new THREE.Color(color));
   const clusters: [number, number, number, number, number, number][] = [
-    [-0.38, 1.24, 0.02, 0.52, 0.48, 0.47],
-    [0.36, 1.28, -0.06, 0.54, 0.46, 0.52],
-    [-0.12, 1.63, -0.12, 0.52, 0.48, 0.48],
-    [0.28, 1.68, 0.11, 0.49, 0.45, 0.5],
-    [-0.45, 1.55, 0.22, 0.42, 0.4, 0.46],
-    [0.48, 1.43, -0.2, 0.43, 0.45, 0.46],
-    [0.0, 1.94, 0.02, 0.42, 0.42, 0.4],
-    [0.02, 1.28, -0.32, 0.4, 0.45, 0.42],
+    [-0.34, 1.28, 0.02, 0.55, 0.52, 0.52],
+    [0.34, 1.3, -0.04, 0.56, 0.52, 0.54],
+    [-0.08, 1.72, -0.08, 0.54, 0.53, 0.52],
+    [0.27, 1.65, 0.16, 0.5, 0.48, 0.5],
+    [0.0, 2.02, 0.0, 0.46, 0.44, 0.46],
   ];
   let leafIndex = 0;
   placements.forEach((tree, treeIndex) => {
@@ -933,158 +762,151 @@ function createPaverMaterial() {
 
 function makeTower(scene: THREE.Scene, x: number, z: number, width: number, depth: number, floors: number, hue: string, rounded = false) {
   const group = new THREE.Group();
-  const floorHeight = 0.62;
+  const floorHeight = 0.72;
   const height = floors * floorHeight;
   const seed = Math.round(Math.abs(x * 7 + z * 11)) % 19;
-  const frame = mat(hue, 0.44, 0.3);
-  const darkFrame = mat("#46575b", 0.52, 0.28);
-  const facade = createFacadeMaterial(hue, seed, rounded);
-  const glass = cachedMaterial("tower-glass", () => new THREE.MeshPhysicalMaterial({
-    color: "#718e99",
-    roughness: 0.14,
-    metalness: 0.62,
-    clearcoat: 0.8,
-    clearcoatRoughness: 0.12,
-    emissive: "#1d3541",
-    emissiveIntensity: 0.08,
+  const frame = mat("#384c55", 0.58, 0.2);
+  const darkFrame = mat("#293d47", 0.52, 0.24);
+  const glass = cachedMaterial("reference-tower-glass", () => new THREE.MeshPhysicalMaterial({
+    color: "#7699a8", roughness: 0.2, metalness: 0.42, clearcoat: 0.72, clearcoatRoughness: 0.2,
   }));
-  const goldTrim = mat("#bd9862", 0.36, 0.46);
-  const podium = mat("#59686a", 0.62, 0.2);
-  const darkPodium = mat("#35474b", 0.58, 0.28);
-  const roofTop = 1.38 + height;
+  const bronze = mat("#c7a06a", 0.42, 0.32);
+  const concrete = mat("#d9c49e", 0.78, 0.02);
+  const paleTrim = mat("#eee0c5", 0.66, 0.04);
+  const podium = mat("#627276", 0.72, 0.1);
+  const darkPodium = mat("#3d5056", 0.7, 0.12);
+  const roofTop = 1.35 + height;
 
-  // Deep stone podium, glass retail frontage and a recessed double-height lobby.
-  addBox(group, width + 1.0, 0.6, depth + 1.0, darkPodium, 0, 0.3, 0);
-  addBox(group, width + 0.48, 0.66, depth + 0.48, podium, 0, 0.86, 0);
-  addBox(group, width + 0.2, 0.12, depth + 0.2, goldTrim, 0, 1.23, 0);
-
-  const shopCount = Math.max(3, Math.min(6, Math.floor(width / 0.7)));
-  const shopWidth = (width + 0.1) / shopCount;
-  const shopWindows: { position: [number, number, number]; scale: [number, number, number] }[] = [];
-  const shopMullions: { position: [number, number, number]; scale: [number, number, number] }[] = [];
-  for (let shop = 0; shop < shopCount; shop++) {
-    const shopX = -width / 2 + shopWidth * (shop + 0.5);
-    shopWindows.push({ position: [shopX, 0.82, depth / 2 + 0.27], scale: [shopWidth * 0.75, 0.47, 0.035] });
-    shopMullions.push({ position: [shopX - shopWidth * 0.49, 0.83, depth / 2 + 0.3], scale: [0.045, 0.54, 0.05] });
-  }
-  addInstancedBoxes(group, glass, shopWindows);
-  addInstancedBoxes(group, goldTrim, shopMullions);
-  addBox(group, 0.62, 0.65, 0.075, darkFrame, 0, 0.84, depth / 2 + 0.32);
-  addBox(group, 0.26, 0.58, 0.035, glass, -0.16, 0.85, depth / 2 + 0.37, false);
-  addBox(group, 0.26, 0.58, 0.035, glass, 0.16, 0.85, depth / 2 + 0.37, false);
-  addBox(group, width * 0.68, 0.08, 0.68, frame, 0, 1.27, depth / 2 + 0.35);
-  addBox(group, width * 0.68, 0.035, 0.68, goldTrim, 0, 1.22, depth / 2 + 0.35, false);
-  for (const side of [-1, 1]) {
-    addBox(group, 0.12, 0.78, 0.08, goldTrim, side * width * 0.25, 0.83, depth / 2 + 0.3, false);
-    addBox(group, 0.045, 0.5, depth * 0.68, glass, side * (width / 2 + 0.245), 0.83, 0, false);
-  }
+  addBox(group, width + 1.25, 0.62, depth + 1.25, darkPodium, 0, 0.31, 0);
+  addBox(group, width + 0.62, 0.55, depth + 0.62, podium, 0, 0.88, 0);
+  addBox(group, width + 0.34, 0.13, depth + 0.34, bronze, 0, 1.22, 0, false);
 
   if (rounded) {
-    const radius = width * 0.52;
-    const core = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.02, height, 32, 1), facade);
-    core.position.y = 1.38 + height / 2;
-    core.castShadow = true;
-    group.add(core);
-
-    const floorRings = new THREE.InstancedMesh(
-      new THREE.CylinderGeometry(1, 1, 1, 32),
-      goldTrim,
-      floors,
+    const radius = Math.max(width, depth) * 0.56;
+    const body = new THREE.Mesh(
+      cachedGeometry("reference-round-tower-" + radius.toFixed(2) + "-" + height.toFixed(2), () => new THREE.CylinderGeometry(radius, radius * 1.02, height, 40, 1)),
+      concrete,
     );
-    const ringDummy = new THREE.Object3D();
-    for (let floor = 0; floor < floors; floor++) {
-      const y = 1.4 + floor * floorHeight;
-      ringDummy.position.set(0, y, 0);
-      ringDummy.scale.set(radius * 2.08, 0.055, radius * 2.08);
-      ringDummy.updateMatrix();
-      floorRings.setMatrixAt(floor, ringDummy.matrix);
-    }
-    floorRings.instanceMatrix.needsUpdate = true;
-    floorRings.castShadow = false;
-    group.add(floorRings);
+    body.position.y = 1.35 + height / 2;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
 
-    const panes: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
-    const mullions: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
+    const ringGeometry = cachedGeometry("reference-round-ring-" + radius.toFixed(2), () => new THREE.TorusGeometry(radius + 0.018, 0.075, 7, 44));
+    const rings = new THREE.InstancedMesh(ringGeometry, bronze, floors + 1);
+    const dummy = new THREE.Object3D();
+    for (let floor = 0; floor <= floors; floor++) {
+      dummy.position.set(0, 1.38 + floor * floorHeight, 0);
+      dummy.rotation.set(Math.PI / 2, 0, 0);
+      dummy.updateMatrix();
+      rings.setMatrixAt(floor, dummy.matrix);
+    }
+    rings.instanceMatrix.needsUpdate = true;
+    group.add(rings);
+
+    const reveals = new THREE.InstancedMesh(unitBoxGeometry(), paleTrim, 10);
+    for (let panel = 0; panel < 10; panel++) {
+      const angle = (panel / 10) * Math.PI * 2;
+      dummy.position.set(Math.sin(angle) * (radius + 0.018), 1.35 + height / 2, Math.cos(angle) * (radius + 0.018));
+      dummy.rotation.set(0, angle, 0);
+      dummy.scale.set(0.045, height, 0.04);
+      dummy.updateMatrix();
+      reveals.setMatrixAt(panel, dummy.matrix);
+    }
+    reveals.instanceMatrix.needsUpdate = true;
+    group.add(reveals);
+
+    const glassPanels: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
     for (let floor = 0; floor < floors; floor++) {
-      const y = 1.4 + floor * floorHeight + floorHeight * 0.42;
-      for (let pane = 0; pane < 10; pane++) {
-        const angle = (pane / 10) * Math.PI * 2;
-        panes.push({
-          position: [Math.sin(angle) * (radius + 0.025), y, Math.cos(angle) * (radius + 0.025)],
-          scale: [0.4, floorHeight * 0.54, 0.028],
+      for (let panel = 0; panel < 10; panel++) {
+        const angle = (panel / 10) * Math.PI * 2;
+        glassPanels.push({
+          position: [Math.sin(angle) * (radius + 0.024), 1.38 + floor * floorHeight + floorHeight * 0.52, Math.cos(angle) * (radius + 0.024)],
+          scale: [0.29, floorHeight * 0.38, 0.035],
           rotation: [0, angle, 0],
         });
       }
     }
-    for (let fin = 0; fin < 8; fin++) {
-      const angle = (fin / 8) * Math.PI * 2;
-      mullions.push({
-        position: [Math.sin(angle) * (radius + 0.035), 1.38 + height / 2, Math.cos(angle) * (radius + 0.035)],
-        scale: [0.06, height, 0.065],
-        rotation: [0, angle, 0],
-      });
-    }
-    addInstancedBoxes(group, glass, panes);
-    addInstancedBoxes(group, frame, mullions);
+    addInstancedBoxes(group, glass, glassPanels);
+    addBox(group, width * 0.52, 0.18, depth * 0.52, paleTrim, 0, roofTop + 0.1, 0);
+    addBox(group, width * 0.38, 0.46, depth * 0.4, concrete, 0, roofTop + 0.4, 0);
   } else {
-    // A few towers use a stepped crown for a recognisable skyline silhouette.
-    const stepped = seed % 4 === 0 && floors >= 10;
+    const stepped = seed % 4 === 0 && floors >= 11;
+    const baseY = 1.35;
+    const lowerHeight = stepped ? height * 0.72 : height;
+    const upperHeight = height - lowerHeight;
+    const upperWidth = width * 0.76;
+    const upperDepth = depth * 0.78;
+    const core = new THREE.Mesh(
+      new THREE.BoxGeometry(width, lowerHeight, depth),
+      createFacadeMaterial(hue, seed, false),
+    );
+    core.position.set(0, baseY + lowerHeight / 2, 0);
+    core.castShadow = true;
+    core.receiveShadow = true;
+    group.add(core);
+
     if (stepped) {
-      const lowerHeight = height * 0.76;
-      const lowerCore = new THREE.Mesh(new THREE.BoxGeometry(width, lowerHeight, depth), facade);
-      lowerCore.position.set(0, 1.38 + lowerHeight / 2, 0);
-      lowerCore.castShadow = true;
-      group.add(lowerCore);
-      const upperWidth = width * 0.76;
-      const upperDepth = depth * 0.78;
-      const upperCore = new THREE.Mesh(new THREE.BoxGeometry(upperWidth, height - lowerHeight, upperDepth), facade);
-      upperCore.position.set(width * 0.08, 1.38 + lowerHeight + (height - lowerHeight) / 2, -depth * 0.04);
-      upperCore.castShadow = true;
-      group.add(upperCore);
-    } else {
-      const core = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), facade);
-      core.position.set(0, 1.38 + height / 2, 0);
-      core.castShadow = true;
-      group.add(core);
+      const top = new THREE.Mesh(
+        new THREE.BoxGeometry(upperWidth, upperHeight, upperDepth),
+        createFacadeMaterial(hue, seed + 3, false),
+      );
+      top.position.set(width * 0.08, baseY + lowerHeight + upperHeight / 2, -depth * 0.04);
+      top.castShadow = true;
+      top.receiveShadow = true;
+      group.add(top);
     }
 
-    const horizontalBands = [];
-    const verticalFins = [];
-    for (let floor = 0; floor <= floors; floor++) {
-      const floorY = 1.4 + floor * floorHeight;
-      horizontalBands.push({ position: [0, floorY, 0] as [number, number, number], scale: [width + 0.12, 0.045, depth + 0.12] as [number, number, number] });
+    const windowPanels: { position: [number, number, number]; scale: [number, number, number]; rotation?: [number, number, number] }[] = [];
+    const horizontalBands: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+    const verticalFrames: { position: [number, number, number]; scale: [number, number, number]; rotation?: [number, number, number] }[] = [];
+    const columns = Math.max(4, Math.min(7, Math.floor(width / 0.58)));
+    for (let floor = 0; floor < floors; floor++) {
+      const y = baseY + floor * floorHeight + floorHeight * 0.53;
+      const topFloor = stepped && floor >= Math.floor(floors * 0.72);
+      const activeWidth = topFloor ? upperWidth : width;
+      const activeDepth = topFloor ? upperDepth : depth;
+      const offsetX = topFloor ? width * 0.08 : 0;
+      const offsetZ = topFloor ? -depth * 0.04 : 0;
+      const frontZ = offsetZ + activeDepth / 2 + 0.035;
+      const sideX = offsetX + activeWidth / 2 + 0.035;
+      const paneWidth = activeWidth / columns;
+      for (let column = 0; column < columns; column++) {
+        const px = offsetX - activeWidth / 2 + paneWidth * (column + 0.5);
+        windowPanels.push({ position: [px, y, frontZ], scale: [paneWidth * 0.72, floorHeight * 0.64, 0.045] });
+        windowPanels.push({ position: [px, y, -frontZ], scale: [paneWidth * 0.72, floorHeight * 0.64, 0.045] });
+        const pz = offsetZ - activeDepth / 2 + activeDepth * (column + 0.5) / columns;
+        windowPanels.push({ position: [sideX, y, pz], scale: [paneWidth * 0.72, floorHeight * 0.64, 0.045], rotation: [0, Math.PI / 2, 0] });
+        windowPanels.push({ position: [-sideX + offsetX * 2, y, pz], scale: [paneWidth * 0.72, floorHeight * 0.64, 0.045], rotation: [0, Math.PI / 2, 0] });
+      }
+      const bandY = baseY + (floor + 1) * floorHeight;
+      horizontalBands.push({ position: [0, bandY, frontZ - 0.015], scale: [activeWidth + 0.1, 0.055, 0.09] });
+      horizontalBands.push({ position: [0, bandY, -frontZ + 0.015], scale: [activeWidth + 0.1, 0.055, 0.09] });
+      horizontalBands.push({ position: [sideX - 0.02, bandY, offsetZ], scale: [0.09, 0.055, activeDepth + 0.1] });
+      horizontalBands.push({ position: [-sideX + offsetX * 2 + 0.02, bandY, offsetZ], scale: [0.09, 0.055, activeDepth + 0.1] });
     }
-    const columns = Math.max(4, Math.min(7, Math.floor(width / 0.66)));
     for (let column = 0; column <= columns; column++) {
-      const finX = -width / 2 + (column / columns) * width;
-      verticalFins.push({ position: [finX, 1.4 + height / 2, depth / 2 + 0.045] as [number, number, number], scale: [0.045, height, 0.075] as [number, number, number] });
+      const px = -width / 2 + (column / columns) * width;
+      verticalFrames.push({ position: [px, baseY + height / 2, depth / 2 + 0.06], scale: [0.055, height, 0.09] });
+      verticalFrames.push({ position: [px, baseY + height / 2, -depth / 2 - 0.06], scale: [0.055, height, 0.09] });
+      const pz = -depth / 2 + (column / columns) * depth;
+      verticalFrames.push({ position: [width / 2 + 0.06, baseY + height / 2, pz], scale: [0.09, height, 0.055] });
+      verticalFrames.push({ position: [-width / 2 - 0.06, baseY + height / 2, pz], scale: [0.09, height, 0.055] });
     }
-    addInstancedBoxes(group, frame, horizontalBands);
-    addInstancedBoxes(group, goldTrim, verticalFins);
+    addInstancedBoxes(group, glass, windowPanels);
+    addInstancedBoxes(group, bronze, horizontalBands);
+    addInstancedBoxes(group, darkFrame, verticalFrames);
+
+    addBox(group, width + 0.36, 0.2, depth + 0.36, paleTrim, 0, roofTop + 0.08, 0);
+    addBox(group, width * 0.38, 0.54, depth * 0.42, darkFrame, width * 0.08, roofTop + 0.43, -depth * 0.08);
+    addBox(group, width * 0.18, 0.24, depth * 0.2, bronze, -width * 0.22, roofTop + 0.37, depth * 0.13);
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.04, 0.8, 8), bronze);
+    antenna.position.set(width * 0.12, roofTop + 0.92, 0);
+    group.add(antenna);
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), bronze);
+    beacon.position.set(width * 0.12, roofTop + 1.35, 0);
+    group.add(beacon);
   }
-
-  // Refined crown with accessible mechanical equipment and a compact rooftop garden.
-  addBox(group, width + 0.42, 0.2, depth + 0.42, frame, 0, roofTop + 0.08, 0);
-  addBox(group, width * 0.38, 0.58, depth * 0.42, darkFrame, width * 0.1, roofTop + 0.43, -depth * 0.08);
-  addBox(group, width * 0.17, 0.24, depth * 0.2, goldTrim, -width * 0.22, roofTop + 0.37, depth * 0.13);
-
-  const hvac = mat("#788487", 0.7, 0.24);
-  const hvacUnits: { position: [number, number, number]; scale: [number, number, number] }[] = [];
-  const fanGrilles: { position: [number, number, number]; scale: [number, number, number] }[] = [];
-  for (let unit = 0; unit < 3; unit++) {
-    const unitX = -width * 0.34 + unit * width * 0.32;
-    hvacUnits.push({ position: [unitX, roofTop + 0.24, depth * 0.28], scale: [0.46, 0.3, 0.42] });
-    fanGrilles.push({ position: [unitX, roofTop + 0.41, depth * 0.28], scale: [0.35, 0.045, 0.32] });
-  }
-  addInstancedBoxes(group, hvac, hvacUnits);
-  addInstancedBoxes(group, darkFrame, fanGrilles);
-
-  const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.8, 9), goldTrim);
-  antenna.position.set(width * 0.12, roofTop + 0.94, 0);
-  group.add(antenna);
-  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), mat("#d64c43", 0.32));
-  beacon.position.set(width * 0.12, roofTop + 1.38, 0);
-  group.add(beacon);
 
   group.position.set(x, 0.35, z);
   scene.add(group);
@@ -1134,103 +956,36 @@ function createStuccoMaterial(color: string, seed: number) {
 
 function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number, detail: "full" | "simple" = "full") {
   const group = new THREE.Group();
-  const walls = ["#e8e1d4", "#d9e3df", "#e5d6c4", "#d5e0e0"];
-  const roofs = ["#3e5b5a", "#786657", "#4e6671", "#9b7256"];
-  const wall = createStuccoMaterial(walls[variant % walls.length], variant);
-  const roof = mat(roofs[variant % roofs.length], 0.58, 0.2);
-  const glass = cachedMaterial("house-glass", () => new THREE.MeshPhysicalMaterial({ color: "#9ac5c8", roughness: 0.14, metalness: 0.42, clearcoat: 0.78 }));
-  const frame = mat("#f3eee3", 0.65, 0.08);
-  const bronze = mat("#9a7653", 0.42, 0.38);
-  const floors = 1 + (variant % 3);
-  const floorHeight = 0.72;
-  const width = 2.15;
-  const depth = 1.72;
-  const height = floors * floorHeight;
+  const walls = ["#f4eee2", "#e5efec", "#efe3d2", "#e4eceb"];
+  const roofs = ["#f3a982", "#acd2d4", "#d9c49e", "#e8b8a0"];
+  const wall = mat(walls[variant % walls.length], 0.92, 0);
+  const roof = mat(roofs[variant % roofs.length], 0.62, 0.04);
+  const darkTrim = mat("#465d5a", 0.7, 0.08);
+  const glass = cachedMaterial("reference-home-glass", () => new THREE.MeshStandardMaterial({ color: "#8fc0c5", roughness: 0.24, metalness: 0.12 }));
+  const width = 2.45 + (variant % 2) * 0.25;
+  const depth = 1.95;
+  const height = detail === "full" && variant === 2 ? 1.8 : 1.35;
 
-  if (detail === "simple") {
-    // Residential LOD: preserve architectural identity while keeping large neighbourhoods inexpensive.
-    addBox(group, width + 0.34, 0.14, depth + 0.34, mat("#77796f"), 0, 0.07, 0);
-    addBox(group, width, height, depth, wall, 0, 0.14 + height / 2, 0);
-    addBox(group, width + 0.28, 0.16, depth + 0.28, roof, 0, 0.14 + height + 0.08, 0);
-    addBox(group, width + 0.16, 0.05, depth + 0.16, bronze, 0, 0.14 + height + 0.18, 0, false);
-    const windowTransforms: { position: [number, number, number]; scale: [number, number, number] }[] = [];
-    for (let floor = 0; floor < floors; floor++) {
-      const y = 0.34 + floor * floorHeight + 0.2;
-      for (const windowX of [-0.65, 0, 0.65]) {
-        windowTransforms.push({ position: [windowX, y, depth / 2 + 0.035], scale: [0.36, 0.32, 0.04] });
-      }
-    }
-    addInstancedBoxes(group, glass, windowTransforms);
-    addBox(group, 0.48, 0.68, 0.08, bronze, -0.72, 0.52, depth / 2 + 0.05);
-    addBox(group, 0.38, 0.58, 0.04, glass, -0.72, 0.53, depth / 2 + 0.1, false);
-    addBox(group, 0.75, 0.075, 0.38, frame, 0.38, 0.76, depth / 2 + 0.2);
-    addBox(group, 0.5, 0.06, 0.34, mat("#6f8b68"), 0.8, 0.24, depth / 2 + 0.25);
-    group.position.set(x, 0.42, z);
-    parent.add(group);
-    return group;
+  addBox(group, width + 0.32, 0.16, depth + 0.32, darkTrim, 0, 0.08, 0);
+  addBox(group, width, height, depth, wall, 0, 0.18 + height / 2, 0);
+  addBox(group, width + 0.28, 0.18, depth + 0.28, roof, 0, 0.18 + height + 0.08, 0);
+  addBox(group, width + 0.1, 0.055, depth + 0.1, darkTrim, 0, 0.18 + height + 0.19, 0, false);
+
+  const windowY = 0.18 + Math.min(height - 0.48, 0.75);
+  for (const px of [-0.63, 0.58]) {
+    addBox(group, 0.58, 0.5, 0.055, darkTrim, px, windowY, depth / 2 + 0.035, false);
+    addBox(group, 0.48, 0.4, 0.035, glass, px, windowY, depth / 2 + 0.072, false);
+    addBox(group, 0.035, 0.42, 0.035, darkTrim, px, windowY, depth / 2 + 0.092, false);
   }
+  addBox(group, 0.42, 0.78, 0.06, darkTrim, -0.86, 0.57, depth / 2 + 0.05);
+  addBox(group, 0.31, 0.65, 0.035, glass, -0.86, 0.58, depth / 2 + 0.09, false);
+  addBox(group, 0.72, 0.09, 0.42, roof, 0.55, 0.94, depth / 2 + 0.2, false);
 
-  addBox(group, width + 0.42, 0.16, depth + 0.42, mat("#77796f"), 0, 0.08, 0);
-  addBox(group, width + 0.08, 0.12, depth + 0.08, bronze, 0, 0.18, 0);
-  addBox(group, width, height, depth, wall, 0, 0.22 + height / 2, 0);
-
-  // Raised roof slab with a warm timber soffit and a clean architectural parapet.
-  addBox(group, width + 0.32, 0.17, depth + 0.32, roof, 0, 0.22 + height + 0.08, 0);
-  addBox(group, width + 0.18, 0.07, depth + 0.18, bronze, 0, 0.22 + height + 0.2, 0);
-  addBox(group, width * 0.34, 0.16, depth * 0.36, roof, width * 0.23, 0.22 + height + 0.31, -depth * 0.2);
-  // Roof garden, skylight and solar panels add believable residential utility details.
-  addBox(group, 0.6, 0.06, 0.48, mat("#7ca0a2", 0.18, 0.5), -0.58, 0.22 + height + 0.28, -0.24, false);
-  const solar = cachedMaterial("house-solar", () => new THREE.MeshStandardMaterial({ color: "#294b59", roughness: 0.2, metalness: 0.58 }));
-  for (let panel = 0; panel < 2; panel++) {
-    const solarPanel = addBox(group, 0.44, 0.045, 0.54, solar, 0.35 + panel * 0.48, 0.22 + height + 0.32, -0.28, false);
-    solarPanel.rotation.x = -0.12;
-    for (let line = 0; line < 3; line++) {
-      const gridLine = addBox(group, 0.012, 0.012, 0.5, mat("#8cb5ba", 0.3, 0.4), 0.15 + panel * 0.48 + line * 0.15, 0.22 + height + 0.35, -0.28, false);
-      gridLine.rotation.x = -0.12;
-    }
-  }
-
-  for (let floor = 0; floor < floors; floor++) {
-    const y = 0.34 + floor * floorHeight;
-    addBox(group, width + 0.1, 0.045, depth + 0.1, frame, 0, y, 0, false);
-    for (const windowX of [-0.65, 0.0, 0.65]) {
-      addBox(group, 0.43, 0.42, 0.045, bronze, windowX, y + 0.35, depth / 2 + 0.035, false);
-      addBox(group, 0.34, 0.34, 0.035, glass, windowX, y + 0.36, depth / 2 + 0.065, false);
-      addBox(group, 0.035, 0.36, 0.035, frame, windowX, y + 0.36, depth / 2 + 0.09, false);
-    }
-    for (const side of [-1, 1]) {
-      addBox(group, 0.045, 0.38, 0.48, bronze, side * (width / 2 + 0.025), y + 0.36, -0.38, false);
-      addBox(group, 0.035, 0.3, 0.37, glass, side * (width / 2 + 0.055), y + 0.37, -0.38, false);
-      addBox(group, 0.035, 0.32, 0.035, frame, side * (width / 2 + 0.08), y + 0.37, -0.38, false);
-    }
-  }
-
-  // Recessed entrance, glass door, side lights and front steps.
-  addBox(group, 0.58, 0.7, 0.07, bronze, -0.72, 0.58, depth / 2 + 0.05);
-  addBox(group, 0.42, 0.58, 0.035, glass, -0.72, 0.59, depth / 2 + 0.1, false);
-  addBox(group, 0.16, 0.65, 0.055, frame, -0.72, 0.6, depth / 2 + 0.13, false);
-  addBox(group, 0.45, 0.13, 0.5, frame, -0.72, 0.25, depth / 2 + 0.28);
-  addBox(group, 0.6, 0.1, 0.68, bronze, -0.72, 0.08, depth / 2 + 0.34);
-
-  if (floors > 1) {
-    // A full-width balcony with slim metal balustrade.
-    addBox(group, 1.18, 0.09, 0.48, frame, 0.36, floorHeight + 0.38, depth / 2 + 0.22);
-    addBox(group, 1.18, 0.045, 0.045, bronze, 0.36, floorHeight + 0.72, depth / 2 + 0.43, false);
-    for (let post = 0; post < 6; post++) {
-      addBox(group, 0.035, 0.31, 0.035, bronze, -0.2 + post * 0.22, floorHeight + 0.55, depth / 2 + 0.43, false);
-    }
-  }
-  if (floors > 2) {
-    addBox(group, width * 0.42, 0.08, 0.62, roof, -0.42, floorHeight * 2 + 0.44, depth / 2 + 0.18);
-    addBox(group, 0.055, 0.31, 0.055, bronze, -0.42, floorHeight * 2 + 0.61, depth / 2 + 0.49);
-  }
-
-  // Landscape strip and entry lighting make every home feel occupied.
-  addBox(group, 0.44, 0.3, 0.3, mat("#718d66"), 0.78, 0.33, depth / 2 + 0.34);
-  addSphere(group, 0.15, mat("#56835d"), 0.78, 0.52, depth / 2 + 0.34, 1.1, 1.1, 0.9);
-  const doorLight = cachedMaterial("house-door-light", () => new THREE.MeshStandardMaterial({ color: "#f7dfab", emissive: "#dca958", emissiveIntensity: 0.6 }));
-  addSphere(group, 0.045, doorLight, -1.1, 0.86, depth / 2 + 0.1, 0.75, 0.75, 0.75);
-
+  addBox(group, 0.42, 0.24, 0.34, darkTrim, 0.58, 0.18 + height + 0.29, -0.24, false);
+  addBox(group, 0.34, 0.05, 0.24, glass, 0.58, 0.18 + height + 0.42, -0.24, false);
+  addBox(group, 0.42, 0.08, 0.55, darkTrim, width / 2 + 0.16, 0.68, 0.15, false);
+  addBox(group, 0.46, 0.2, 0.34, mat("#8eaa79", 0.98, 0), width / 2 + 0.32, 0.26, depth / 2 + 0.22, false);
+  addSphere(group, 0.16, mat("#6c9a66", 0.98, 0), width / 2 + 0.32, 0.48, depth / 2 + 0.22);
   group.position.set(x, 0.42, z);
   parent.add(group);
   return group;
