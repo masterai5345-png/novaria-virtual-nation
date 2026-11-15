@@ -2303,6 +2303,8 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
     const selectedResidentModel = new THREE.Group();
     selectedResidentModel.visible = false;
     scene.add(selectedResidentModel);
+    const selectedResidentMascot = new THREE.Group();
+    selectedResidentModel.add(selectedResidentMascot);
     const selectedResidentMarker = new THREE.Mesh(
       new THREE.TorusGeometry(0.72, 0.075, 8, 28),
       new THREE.MeshStandardMaterial({ color: "#f2c36f", metalness: 0.5, roughness: 0.32, emissive: "#8e642d", emissiveIntensity: 0.22 }),
@@ -2430,7 +2432,7 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
         activeResidentId = requestedResident?.id ?? null;
         selectedResidentModel.visible = Boolean(requestedResident);
         if (requestedResident) {
-          createMascot(selectedResidentModel, requestedResident.species || "fox", requestedResident.avatarStyle || {});
+          createMascot(selectedResidentMascot, requestedResident.species || "fox", requestedResident.avatarStyle || {});
           selectedResidentModel.visible = true;
           const seed = [...requestedResident.id].reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 7);
           const district = seed % 4;
@@ -2479,6 +2481,7 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
       player.position.y = 0.42 + Math.sin(time * (moving ? 0.014 : 0.0022)) * (moving ? 0.075 : 0.025);
       animateMascot(player, time * (moving ? 0.015 : 0.002), moving ? 0.52 : 0.035);
       animateMascot(mayor, time * 0.0018, 0.025);
+      if (selectedResidentModel.visible) animateMascot(selectedResidentMascot, time * 0.005, 0.08);
 
       npcGroups.forEach((npc, index) => {
         const phase = Number(npc.userData.phase ?? 0);
