@@ -348,3 +348,11 @@ SET avatar_species = (ARRAY[
   'elephant', 'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
 ]::text[])[1 + (get_byte(decode(md5(id::text), 'hex'), 0) % 27)]
 WHERE avatar_species = 'otter';
+
+
+-- Optional public Instagram username used by the city mascot finder.
+-- A citizen appears in public resident search only after choosing a handle.
+ALTER TABLE citizens ADD COLUMN IF NOT EXISTS social_handle TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS citizens_social_handle_unique_idx
+  ON citizens (LOWER(social_handle))
+  WHERE social_handle IS NOT NULL AND social_handle <> '';
