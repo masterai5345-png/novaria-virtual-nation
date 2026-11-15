@@ -952,52 +952,132 @@ function makeTreeCluster(scene: THREE.Scene, centerX: number, centerZ: number, w
 
 function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
   const car = new THREE.Group();
-  const body = mat(color, 0.32, 0.24);
-  const glass = new THREE.MeshStandardMaterial({
-    color: "#8fb6c0",
-    roughness: 0.14,
-    metalness: 0.52,
-    transparent: true,
-    opacity: 0.94,
+  const body = new THREE.MeshPhysicalMaterial({ color, roughness: 0.28, metalness: 0.18, clearcoat: 0.88, clearcoatRoughness: 0.16 });
+  const glass = new THREE.MeshPhysicalMaterial({ color: "#7199a5", roughness: 0.11, metalness: 0.42, transparent: true, opacity: 0.92, clearcoat: 1 });
+  const rubber = mat("#202528", 0.96);
+  const chrome = mat("#bcc8c4", 0.22, 0.82);
+  const darkChrome = mat("#263437", 0.45, 0.54);
+  const headlamp = new THREE.MeshStandardMaterial({ color: "#fff4cf", emissive: "#ffdc91", emissiveIntensity: 0.78, roughness: 0.2 });
+  const tailLamp = new THREE.MeshStandardMaterial({ color: "#d34b42", emissive: "#a72a26", emissiveIntensity: 0.48 });
+  const wheels: THREE.Group[] = [];
+
+  // Sculpted body shell with a curved bonnet, roofline and boot.
+  const shell = new THREE.Shape();
+  shell.moveTo(-0.98, 0.2);
+  shell.lineTo(-0.96, 0.4);
+  shell.quadraticCurveTo(-0.94, 0.55, -0.72, 0.57);
+  shell.lineTo(-0.44, 0.59);
+  shell.lineTo(-0.22, 0.94);
+  shell.quadraticCurveTo(0.0, 1.04, 0.23, 0.94);
+  shell.lineTo(0.52, 0.58);
+  shell.lineTo(0.82, 0.56);
+  shell.quadraticCurveTo(1.0, 0.53, 1.0, 0.32);
+  shell.lineTo(0.94, 0.2);
+  shell.closePath();
+  const shellGeometry = new THREE.ExtrudeGeometry(shell, {
+    depth: 0.82,
+    bevelEnabled: true,
+    bevelSegments: 4,
+    steps: 1,
+    bevelSize: 0.035,
+    bevelThickness: 0.04,
+    curveSegments: 10,
   });
-  const rubber = mat("#20262a", 0.96);
-  const chrome = mat("#b9c6c4", 0.24, 0.78);
-  const headlamp = new THREE.MeshStandardMaterial({ color: "#fff4cf", emissive: "#ffdc91", emissiveIntensity: 0.65, roughness: 0.25 });
-  const tailLamp = new THREE.MeshStandardMaterial({ color: "#c94842", emissive: "#9e2722", emissiveIntensity: 0.4 });
-  addBox(car, 1.72, 0.38, 0.82, body, 0, 0.39, 0);
-  addBox(car, 0.96, 0.43, 0.68, glass, -0.05, 0.76, 0);
-  addBox(car, 0.13, 0.36, 0.72, body, -0.53, 0.68, 0);
-  addBox(car, 0.12, 0.36, 0.72, body, 0.48, 0.68, 0);
-  addBox(car, 0.15, 0.12, 0.9, chrome, 0.89, 0.34, 0, false);
-  addBox(car, 0.15, 0.12, 0.9, darkFrameMaterial(), -0.89, 0.34, 0, false);
-  addBox(car, 0.055, 0.12, 0.16, headlamp, 0.89, 0.47, -0.27, false);
-  addBox(car, 0.055, 0.12, 0.16, headlamp, 0.89, 0.47, 0.27, false);
-  addBox(car, 0.055, 0.14, 0.15, tailLamp, -0.88, 0.47, -0.28, false);
-  addBox(car, 0.055, 0.14, 0.15, tailLamp, -0.88, 0.47, 0.28, false);
-  addBox(car, 0.035, 0.16, 0.24, chrome, 0.92, 0.4, 0, false);
-  addBox(car, 0.045, 0.035, 0.18, chrome, 0, 0.2, 0, false);
+  const shellMesh = new THREE.Mesh(shellGeometry, body);
+  shellMesh.position.z = -0.41;
+  shellMesh.castShadow = true;
+  shellMesh.receiveShadow = true;
+  car.add(shellMesh);
+
+  // Dark panoramic roof and windshield surround.
+  const cabin = new THREE.Shape();
+  cabin.moveTo(-0.43, 0.61);
+  cabin.lineTo(-0.18, 0.91);
+  cabin.quadraticCurveTo(0.0, 0.98, 0.18, 0.91);
+  cabin.lineTo(0.45, 0.61);
+  cabin.closePath();
+  const cabinMesh = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(cabin, { depth: 0.58, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.018, bevelThickness: 0.025, curveSegments: 10 }),
+    darkChrome,
+  );
+  cabinMesh.position.z = -0.29;
+  cabinMesh.castShadow = true;
+  car.add(cabinMesh);
+  addBox(car, 0.44, 0.29, 0.02, glass, 0.19, 0.75, 0, false);
+  addBox(car, 0.39, 0.25, 0.02, glass, -0.25, 0.74, 0, false);
   for (const side of [-1, 1]) {
-    for (const axle of [-0.56, 0.55]) {
-      const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.13, 18), rubber);
-      tyre.rotation.z = Math.PI / 2;
-      tyre.position.set(axle, 0.2, side * 0.405);
-      car.add(tyre);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.14, 16), chrome);
-      hub.rotation.z = Math.PI / 2;
-      hub.position.copy(tyre.position);
-      car.add(hub);
-    }
-    for (const doorX of [-0.28, 0.26]) {
-      addBox(car, 0.38, 0.018, 0.015, chrome, doorX, 0.53, side * 0.421, false);
-    }
-    addBox(car, 0.14, 0.09, 0.13, body, 0.36, 0.76, side * 0.41);
-    addBox(car, 0.17, 0.035, 0.08, chrome, 0.36, 0.82, side * 0.47, false);
+    addBox(car, 0.29, 0.19, 0.025, glass, -0.23, 0.76, side * 0.306, false);
+    addBox(car, 0.31, 0.19, 0.025, glass, 0.19, 0.76, side * 0.306, false);
+    addBox(car, 0.045, 0.26, 0.035, darkChrome, -0.02, 0.76, side * 0.319, false);
+    addBox(car, 0.04, 0.26, 0.035, darkChrome, -0.45, 0.73, side * 0.3, false);
+    addBox(car, 0.04, 0.2, 0.035, darkChrome, 0.44, 0.72, side * 0.3, false);
+    // Wing mirrors with a small glass insert.
+    addBox(car, 0.16, 0.09, 0.13, body, 0.38, 0.73, side * 0.46);
+    addBox(car, 0.085, 0.045, 0.035, glass, 0.4, 0.75, side * 0.53, false);
+    // Door seams, chrome handles and a lower side sill.
+    addBox(car, 0.018, 0.29, 0.012, darkChrome, 0.0, 0.43, side * 0.415, false);
+    addBox(car, 0.15, 0.025, 0.018, chrome, -0.24, 0.51, side * 0.421, false);
+    addBox(car, 0.15, 0.025, 0.018, chrome, 0.24, 0.51, side * 0.421, false);
+    addBox(car, 1.35, 0.055, 0.065, darkChrome, 0, 0.24, side * 0.42);
   }
+
+  // Front grille, metallic bumpers, headlamps and rear light clusters.
+  addBox(car, 0.07, 0.15, 0.52, darkChrome, 1.0, 0.37, 0, false);
+  addBox(car, 0.045, 0.1, 0.28, chrome, 1.04, 0.37, 0, false);
+  for (let slat = 0; slat < 4; slat++) addBox(car, 0.018, 0.014, 0.29, chrome, 1.055, 0.31 + slat * 0.04, 0, false);
+  addBox(car, 0.07, 0.11, 0.92, chrome, 0.96, 0.25, 0, false);
+  addBox(car, 0.07, 0.1, 0.82, darkChrome, -0.98, 0.26, 0, false);
+  for (const side of [-1, 1]) {
+    addBox(car, 0.055, 0.13, 0.2, headlamp, 0.91, 0.49, side * 0.28, false);
+    addBox(car, 0.055, 0.13, 0.18, tailLamp, -0.91, 0.47, side * 0.29, false);
+    addBox(car, 0.04, 0.045, 0.1, mat("#f0dfb3", 0.34, 0.12), -0.92, 0.33, side * 0.34, false);
+  }
+
+  // Realistic four-wheel layout: rubber sidewalls, alloy rims and brake discs.
+  for (const side of [-1, 1]) {
+    for (const axle of [-0.62, 0.62]) {
+      const assembly = new THREE.Group();
+      const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.14, 24), rubber);
+      tyre.rotation.x = Math.PI / 2;
+      assembly.add(tyre);
+      const sidewall = new THREE.Mesh(new THREE.TorusGeometry(0.145, 0.018, 7, 24), darkChrome);
+      sidewall.position.z = side * 0.076;
+      assembly.add(sidewall);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.15, 20), chrome);
+      hub.rotation.x = Math.PI / 2;
+      assembly.add(hub);
+      const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.154, 16), darkChrome);
+      hubCap.rotation.x = Math.PI / 2;
+      hubCap.position.z = side * 0.01;
+      assembly.add(hubCap);
+      for (let spoke = 0; spoke < 5; spoke++) {
+        const angle = (spoke / 5) * Math.PI * 2;
+        const detail = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.085, 0.018), mat("#e3e8e2", 0.25, 0.8));
+        detail.position.set(Math.cos(angle) * 0.058, Math.sin(angle) * 0.058, side * 0.085);
+        detail.rotation.z = angle;
+        assembly.add(detail);
+      }
+      assembly.position.set(axle, 0.2, side * 0.405);
+      car.add(assembly);
+      wheels.push(assembly);
+    }
+  }
+
+  // Glass sunroof, slim roof antenna and registration plate.
+  const sunroof = addBox(car, 0.32, 0.025, 0.3, glass, -0.03, 0.96, 0, false);
+  sunroof.material = glass;
+  const plate = addBox(car, 0.22, 0.07, 0.025, mat("#e8e5d6", 0.5), 1.06, 0.28, 0, false);
+  plate.castShadow = false;
+  const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, 0.16, 6), darkChrome);
+  antenna.position.set(-0.35, 1.0, -0.18);
+  antenna.rotation.z = -0.3;
+  car.add(antenna);
+
   car.position.set(x, 0.42, z);
+  car.userData.wheels = wheels;
   scene.add(car);
   return car;
 }
-
 function darkFrameMaterial() {
   return mat("#29383c", 0.68, 0.16);
 }
@@ -1761,8 +1841,11 @@ export default function WorldCanvas() {
 
       scene.traverse((object) => {
         if (object instanceof THREE.Group && typeof object.userData.speed === "number") {
-          object.position.x += Number(object.userData.speed) * delta;
+          const speed = Number(object.userData.speed);
+          object.position.x += speed * delta;
           if (object.position.x > 25) object.position.x = -25;
+          const wheels = object.userData.wheels as THREE.Group[] | undefined;
+          wheels?.forEach((wheel) => { wheel.rotation.z -= speed * delta / 0.19; });
         }
       });
 
