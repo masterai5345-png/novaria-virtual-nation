@@ -3,10 +3,10 @@ import AuthProviders from "@/components/auth/AuthProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NOVARIA — A Living Virtual Nation",
+  title: "Kota Maskot — NOVARIA",
   description:
-    "Enter a living 3D coastal metropolis, meet animal mascot citizens, explore city districts, and help NOVARIA grow.",
-  applicationName: "NOVARIA",
+    "Masuki kota 3D penuh warga maskot dari berbagai spesies hewan, jelajahi distrik, dan bantu NOVARIA berkembang.",
+  applicationName: "Kota Maskot",
   manifest: "/manifest.webmanifest",
 };
 
@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="id">
       <body>
         <AuthProviders>{children}</AuthProviders>
       </body>
