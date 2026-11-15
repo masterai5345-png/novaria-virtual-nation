@@ -2105,9 +2105,29 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group, lowPowerDevice = 
 
 }
 
-export default function WorldCanvas() {
+export type WorldResident = {
+  id: string;
+  displayName: string;
+  publicHandle: string;
+  species: string;
+  avatarStyle: AvatarStyle;
+};
+
+type WorldCanvasProps = {
+  isNight: boolean;
+  quality: "high" | "low";
+  focusResident: WorldResident | null;
+};
+
+export default function WorldCanvas({ isNight, quality, focusResident }: WorldCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const movementRef = useRef({ x: 0, z: 0 });
+  const nightRef = useRef(isNight);
+  const qualityRef = useRef(quality);
+  const focusResidentRef = useRef(focusResident);
+  nightRef.current = isNight;
+  qualityRef.current = quality;
+  focusResidentRef.current = focusResident;
   const [stickPosition, setStickPosition] = useState({ x: 0, y: 0 });
   const [stickActive, setStickActive] = useState(false);
 
@@ -2136,8 +2156,10 @@ export default function WorldCanvas() {
 
     acquireSharedSceneResources();
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#b9c9c7");
-    scene.fog = new THREE.Fog("#b9c9c7", 58, 118);
+    const daySky = new THREE.Color("#b9c9c7");
+    const nightSky = new THREE.Color("#17243a");
+    scene.background = daySky.clone();
+    scene.fog = new THREE.Fog(daySky, 58, 118);
 
     const camera = new THREE.PerspectiveCamera(39, 1, 0.1, 220);
     camera.position.set(0, 26, 34);
@@ -2175,8 +2197,10 @@ export default function WorldCanvas() {
     pmremGenerator.dispose();
     roomEnvironment.dispose();
 
-    scene.add(new THREE.HemisphereLight("#fff5e8", "#53646a", 2.1));
-    scene.add(new THREE.AmbientLight("#f0e9db", 0.34));
+    const hemisphere = new THREE.HemisphereLight("#fff5e8", "#53646a", 2.1);
+    scene.add(hemisphere);
+    const ambient = new THREE.AmbientLight("#f0e9db", 0.34);
+    scene.add(ambient);
     const sun = new THREE.DirectionalLight("#ffe3bb", 3.35);
     sun.position.set(-15, 28, 16);
     sun.castShadow = !lowPowerDevice;
@@ -2275,6 +2299,21 @@ export default function WorldCanvas() {
     mayor.add(mayorBadge);
     scene.add(mayor);
 
+    // A dedicated model is reused when a public citizen is selected from the uploaded-style finder.
+    const selectedResidentModel = new THREE.Group();
+    selectedResidentModel.visible = false;
+    scene.add(selectedResidentModel);
+    const selectedResidentMarker = new THREE.Mesh(
+      new THREE.TorusGeometry(0.72, 0.075, 8, 28),
+      new THREE.MeshStandardMaterial({ color: "#f2c36f", metalness: 0.5, roughness: 0.32, emissive: "#8e642d", emissiveIntensity: 0.22 }),
+    );
+    selectedResidentMarker.rotation.x = Math.PI / 2;
+    selectedResidentModel.add(selectedResidentMarker);
+    let activeResidentId: string | null = null;
+    let focusPoint = new THREE.Vector3();
+    let activeNight = nightRef.current;
+    let activeQuality = qualityRef.current;
+
     let avatarAbort: AbortController | null = new AbortController();
     fetch("/api/citizen/profile", { cache: "no-store", signal: avatarAbort.signal })
       .then(async (response) => {
@@ -2365,6 +2404,48 @@ export default function WorldCanvas() {
       const frameDuration = previousTime === 0 ? 0 : time - previousTime;
       const delta = previousTime === 0 ? 0 : Math.min(frameDuration / 1000, 0.05);
       previousTime = time;
+
+      if (nightRef.current !== activeNight) {
+        activeNight = nightRef.current;
+        const target = activeNight ? nightSky : daySky;
+        scene.background = target.clone();
+        scene.fog?.color.copy(target);
+        sun.color.set(activeNight ? "#a9c4ff" : "#ffe3bb");
+        sun.intensity = activeNight ? 0.78 : 3.35;
+        hemisphere.intensity = activeNight ? 0.85 : 2.1;
+        ambient.intensity = activeNight ? 0.52 : 0.34;
+        scene.environmentIntensity = activeNight ? (lowPowerDevice ? 0.28 : 0.38) : (lowPowerDevice ? 0.42 : 0.62);
+      }
+
+      if (qualityRef.current !== activeQuality) {
+        activeQuality = qualityRef.current;
+        const highQuality = activeQuality === "high" && !lowPowerDevice;
+        renderer.setPixelRatio(highQuality ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 1.0));
+        renderer.shadowMap.enabled = highQuality;
+        sun.castShadow = highQuality;
+      }
+
+      const requestedResident = focusResidentRef.current;
+      if (requestedResident?.id !== activeResidentId) {
+        activeResidentId = requestedResident?.id ?? null;
+        selectedResidentModel.visible = Boolean(requestedResident);
+        if (requestedResident) {
+          createMascot(selectedResidentModel, requestedResident.species || "fox", requestedResident.avatarStyle || {});
+          selectedResidentModel.visible = true;
+          const seed = [...requestedResident.id].reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 7);
+          const district = seed % 4;
+          const residentSpots: [number, number][] = [
+            [-11.2, 9.1],
+            [10.5, 9.2],
+            [-11.0, -10.8],
+            [10.8, -10.4],
+          ];
+          const [residentX, residentZ] = residentSpots[district];
+          selectedResidentModel.position.set(residentX, 0.42, residentZ);
+          selectedResidentModel.rotation.y = (seed % 628) / 100;
+          focusPoint.set(residentX, 0.45, residentZ);
+        }
+      }
       // One-time fallback for devices that still struggle: lower fill-rate, remove dynamic shadows,
       // and trim a few distant citizens instead of letting the frame rate collapse.
       if (!lowPowerDevice && !adaptiveReduced && frameDuration > 25) slowFrameStreak++;
@@ -2420,10 +2501,16 @@ export default function WorldCanvas() {
         wheels?.forEach((wheel) => { wheel.rotation.z -= speed * delta / 0.19; });
       });
 
-      const radius = 34 / zoom;
-      camera.position.x = player.position.x + Math.sin(rotation + 0.42) * radius * 0.62;
-      camera.position.z = player.position.z + Math.cos(rotation + 0.42) * radius * 0.72;
-      camera.lookAt(player.position.x, 0.45, player.position.z);
+      const hasFocusedResident = Boolean(focusResidentRef.current && selectedResidentModel.visible);
+      const focusActor = hasFocusedResident ? selectedResidentModel : player;
+      if (hasFocusedResident) {
+        selectedResidentMarker.position.y = 0.08 + Math.sin(time * 0.004) * 0.04;
+        selectedResidentMarker.rotation.z += delta * 0.35;
+      }
+      const radius = (hasFocusedResident ? 17 : 34) / zoom;
+      camera.position.x = focusActor.position.x + Math.sin(rotation + 0.42) * radius * 0.62;
+      camera.position.z = focusActor.position.z + Math.cos(rotation + 0.42) * radius * 0.72;
+      camera.lookAt(focusActor.position.x, hasFocusedResident ? 1.1 : 0.45, focusActor.position.z);
       renderer.render(scene, camera);
     };
     const onVisibilityChange = () => {
