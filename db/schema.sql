@@ -327,7 +327,16 @@ CREATE INDEX IF NOT EXISTS worker_heartbeats_last_seen_idx
 
 
 -- Citizen mascot species are assigned once at registration and remain permanent.
+-- Reassign old single-otter accounts before applying the new multi-species constraint.
 ALTER TABLE citizens DROP CONSTRAINT IF EXISTS citizens_avatar_species_check;
+UPDATE citizens
+SET avatar_species = (ARRAY[
+  'fox', 'cat', 'panda', 'rabbit', 'wolf', 'bear', 'raccoon',
+  'capybara', 'penguin', 'deer', 'lion', 'tiger', 'red-panda',
+  'koala', 'frog', 'duck', 'dog', 'cow', 'hamster', 'hedgehog',
+  'elephant', 'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
+]::text[])[1 + (get_byte(decode(md5(id::text), 'hex'), 0) % 27)]
+WHERE avatar_species = 'otter';
 ALTER TABLE citizens
   ADD CONSTRAINT citizens_avatar_species_check
   CHECK (avatar_species IN (
@@ -338,19 +347,16 @@ ALTER TABLE citizens
   ));
 ALTER TABLE citizens ALTER COLUMN avatar_species SET DEFAULT 'fox';
 
--- Convert founding accounts from the original all-Otter prototype to a stable,
--- deterministic mix of animal residents. Re-running the schema does not reshuffle them.
-UPDATE citizens
-SET avatar_species = (ARRAY[
-  'fox', 'cat', 'panda', 'rabbit', 'wolf', 'bear', 'raccoon',
-  'capybara', 'penguin', 'deer', 'lion', 'tiger', 'red-panda',
-  'koala', 'frog', 'duck', 'dog', 'cow', 'hamster', 'hedgehog',
-  'elephant', 'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
-]::text[])[1 + (get_byte(decode(md5(id::text), 'hex'), 0) % 27)]
-WHERE avatar_species = 'otter';
-
--- City leadership is a distinct NPC persona, separate from resident mascot selection.
+-- The city leader is a separate civic character, not a citizen species lock.
+-- Convert the former otter leader before constraining the leader species.
 ALTER TABLE city_leaders DROP CONSTRAINT IF EXISTS city_leaders_species_check;
+UPDATE city_leaders
+SET leader_key = 'mayor-bear',
+    display_name = 'Pak Wali Kota Beruang',
+    species = 'bear',
+    title = 'Mayor',
+    profile = '{"role":"official in-world city leader","visual_identity":"friendly bear mayor in a tailored navy civic jacket, warm red tie and gold city badge"}'::jsonb
+WHERE leader_key = 'mayor-otti';
 ALTER TABLE city_leaders
   ADD CONSTRAINT city_leaders_species_check
   CHECK (species IN (
@@ -359,10 +365,7 @@ ALTER TABLE city_leaders
     'koala', 'frog', 'duck', 'dog', 'cow', 'hamster', 'hedgehog',
     'elephant', 'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
   ));
-
--- The city mascot population is diverse; the founding bear mayor is not a citizen species lock.
 ALTER TABLE city_leaders ALTER COLUMN species SET DEFAULT 'bear';
-
 
 -- Optional public Instagram username used by the city mascot finder.
 -- A citizen appears in public resident search only after choosing a handle.
