@@ -416,3 +416,357 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 620px) {
   .runtime-health { width: 100%; }
 }
+
+
+/* NOVARIA full-screen mascot metropolis */
+.town-experience {
+  position: fixed;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: #aeb8b1;
+  color: #f7f6ef;
+}
+.town-experience .world-canvas-host {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.town-experience .world-canvas {
+  width: 100%;
+  height: 100%;
+}
+.town-world-shade {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(12,25,30,.48), transparent 24%, transparent 68%, rgba(9,20,24,.2));
+}
+.town-topbar {
+  position: absolute;
+  z-index: 12;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 27px;
+  border-bottom: 1px solid #ffffff20;
+  background: linear-gradient(180deg, rgba(10,24,30,.77), rgba(10,24,30,.24));
+  backdrop-filter: blur(12px);
+}
+.town-brand { display: flex; align-items: center; gap: 11px; color: #f8f4e9; }
+.town-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border: 1px solid #f3d69a88;
+  border-radius: 13px 13px 13px 4px;
+  background: linear-gradient(145deg, #e5bd75, #a87544);
+  color: #173638;
+  font: 800 22px Manrope;
+  box-shadow: 0 7px 24px #060f1355;
+}
+.town-brand strong { display: block; font: 800 15px Manrope; letter-spacing: .16em; }
+.town-brand small { display: block; margin-top: 4px; color: #d1d6c9; font-size: 8px; letter-spacing: .17em; }
+.town-topbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #e2e7df;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .17em;
+}
+.town-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #8fd29b; box-shadow: 0 0 0 4px #8fd29b24; }
+.town-topbar-actions { display: flex; align-items: center; gap: 11px; }
+.town-topbar .citizen-button {
+  border: 1px solid #f2ddb1;
+  background: #f0d6a4;
+  color: #253e3c;
+  padding: 11px 16px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: 0 6px 18px #07141636;
+}
+.town-topbar .citizen-button:hover { background: #fff0cc; }
+.town-topbar .citizen-button:disabled { border-color: #ffffff30; background: #ffffff25; color: #f0f1e9; }
+.town-topbar .citizen-account-name { color: #f4f0e6; font-size: 10px; }
+.town-profile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 13px;
+  border: 1px solid #ffffff42;
+  border-radius: 99px;
+  background: #10272a9c;
+  color: #f2ead9;
+  font-size: 10px;
+  font-weight: 700;
+}
+.town-rail {
+  position: absolute;
+  z-index: 10;
+  left: 19px;
+  top: 50%;
+  display: grid;
+  gap: 9px;
+  padding: 9px;
+  transform: translateY(-50%);
+  border: 1px solid #ffffff3a;
+  border-radius: 18px;
+  background: rgba(13,31,34,.73);
+  backdrop-filter: blur(13px);
+  box-shadow: 0 12px 36px #0615174a;
+}
+.town-rail button {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #c4d0c9;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+.town-rail button:hover { background: #ffffff16; color: #fff; transform: translateY(-1px); }
+.town-rail button.active { border-color: #e7c27e66; background: #e3bd781f; color: #f1d49d; }
+.town-location-tag {
+  position: absolute;
+  z-index: 8;
+  left: 85px;
+  top: 104px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px 10px 12px;
+  border: 1px solid #ffffff38;
+  border-radius: 13px;
+  background: rgba(18,37,39,.72);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 22px #091a1d33;
+}
+.town-location-pin {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border-radius: 9px;
+  background: #e8c783;
+  color: #243b37;
+  font-size: 17px;
+}
+.town-location-tag b, .town-location-tag small { display: block; }
+.town-location-tag b { font: 800 10px Manrope; letter-spacing: .12em; }
+.town-location-tag small { margin-top: 3px; color: #aebfb6; font-size: 7px; letter-spacing: .14em; }
+.town-mayor-card {
+  position: absolute;
+  z-index: 8;
+  right: 23px;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 245px;
+  padding: 12px 13px;
+  border: 1px solid #ffffff44;
+  border-radius: 16px;
+  background: rgba(13,31,34,.83);
+  backdrop-filter: blur(13px);
+  box-shadow: 0 13px 35px #08171955;
+}
+.town-mayor-avatar { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 13px; background: #e8d9b9; font-size: 27px; }
+.town-mayor-copy { flex: 1; min-width: 0; }
+.town-mayor-copy small, .town-mayor-copy b, .town-mayor-copy em { display: block; }
+.town-mayor-copy small { color: #cfb77e; font-size: 7px; font-weight: 800; letter-spacing: .13em; }
+.town-mayor-copy b { margin-top: 3px; color: #f7f1e4; font: 800 12px Manrope; }
+.town-mayor-copy em { margin-top: 3px; color: #aabcb3; font-size: 8px; font-style: normal; }
+.town-mayor-card > button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: #e6bd79;
+  color: #233b39;
+  font-size: 20px;
+  font-weight: 800;
+}
+.town-bottom-hint {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  transform: translateX(-50%);
+  border: 1px solid #ffffff36;
+  border-radius: 99px;
+  background: rgba(12,29,32,.68);
+  color: #9eb0a8;
+  backdrop-filter: blur(12px);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  white-space: nowrap;
+}
+.town-bottom-hint span { color: #f0d49d; font-size: 8px; }
+.town-bottom-hint i { width: 3px; height: 3px; border-radius: 50%; background: #82958b; margin: 0 3px; }
+.town-experience .town-joystick { z-index: 9; }
+.town-experience .town-move-hint { z-index: 8; bottom: 78px; color: #e7e7d9; }
+.town-drawer {
+  position: absolute;
+  z-index: 15;
+  top: 96px;
+  right: 22px;
+  bottom: 24px;
+  width: min(410px, calc(100vw - 120px));
+  overflow-y: auto;
+  padding: 21px;
+  border: 1px solid #ffffff38;
+  border-radius: 21px;
+  background: rgba(12,30,33,.94);
+  color: #edf1e9;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 22px 70px #07171982;
+  scrollbar-width: thin;
+  scrollbar-color: #59716c transparent;
+}
+.town-drawer-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid #ffffff1b; }
+.town-drawer-heading small { color: #cfb278; font-size: 8px; font-weight: 800; letter-spacing: .16em; }
+.town-drawer-heading h2 { margin: 7px 0 0; color: #f7f2e7; font: 800 23px/1.12 Manrope; letter-spacing: -.04em; }
+.town-drawer-heading > button { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid #ffffff2a; border-radius: 10px; background: #ffffff0c; color: #dce4dc; }
+.town-overview-content, .town-mission-content, .town-district-list, .town-residents-content { display: grid; gap: 11px; padding-top: 16px; }
+.town-overview-content > p { margin: 0 0 4px; color: #a8bab0; font-size: 10px; line-height: 1.7; }
+.town-drawer .quick-stats { gap: 7px; }
+.town-drawer .quick-stats div { padding: 11px 9px; background: #203b3b; }
+.town-drawer .quick-stats small { color: #9db2a5; font-size: 7px; }
+.town-drawer .quick-stats strong { color: #f4e8d0; font-size: 17px; }
+.town-wallet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid #e0bd7935;
+  border-radius: 13px;
+  background: linear-gradient(120deg, #263e3b, #1c3335);
+}
+.town-wallet small, .town-wallet b { display: block; }
+.town-wallet small { color: #b6bca7; font-size: 7px; font-weight: 800; letter-spacing: .11em; }
+.town-wallet b { margin-top: 5px; color: #f1d59d; font: 800 19px Manrope; }
+.town-wallet em { color: #9db0a5; font-size: 8px; font-style: normal; text-align: right; }
+.town-primary-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #e3bc79;
+  color: #1c3635;
+  font-size: 10px;
+  font-weight: 800;
+}
+.town-mission-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #ffffff1b;
+  border-radius: 13px;
+  background: #1a3436;
+}
+.town-mission-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 10px; background: #e1bd7a20; color: #e6c47f; }
+.town-mission-copy { flex: 1; min-width: 0; }
+.town-mission-copy b { display: block; color: #f2ede2; font: 700 11px Manrope; }
+.town-mission-copy p { margin: 5px 0; color: #a9bbb0; font-size: 9px; line-height: 1.55; }
+.town-mission-copy small { color: #d1b276; font-size: 7px; font-weight: 800; letter-spacing: .1em; }
+.town-mission-card > button { flex: 0 0 auto; margin-top: 2px; padding: 8px 10px; border: 0; border-radius: 99px; background: #e2bd7a; color: #203937; font-size: 8px; font-weight: 800; }
+.town-mission-card > button:disabled { background: #ffffff14; color: #a6b4a9; }
+.town-muted { margin: 3px 0 0; color: #8fa79a; font-size: 8px; line-height: 1.65; }
+.town-success, .town-error { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 9px; line-height: 1.5; }
+.town-success { background: #24483c; color: #a7ddb4; }
+.town-error { background: #512f2d; color: #f0aaa0; }
+.town-district-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px;
+  border: 1px solid #ffffff18;
+  border-radius: 13px;
+  background: #193335;
+}
+.town-district-card > span { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 10px; background: #e2bd7820; color: #e2c183; }
+.town-district-card small, .town-district-card b { display: block; }
+.town-district-card small { color: #c8ae78; font-size: 7px; font-weight: 800; letter-spacing: .13em; }
+.town-district-card b { margin-top: 4px; color: #f0eee5; font: 700 11px Manrope; }
+.town-district-card p { margin: 5px 0 0; color: #a5b7ac; font-size: 8px; line-height: 1.55; }
+.town-mayor-profile { display: flex; gap: 12px; padding: 13px; border: 1px solid #dcb66a38; border-radius: 13px; background: #293c39; }
+.town-mayor-profile > span { display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto; border-radius: 13px; background: #e6d6b4; font-size: 31px; }
+.town-mayor-profile small, .town-mayor-profile b { display: block; }
+.town-mayor-profile small { color: #d7bb7c; font-size: 7px; font-weight: 800; letter-spacing: .11em; }
+.town-mayor-profile b { margin-top: 4px; font: 800 14px Manrope; color: #f5efe3; }
+.town-mayor-profile p { margin: 5px 0 0; color: #b1c0b3; font-size: 8px; line-height: 1.5; }
+.town-species-heading { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+.town-species-heading b { color: #f2eee3; font: 800 12px Manrope; }
+.town-species-heading small { color: #c7ad77; font-size: 7px; font-weight: 800; letter-spacing: .12em; }
+.town-species-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.town-species-grid > div { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 8px; border: 1px solid #ffffff13; border-radius: 10px; background: #183133; }
+.town-species-grid span { font-size: 17px; }
+.town-species-grid b { overflow: hidden; color: #cbd7cb; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.town-residents-content .town-primary-action { text-decoration: none; }
+@media (max-width: 760px) {
+  .town-topbar { height: 70px; padding: 0 13px; }
+  .town-brand-mark { width: 37px; height: 37px; font-size: 18px; }
+  .town-brand strong { font-size: 12px; }
+  .town-brand small { font-size: 6px; }
+  .town-topbar-center { display: none; }
+  .town-topbar-actions { gap: 6px; }
+  .town-topbar .citizen-button { padding: 9px 11px; font-size: 9px; }
+  .town-topbar .citizen-account-name { display: none; }
+  .town-profile-link { padding: 8px 9px; font-size: 8px; }
+  .town-rail { left: 10px; top: 49%; gap: 5px; padding: 6px; border-radius: 14px; }
+  .town-rail button { width: 37px; height: 37px; }
+  .town-location-tag { left: 68px; top: 84px; padding: 8px 10px; }
+  .town-location-pin { width: 25px; height: 25px; }
+  .town-mayor-card { right: 10px; bottom: 13px; min-width: 190px; max-width: 215px; padding: 9px; gap: 8px; }
+  .town-mayor-avatar { width: 36px; height: 36px; font-size: 22px; }
+  .town-mayor-copy small { font-size: 6px; }
+  .town-mayor-copy b { font-size: 10px; }
+  .town-mayor-copy em { font-size: 7px; }
+  .town-bottom-hint { display: none; }
+  .town-experience .town-joystick { left: 11px; bottom: 12px; width: 101px; height: 101px; }
+  .town-experience .town-move-hint { display: none; }
+  .town-drawer { top: 80px; right: 10px; bottom: 126px; width: min(410px, calc(100vw - 68px)); padding: 15px; border-radius: 16px; }
+  .town-drawer-heading h2 { font-size: 19px; }
+  .town-species-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 430px) {
+  .town-topbar { padding: 0 9px; }
+  .town-brand { gap: 7px; }
+  .town-brand small { letter-spacing: .1em; }
+  .town-profile-link { padding: 8px; }
+  .town-topbar .citizen-button { padding: 8px 9px; }
+  .town-location-tag { top: 78px; }
+  .town-drawer { left: 58px; right: 8px; width: auto; }
+  .town-mayor-card { min-width: 174px; max-width: 188px; }
+}
+.avatar-species-emoji { position: absolute; z-index: 4; left: 35px; top: 5px; font-size: 29px; filter: drop-shadow(0 3px 2px #25352c55); }
