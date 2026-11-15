@@ -59,8 +59,45 @@ const COAT_COLORS: Record<string, string> = {
   honey: "#bd8b50",
 };
 
+const sharedMaterialCache = new Map<string, THREE.Material>();
+const sharedGeometryCache = new Map<string, THREE.BufferGeometry>();
+const sharedMaterials = new WeakSet<THREE.Material>();
+const sharedGeometries = new WeakSet<THREE.BufferGeometry>();
+
+function cachedMaterial<T extends THREE.Material>(key: string, create: () => T): T {
+  const existing = sharedMaterialCache.get(key);
+  if (existing) return existing as T;
+  const material = create();
+  sharedMaterials.add(material);
+  sharedMaterialCache.set(key, material);
+  return material;
+}
+
+function unitBoxGeometry() {
+  const key = "unit-box";
+  let geometry = sharedGeometryCache.get(key);
+  if (!geometry) {
+    geometry = new THREE.BoxGeometry(1, 1, 1);
+    sharedGeometries.add(geometry);
+    sharedGeometryCache.set(key, geometry);
+  }
+  return geometry;
+}
+
+function unitSphereGeometry() {
+  const key = "unit-sphere-18-14";
+  let geometry = sharedGeometryCache.get(key);
+  if (!geometry) {
+    geometry = new THREE.SphereGeometry(1, 18, 14);
+    sharedGeometries.add(geometry);
+    sharedGeometryCache.set(key, geometry);
+  }
+  return geometry;
+}
+
 function mat(color: string, roughness = 0.82, metalness = 0.02) {
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+  const key = `standard:${color}:${roughness}:${metalness}`;
+  return cachedMaterial(key, () => new THREE.MeshStandardMaterial({ color, roughness, metalness }));
 }
 
 function addBox(
@@ -74,8 +111,9 @@ function addBox(
   z: number,
   castShadow = true,
 ) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+  const mesh = new THREE.Mesh(unitBoxGeometry(), material);
   mesh.position.set(x, y, z);
+  mesh.scale.set(width, height, depth);
   mesh.castShadow = castShadow;
   mesh.receiveShadow = true;
   parent.add(mesh);
@@ -93,10 +131,10 @@ function addSphere(
   scaleY = 1,
   scaleZ = 1,
 ) {
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 18, 14), material);
+  const mesh = new THREE.Mesh(unitSphereGeometry(), material);
   mesh.position.set(x, y, z);
-  mesh.scale.set(scaleX, scaleY, scaleZ);
-  mesh.castShadow = true;
+  mesh.scale.set(radius * scaleX, radius * scaleY, radius * scaleZ);
+  mesh.castShadow = false;
   parent.add(mesh);
   return mesh;
 }
@@ -106,9 +144,11 @@ function clearGroup(group: THREE.Group) {
     group.remove(child);
     child.traverse((object) => {
       if (object instanceof THREE.Mesh) {
-        object.geometry.dispose();
+        if (!sharedGeometries.has(object.geometry)) object.geometry.dispose();
         const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach((entry) => entry.dispose());
+        materials.forEach((entry) => {
+          if (!sharedMaterials.has(entry)) entry.dispose();
+        });
       }
     });
   }
@@ -128,6 +168,7 @@ function addTube(
 }
 
 function createFurMaterial(color: string) {
+  return cachedMaterial(`fur:${color}`, () => {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 256;
@@ -162,6 +203,7 @@ function createFurMaterial(color: string) {
     sheenRoughness: 0.94,
     bumpMap: texture,
     bumpScale: 0.018,
+  });
   });
 }
 
