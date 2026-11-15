@@ -144,6 +144,8 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   const trim = mat("#e9d1a0", 0.48, 0.12);
   const gold = mat("#d6ad68", 0.36, 0.32);
   const sole = mat("#263238", 0.9);
+  const animatedArms: THREE.Object3D[] = [];
+  const animatedLegs: THREE.Object3D[] = [];
 
   // Tail is placed behind the body first so it sits naturally in the silhouette.
   if (look.tail === "bushy") {
@@ -166,6 +168,7 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
     const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.23, 4, 9), coat);
     leg.position.set(side * 0.18, 0.27, 0.015);
     group.add(leg);
+    animatedLegs.push(leg);
     addSphere(group, 0.135, sole, side * 0.19, 0.105, 0.11, 1.18, 0.55, 1.45);
     addSphere(group, 0.105, outfit, side * 0.19, 0.16, 0.18, 1.05, 0.48, 1.2);
 
@@ -173,6 +176,7 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
     arm.position.set(side * 0.36, 0.78, 0.015);
     arm.rotation.z = side * -0.36;
     group.add(arm);
+    animatedArms.push(arm);
     const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.092, 0.092, 0.105, 16), trim);
     cuff.position.set(side * 0.465, 0.64, 0.04);
     cuff.rotation.z = side * -0.36;
@@ -364,6 +368,8 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   group.userData.species = species;
   group.userData.coatMaterial = coat;
   group.userData.outfitMaterial = outfit;
+  group.userData.animatedArms = animatedArms;
+  group.userData.animatedLegs = animatedLegs;
 }
 function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
   const group = new THREE.Group();
@@ -1117,7 +1123,11 @@ export default function WorldCanvas() {
       [-11, 7], [-8, 10], [-12, 12], [-7, 7], [-10, 5], [-5, 11],
       [8, 6], [10, 9], [12, 11], [7, 12], [13, 7], [9, 14],
       [-2.5, -3.6], [2.8, -3.8], [4.5, 5.4], [-4.6, 6.2], [15, 2], [-16, 2],
-      [3.8, 15.7], [-4.5, 15.4],
+      [3.8, 15.7], [-4.5, 15.4], [-13, 8.4], [-11.5, 12.8], [-8.5, 11.5],
+      [-6.2, 8.2], [6.5, 8.8], [9, 6.5], [11.5, 12], [14, 9.5],
+      [-2.3, -2], [2.2, -3], [-4, 2.8], [4.2, 4.2], [-17, -5], [-15, -8],
+      [-12, -6], [-7, -5], [17, 6], [-18, 3], [16, 14], [-3, 17],
+      [2, 16], [-9, 18], [8, 18],
     ];
     const npcSpecies = [...CITIZEN_SPECIES].sort(() => Math.random() - 0.5);
     npcSpots.forEach(([x, z], index) => {
@@ -1136,6 +1146,14 @@ export default function WorldCanvas() {
       scene.add(npc);
       npcGroups.push(npc);
     });
+
+    const animateMascot = (mascot: THREE.Group, phase: number, intensity: number) => {
+      const swing = Math.sin(phase) * intensity;
+      const arms = mascot.userData.animatedArms as THREE.Object3D[] | undefined;
+      const legs = mascot.userData.animatedLegs as THREE.Object3D[] | undefined;
+      arms?.forEach((arm, index) => { arm.rotation.z = (index === 0 ? 1 : -1) * (0.16 + swing); });
+      legs?.forEach((leg, index) => { leg.rotation.x = (index === 0 ? -1 : 1) * swing * 0.72; });
+    };
 
     const player = new THREE.Group();
     createMascot(player, "fox", { outfit: "citizen-teal", accessory: "none" });
@@ -1253,6 +1271,8 @@ export default function WorldCanvas() {
         player.rotation.y += (Math.sin(time * 0.0007) * 0.08 - player.rotation.y) * Math.min(delta * 1.8, 1);
       }
       player.position.y = 0.42 + Math.sin(time * (moving ? 0.014 : 0.0022)) * (moving ? 0.075 : 0.025);
+      animateMascot(player, time * (moving ? 0.015 : 0.002), moving ? 0.52 : 0.035);
+      animateMascot(mayor, time * 0.0018, 0.025);
 
       npcGroups.forEach((npc, index) => {
         const phase = Number(npc.userData.phase ?? 0);
@@ -1264,6 +1284,7 @@ export default function WorldCanvas() {
         npc.position.z = nextZ;
         npc.position.y = 0.42 + Math.abs(Math.sin(time * 0.003 + index)) * 0.025;
         npc.rotation.y = Math.atan2(Math.cos(angle) * radius, -Math.sin(angle * 0.83) * radius);
+        animateMascot(npc, time * 0.009 + phase, 0.15);
       });
 
       scene.traverse((object) => {
