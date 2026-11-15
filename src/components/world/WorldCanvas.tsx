@@ -2100,10 +2100,10 @@ export default function WorldCanvas() {
     // Adaptive rendering profile: retain detail on desktop, reduce fill-rate and shadow cost on phones.
     const device = navigator as Navigator & { deviceMemory?: number };
     const compactDevice = window.matchMedia("(max-width: 760px)").matches;
-    const lowPowerDevice = (device.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    const lowPowerDevice = compactDevice || (device.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4;
     const reducedQuality = compactDevice || lowPowerDevice;
-    const maxPixelRatio = lowPowerDevice ? 1 : compactDevice ? 1.15 : 1.45;
-    const frameInterval = lowPowerDevice ? 1000 / 30 : compactDevice ? 1000 / 45 : 0;
+    const maxPixelRatio = lowPowerDevice ? 1.15 : 1.5;
+    const frameInterval = lowPowerDevice ? 1000 / 30 : 0;
     const renderer = new THREE.WebGLRenderer({
       antialias: !lowPowerDevice,
       alpha: false,
@@ -2176,7 +2176,8 @@ export default function WorldCanvas() {
       [7.2, 19.2], [14.4, 19.0], [5.2, -1.1], [8.2, -1.2],
     ];
     const npcSpecies = [...CITIZEN_SPECIES].sort(() => Math.random() - 0.5);
-    npcSpots.forEach(([x, z], index) => {
+    const visibleNpcSpots = lowPowerDevice ? npcSpots.slice(0, 18) : npcSpots;
+    visibleNpcSpots.forEach(([x, z], index) => {
       const npc = new THREE.Group();
       createMascot(npc, npcSpecies[index % npcSpecies.length], {
         outfit: ["citizen-teal", "explorer", "builder", "harbor-guard"][index % 4],
