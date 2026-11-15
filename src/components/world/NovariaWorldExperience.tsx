@@ -66,6 +66,7 @@ export default function NovariaWorldExperience() {
       setResidentMascot(null);
       return;
     }
+    const fallbackName = session.user?.name || "Citizen";
     const controller = new AbortController();
     fetch("/api/citizen/profile", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
@@ -75,7 +76,7 @@ export default function NovariaWorldExperience() {
       .then((data) => {
         if (data?.profile?.species) {
           setResidentMascot({
-            displayName: data.profile.displayName || session.user?.name || "Citizen",
+            displayName: data.profile.displayName || fallbackName,
             species: data.profile.species,
           });
         }
