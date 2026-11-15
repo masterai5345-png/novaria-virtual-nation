@@ -18,7 +18,7 @@ import {
 import CitizenButton from "@/components/auth/CitizenButton";
 import CityMetrics from "@/components/world/CityMetrics";
 import WorldCanvas from "@/components/world/WorldCanvas";
-import { ANIMAL_EMOJI, ANIMAL_LABELS, CITIZEN_SPECIES } from "@/lib/animals";
+import { ANIMAL_EMOJI, ANIMAL_LABELS, CITIZEN_SPECIES, isCitizenSpecies } from "@/lib/animals";
 
 type TownPanel = "overview" | "missions" | "districts" | "residents" | null;
 type Mission = {
@@ -59,6 +59,32 @@ export default function NovariaWorldExperience() {
   const [missionBusy, setMissionBusy] = useState("");
   const [missionMessage, setMissionMessage] = useState("");
   const [missionError, setMissionError] = useState("");
+  const [residentMascot, setResidentMascot] = useState<{ displayName: string; species: string } | null>(null);
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setResidentMascot(null);
+      return;
+    }
+    const controller = new AbortController();
+    fetch("/api/citizen/profile", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return await response.json() as { profile?: { displayName?: string; species?: string } };
+      })
+      .then((data) => {
+        if (data?.profile?.species) {
+          setResidentMascot({
+            displayName: data.profile.displayName || session.user?.name || "Citizen",
+            species: data.profile.species,
+          });
+        }
+      })
+      .catch(() => {
+        // The public city remains explorable if a citizen profile cannot be loaded.
+      });
+    return () => controller.abort();
+  }, [session?.user?.id, session?.user?.name]);
 
   const refreshMissions = useCallback(async () => {
     try {
@@ -145,7 +171,14 @@ export default function NovariaWorldExperience() {
           <span>YOUR WORLD IS WAITING</span>
         </div>
         <div className="town-topbar-actions">
-          {session?.user?.id ? <Link href="/citizen" className="town-profile-link"><PawPrint size={15}/> My mascot</Link> : null}
+          {session?.user?.id ? (
+            <Link href="/citizen" className="town-profile-link">
+              <PawPrint size={15}/>
+              {residentMascot && isCitizenSpecies(residentMascot.species)
+                ? `${ANIMAL_EMOJI[residentMascot.species]} ${ANIMAL_LABELS[residentMascot.species]}`
+                : "My mascot"}
+            </Link>
+          ) : null}
           <CitizenButton />
         </div>
       </header>
