@@ -625,7 +625,7 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
 
   if (rounded) {
     const radius = width * 0.52;
-    const core = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.02, height, 32, 1), glass);
+    const core = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.02, height, 32, 1), facade);
     core.position.y = 1.38 + height / 2;
     core.castShadow = true;
     group.add(core);
