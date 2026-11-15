@@ -202,14 +202,15 @@ function addTube(
   return mesh;
 }
 
-function createFurMaterial(color: string) {
-  return cachedMaterial(`fur:${color}`, () => {
+let sharedFurNoiseTexture: THREE.Texture | null = null;
+
+function getFurNoiseTexture() {
+  if (sharedFurNoiseTexture) return sharedFurNoiseTexture;
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 256;
   const context = canvas.getContext("2d");
-  const fallback = new THREE.MeshPhysicalMaterial({ color, roughness: 0.94, sheen: 0.25, sheenRoughness: 0.92 });
-  if (!context) return fallback;
+  if (!context) return null;
   context.fillStyle = "#858585";
   context.fillRect(0, 0, 256, 256);
   let seed = 7411;
@@ -220,25 +221,30 @@ function createFurMaterial(color: string) {
   for (let index = 0; index < 5200; index++) {
     const brightness = Math.floor(90 + random() * 90);
     context.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
-    const x = random() * 256;
-    const y = random() * 256;
-    context.fillRect(x, y, 0.7 + random() * 1.6, 0.7 + random() * 2.2);
+    context.fillRect(random() * 256, random() * 256, 0.7 + random() * 1.6, 0.7 + random() * 2.2);
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(1.8, 1.8);
   texture.anisotropy = 4;
-  return new THREE.MeshPhysicalMaterial({
-    color,
-    roughness: 0.96,
-    metalness: 0,
-    sheen: 0.28,
-    sheenColor: new THREE.Color(color).multiplyScalar(1.15),
-    sheenRoughness: 0.94,
-    bumpMap: texture,
-    bumpScale: 0.018,
-  });
+  sharedFurNoiseTexture = texture;
+  return texture;
+}
+
+function createFurMaterial(color: string) {
+  return cachedMaterial(`fur:${color}`, () => {
+    const bumpMap = getFurNoiseTexture();
+    return new THREE.MeshPhysicalMaterial({
+      color,
+      roughness: 0.96,
+      metalness: 0,
+      sheen: 0.28,
+      sheenColor: new THREE.Color(color).multiplyScalar(1.15),
+      sheenRoughness: 0.94,
+      bumpMap: bumpMap ?? null,
+      bumpScale: bumpMap ? 0.018 : 0,
+    });
   });
 }
 
@@ -719,20 +725,50 @@ function createPalmForest(scene: THREE.Scene) {
   placements.length = 0;
 }
 function makeHedge(scene: THREE.Scene, x: number, z: number, width = 1.4, depth = 0.55) {
-  const hedge = new THREE.Group();
-  addBox(hedge, width + 0.18, 0.14, depth + 0.18, mat("#685540", 1), 0, 0.07, 0);
-  const count = Math.max(3, Math.floor(width * 4));
-  for (let index = 0; index < count; index++) {
-    const plant = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(0.23, 1),
-      mat(index % 2 ? "#44784f" : "#57885b", 0.99),
-    );
-    plant.position.set(-width / 2 + 0.15 + index * (width - 0.3) / Math.max(1, count - 1), 0.3 + (index % 3) * 0.035, Math.sin(index * 2) * 0.12);
-    plant.scale.set(1.15, 0.82, 1.0);
-    hedge.add(plant);
-  }
-  hedge.position.set(x, 0.4, z);
-  scene.add(hedge);
+  const placements = (scene.userData.hedgePlacements ??= []) as { x: number; z: number; width: number; depth: number }[];
+  placements.push({ x, z, width, depth });
+}
+
+function createHedgeBatch(scene: THREE.Scene) {
+  const placements = (scene.userData.hedgePlacements ?? []) as { x: number; z: number; width: number; depth: number }[];
+  if (!placements.length) return;
+  const dummy = new THREE.Object3D();
+  const soil = new THREE.InstancedMesh(unitBoxGeometry(), mat("#685540", 1), placements.length);
+  placements.forEach((item, index) => {
+    dummy.position.set(item.x, 0.47, item.z);
+    dummy.scale.set(item.width + 0.18, 0.14, item.depth + 0.18);
+    dummy.updateMatrix();
+    soil.setMatrixAt(index, dummy.matrix);
+  });
+  soil.instanceMatrix.needsUpdate = true;
+  scene.add(soil);
+  const total = placements.reduce((sum, item) => sum + Math.max(3, Math.floor(item.width * 4)), 0);
+  const foliage = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(0.23, 1),
+    cachedMaterial("hedge-leaves", () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.99 })),
+    total,
+  );
+  let index = 0;
+  placements.forEach((item, hedgeIndex) => {
+    const count = Math.max(3, Math.floor(item.width * 4));
+    for (let plant = 0; plant < count; plant++) {
+      dummy.position.set(
+        item.x - item.width / 2 + 0.15 + plant * (item.width - 0.3) / Math.max(1, count - 1),
+        0.7 + (plant % 3) * 0.035,
+        item.z + Math.sin(plant * 2) * 0.12,
+      );
+      dummy.scale.set(1.15, 0.82, 1.0);
+      dummy.rotation.set(0, (plant + hedgeIndex) * 0.24, 0);
+      dummy.updateMatrix();
+      foliage.setMatrixAt(index, dummy.matrix);
+      foliage.setColorAt(index, new THREE.Color((plant + hedgeIndex) % 2 ? "#44784f" : "#57885b"));
+      index++;
+    }
+  });
+  foliage.instanceMatrix.needsUpdate = true;
+  if (foliage.instanceColor) foliage.instanceColor.needsUpdate = true;
+  scene.add(foliage);
+  placements.length = 0;
 }
 
 function createFacadeMaterial(baseColor: string, seed: number, rounded = false) {
@@ -1419,19 +1455,54 @@ function createBench(scene: THREE.Scene, x: number, z: number, rotation = 0) {
 }
 
 function createPlanter(scene: THREE.Scene, x: number, z: number, width = 1.25) {
-  const planter = new THREE.Group();
-  const stone = mat("#b8b7a9", 0.95);
-  const soil = mat("#594a3a", 1);
-  addBox(planter, width, 0.42, 0.72, stone, 0, 0.21, 0);
-  addBox(planter, width - 0.14, 0.06, 0.56, soil, 0, 0.44, 0, false);
-  for (let index = 0; index < 5; index++) {
-    const plant = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), mat(index % 2 ? "#56865d" : "#679467", 0.98));
-    plant.position.set((index - 2) * (width - 0.28) / 4, 0.63 + (index % 2) * 0.06, Math.sin(index) * 0.13);
-    plant.scale.set(1, 0.75, 0.85);
-    planter.add(plant);
-  }
-  planter.position.set(x, 0.41, z);
-  scene.add(planter);
+  const placements = (scene.userData.planterPlacements ??= []) as { x: number; z: number; width: number }[];
+  placements.push({ x, z, width });
+}
+
+function createPlanterBatch(scene: THREE.Scene) {
+  const placements = (scene.userData.planterPlacements ?? []) as { x: number; z: number; width: number }[];
+  if (!placements.length) return;
+  const base = new THREE.InstancedMesh(unitBoxGeometry(), mat("#b8b7a9", 0.95), placements.length);
+  const soil = new THREE.InstancedMesh(unitBoxGeometry(), mat("#594a3a", 1), placements.length);
+  const dummy = new THREE.Object3D();
+  placements.forEach((item, index) => {
+    dummy.position.set(item.x, 0.61, item.z);
+    dummy.scale.set(item.width, 0.42, 0.72);
+    dummy.updateMatrix();
+    base.setMatrixAt(index, dummy.matrix);
+    dummy.position.y = 0.83;
+    dummy.scale.set(item.width - 0.14, 0.06, 0.56);
+    dummy.updateMatrix();
+    soil.setMatrixAt(index, dummy.matrix);
+  });
+  base.instanceMatrix.needsUpdate = true;
+  soil.instanceMatrix.needsUpdate = true;
+  scene.add(base, soil);
+
+  const plantGeometry = unitSphereGeometry();
+  const plantMaterial = cachedMaterial("planter-greenery", () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.98 }));
+  const plantCount = placements.length * 5;
+  const plants = new THREE.InstancedMesh(plantGeometry, plantMaterial, plantCount);
+  const greens = ["#56865d", "#679467", "#477e57"].map((color) => new THREE.Color(color));
+  let index = 0;
+  placements.forEach((item, planterIndex) => {
+    for (let plant = 0; plant < 5; plant++) {
+      dummy.position.set(
+        item.x + (plant - 2) * (item.width - 0.28) / 4,
+        1.04 + (plant % 2) * 0.06,
+        item.z + Math.sin(plant) * 0.13,
+      );
+      dummy.scale.set(0.19, 0.1425, 0.1615);
+      dummy.updateMatrix();
+      plants.setMatrixAt(index, dummy.matrix);
+      plants.setColorAt(index, greens[(plant + planterIndex) % greens.length]);
+      index++;
+    }
+  });
+  plants.instanceMatrix.needsUpdate = true;
+  if (plants.instanceColor) plants.instanceColor.needsUpdate = true;
+  scene.add(plants);
+  placements.length = 0;
 }
 
 function createStreetLamp(scene: THREE.Scene, x: number, z: number, height = 2.9) {
@@ -1913,6 +1984,8 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   makeHedge(scene, -4.9, 11.4, 2.1, 0.52);
   makeHedge(scene, 6.1, 5.3, 1.7, 0.48);
   makeHedge(scene, 14.1, 12.8, 1.7, 0.48);
+  createHedgeBatch(scene);
+  createPlanterBatch(scene);
 
   // Premium street furniture, park benches, planters and traffic controls.
   addStreetFurniture(scene);
@@ -2272,7 +2345,7 @@ export default function WorldCanvas() {
         vehicle.position.x += speed * delta;
         if (vehicle.position.x > 25) vehicle.position.x = -25;
         const wheels = vehicle.userData.wheels as THREE.Group[] | undefined;
-        wheels?.forEach((wheel) => { wheel.rotation.x -= speed * delta / 0.19; });
+        wheels?.forEach((wheel) => { wheel.rotation.z -= speed * delta / 0.19; });
       });
 
       const radius = 34 / zoom;
