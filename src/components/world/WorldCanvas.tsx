@@ -1074,6 +1074,82 @@ function createTrafficSignal(scene: THREE.Scene, x: number, z: number, rotation 
   scene.add(signal);
 }
 
+function createBusShelter(scene: THREE.Scene, x: number, z: number) {
+  const shelter = new THREE.Group();
+  const steel = mat("#344c50", 0.42, 0.46);
+  const bronze = mat("#c39b63", 0.35, 0.52);
+  const glass = new THREE.MeshPhysicalMaterial({ color: "#a8c8c8", roughness: 0.12, metalness: 0.46, transparent: true, opacity: 0.58, transmission: 0.12 });
+  const stone = mat("#bbb8aa", 0.88);
+  addBox(shelter, 3.7, 0.14, 1.55, stone, 0, 0.08, 0);
+  addBox(shelter, 3.5, 0.12, 1.38, steel, 0, 2.3, 0);
+  addBox(shelter, 3.3, 0.07, 1.22, bronze, 0, 2.22, 0);
+  for (const side of [-1, 1]) {
+    addBox(shelter, 0.09, 2.1, 0.09, steel, side * 1.62, 1.15, -0.52);
+    addBox(shelter, 0.09, 2.1, 0.09, steel, side * 1.62, 1.15, 0.52);
+    addBox(shelter, 0.035, 1.78, 0.82, glass, side * 1.62, 1.18, 0, false);
+    addBox(shelter, 0.09, 2.1, 0.09, steel, side * 1.62, 1.15, 0);
+  }
+  addBox(shelter, 3.0, 0.08, 0.09, steel, 0, 1.75, -0.66);
+  // Wood-and-metal bench with individually modelled slats.
+  for (let slat = 0; slat < 5; slat++) {
+    addBox(shelter, 1.75, 0.045, 0.12, mat(slat % 2 ? "#9a7755" : "#896a4e", 0.76), 0, 0.61, -0.32 + slat * 0.13);
+  }
+  addBox(shelter, 1.75, 0.055, 0.12, steel, 0, 0.43, 0.03);
+  for (const side of [-1, 1]) addBox(shelter, 0.08, 0.52, 0.42, steel, side * 0.72, 0.55, -0.08);
+  // Printed bus timetable with a clean destination board.
+  const boardCanvas = document.createElement("canvas");
+  boardCanvas.width = 256;
+  boardCanvas.height = 384;
+  const context = boardCanvas.getContext("2d");
+  if (context) {
+    context.fillStyle = "#edf0e6";
+    context.fillRect(0, 0, 256, 384);
+    context.fillStyle = "#205153";
+    context.fillRect(0, 0, 256, 82);
+    context.fillStyle = "#f4e7c9";
+    context.font = "bold 28px Arial";
+    context.textAlign = "center";
+    context.fillText("NOVARIA", 128, 35);
+    context.font = "bold 17px Arial";
+    context.fillText("CITY TRANSIT", 128, 62);
+    context.fillStyle = "#3e5756";
+    context.font = "bold 18px Arial";
+    context.fillText("CENTRAL LOOP", 128, 122);
+    context.font = "16px Arial";
+    context.fillText("CITY HALL  ·  04", 128, 165);
+    context.fillText("MARINA      ·  08", 128, 204);
+    context.fillText("HARBOR      ·  12", 128, 243);
+    context.fillText("EVERY 10 MIN", 128, 318);
+    const texture = new THREE.CanvasTexture(boardCanvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.92), new THREE.MeshBasicMaterial({ map: texture }));
+    board.position.set(-1.24, 1.35, 0.68);
+    board.rotation.y = -0.12;
+    shelter.add(board);
+  }
+  shelter.position.set(x, 0.4, z);
+  shelter.rotation.y = Math.PI;
+  scene.add(shelter);
+}
+
+function createRoadArrow(scene: THREE.Scene, x: number, z: number, rotation = 0) {
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.52, -0.19);
+  shape.lineTo(0.08, -0.19);
+  shape.lineTo(0.08, -0.42);
+  shape.lineTo(0.58, 0);
+  shape.lineTo(0.08, 0.42);
+  shape.lineTo(0.08, 0.19);
+  shape.lineTo(-0.52, 0.19);
+  shape.closePath();
+  const arrow = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat("#eee9d7", 0.74));
+  arrow.rotation.x = -Math.PI / 2;
+  arrow.rotation.z = rotation;
+  arrow.position.set(x, 0.426, z);
+  arrow.receiveShadow = true;
+  scene.add(arrow);
+}
+
 function addStreetFurniture(scene: THREE.Scene) {
   createBench(scene, -12.8, 8.9, Math.PI / 2);
   createBench(scene, -7.2, 8.9, -Math.PI / 2);
@@ -1360,6 +1436,9 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
 
   // Premium street furniture, park benches, planters and traffic controls.
   addStreetFurniture(scene);
+  createBusShelter(scene, 16.7, 5.7);
+  createRoadArrow(scene, -11.5, 1.8, 0);
+  createRoadArrow(scene, 11.5, 1.8, Math.PI);
 
   // Street lights, benches and bollards around the central plazas.
   const lampMaterial = mat("#38484a", 0.55, 0.25);
