@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { CITIZEN_SPECIES } from "@/lib/animals";
 
 type AvatarStyle = { furTone?: string; outfit?: string; accessory?: string };
@@ -2148,6 +2149,15 @@ export default function WorldCanvas() {
     renderer.domElement.className = "world-canvas";
     host.appendChild(renderer.domElement);
 
+    // One-time PMREM studio environment gives glass, lacquer and metal convincing reflections.
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const roomEnvironment = new RoomEnvironment();
+    const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
+    scene.environment = environmentTarget.texture;
+    scene.environmentIntensity = lowPowerDevice ? 0.42 : 0.62;
+    pmremGenerator.dispose();
+    roomEnvironment.dispose();
+
     scene.add(new THREE.HemisphereLight("#fff5e8", "#53646a", 2.1));
     scene.add(new THREE.AmbientLight("#f0e9db", 0.34));
     const sun = new THREE.DirectionalLight("#ffe3bb", 3.35);
@@ -2418,6 +2428,7 @@ export default function WorldCanvas() {
       avatarAbort?.abort();
       avatarAbort = null;
       observer.disconnect();
+      environmentTarget.dispose();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
