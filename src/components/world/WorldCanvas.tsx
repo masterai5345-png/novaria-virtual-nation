@@ -1351,7 +1351,6 @@ function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
   const darkChrome = mat("#263437", 0.45, 0.54);
   const headlamp = cachedMaterial("car-headlamp", () => new THREE.MeshStandardMaterial({ color: "#fff4cf", emissive: "#ffdc91", emissiveIntensity: 0.78, roughness: 0.2 }));
   const tailLamp = cachedMaterial("car-tail-lamp", () => new THREE.MeshStandardMaterial({ color: "#d34b42", emissive: "#a72a26", emissiveIntensity: 0.48 }));
-  const wheels: THREE.Group[] = [];
 
   // Sculpted body shell with a curved bonnet, roofline and boot.
   const shell = new THREE.Shape();
@@ -1482,10 +1481,6 @@ function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
   scene.add(car);
   return car;
 }
-function darkFrameMaterial() {
-  return mat("#29383c", 0.68, 0.16);
-}
-
 function createBench(scene: THREE.Scene, x: number, z: number, rotation = 0) {
   const bench = new THREE.Group();
   const wood = mat("#956d4d", 0.72);
