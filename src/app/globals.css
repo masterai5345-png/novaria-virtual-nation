@@ -1604,3 +1604,41 @@ a { color: inherit; text-decoration: none; }
   .town-icon-control, .town-search-button, .town-random-button,
   .town-resident-result { transition: none; }
 }
+
+.avatar-label span {
+  margin-left: 5px;
+  color: #a8b9ac;
+  font-size: 8px;
+  font-weight: 600;
+}
+.avatar-handle-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+  padding: 0 12px;
+  border: 1px solid #ffffff25;
+  border-radius: 11px;
+  background: #0c2429;
+  color: #d5b97e;
+}
+.avatar-handle-field > span { font: 800 13px "DM Sans", sans-serif; }
+.avatar-handle-field .avatar-name-input {
+  flex: 1;
+  margin: 0;
+  padding-inline: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.avatar-handle-field:focus-within {
+  border-color: #d8b879;
+  box-shadow: 0 0 0 3px #d8b87920;
+}
+.avatar-public-note {
+  display: block;
+  margin-top: 6px;
+  color: #9db3a6;
+  font-size: 8px;
+  line-height: 1.5;
+}
