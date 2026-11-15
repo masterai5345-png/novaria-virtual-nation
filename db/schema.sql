@@ -324,3 +324,27 @@ CREATE TABLE IF NOT EXISTS worker_heartbeats (
 
 CREATE INDEX IF NOT EXISTS worker_heartbeats_last_seen_idx
   ON worker_heartbeats (last_seen_at DESC);
+
+
+-- Citizen mascot species are assigned once at registration and remain permanent.
+ALTER TABLE citizens DROP CONSTRAINT IF EXISTS citizens_avatar_species_check;
+ALTER TABLE citizens
+  ADD CONSTRAINT citizens_avatar_species_check
+  CHECK (avatar_species IN (
+    'otter', 'fox', 'cat', 'panda', 'rabbit', 'wolf', 'bear', 'raccoon',
+    'capybara', 'penguin', 'deer', 'lion', 'tiger', 'red-panda', 'koala',
+    'frog', 'duck', 'dog', 'cow', 'hamster', 'hedgehog', 'elephant',
+    'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
+  ));
+ALTER TABLE citizens ALTER COLUMN avatar_species SET DEFAULT 'fox';
+
+-- Convert founding accounts from the original all-Otter prototype to a stable,
+-- deterministic mix of animal residents. Re-running the schema does not reshuffle them.
+UPDATE citizens
+SET avatar_species = (ARRAY[
+  'fox', 'cat', 'panda', 'rabbit', 'wolf', 'bear', 'raccoon',
+  'capybara', 'penguin', 'deer', 'lion', 'tiger', 'red-panda',
+  'koala', 'frog', 'duck', 'dog', 'cow', 'hamster', 'hedgehog',
+  'elephant', 'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
+]::text[])[1 + (get_byte(decode(md5(id::text), 'hex'), 0) % 27)]
+WHERE avatar_species = 'otter';
