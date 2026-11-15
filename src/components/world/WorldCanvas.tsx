@@ -410,19 +410,145 @@ function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
   group.position.set(x, 0.4, z);
   scene.add(group);
 }
+function createFacadeMaterial(baseColor: string, seed: number, rounded = false) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const context = canvas.getContext("2d");
+  if (!context) return mat(baseColor, 0.3, 0.55);
+
+  const palette = ["#36505c", "#48616d", "#637a82", "#8c8c83", "#5d7077"];
+  const base = palette[seed % palette.length];
+  context.fillStyle = base;
+  context.fillRect(0, 0, 1024, 1024);
+  const columns = rounded ? 9 : 8;
+  const rows = 22;
+  const cellW = 1024 / columns;
+  const cellH = 1024 / rows;
+
+  for (let row = 0; row < rows; row++) {
+    const floorY = row * cellH;
+    context.fillStyle = row % 4 === 0 ? "rgba(18,31,37,.56)" : "rgba(20,33,39,.35)";
+    context.fillRect(0, floorY, 1024, 8);
+    for (let column = 0; column < columns; column++) {
+      const x = column * cellW;
+      const lit = ((row * 17 + column * 29 + seed * 13) % 11) < 3;
+      const tone = lit ? "#e4d6ad" : (row + column) % 3 === 0 ? "#9bb7ba" : "#52717c";
+      const gradient = context.createLinearGradient(x, floorY + 12, x + cellW, floorY + cellH - 12);
+      gradient.addColorStop(0, lit ? "#f4e5c3" : "#7997a0");
+      gradient.addColorStop(0.22, tone);
+      gradient.addColorStop(1, lit ? "#c3b18a" : "#294550");
+      context.fillStyle = gradient;
+      context.fillRect(x + 11, floorY + 17, cellW - 22, cellH - 32);
+      context.fillStyle = "rgba(229,241,235,.28)";
+      context.fillRect(x + 15, floorY + 20, Math.max(2, cellW * 0.025), cellH - 38);
+      context.fillStyle = "rgba(14,28,34,.5)";
+      context.fillRect(x + cellW - 14, floorY + 17, 3, cellH - 32);
+    }
+  }
+
+  // Vertical anodised mullions and a subtle stone / metal spandrel grid.
+  context.fillStyle = "rgba(18,31,37,.72)";
+  for (let column = 0; column <= columns; column++) {
+    context.fillRect(column * cellW - 4, 0, 8, 1024);
+  }
+  context.fillStyle = "rgba(216,194,151,.36)";
+  for (let row = 0; row <= rows; row++) {
+    context.fillRect(0, row * cellH - 2, 1024, 4);
+  }
+
+  // Fine, non-repeating facade grain prevents the glass tower from looking like flat plastic.
+  let random = (seed + 1) * 9187;
+  const next = () => {
+    random = (random * 16807) % 2147483647;
+    return random / 2147483647;
+  };
+  for (let i = 0; i < 2600; i++) {
+    const x = next() * 1024;
+    const y = next() * 1024;
+    context.fillStyle = next() > 0.5 ? "rgba(255,255,255,.045)" : "rgba(0,0,0,.05)";
+    context.fillRect(x, y, 1 + next() * 2, 1 + next() * 3);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return new THREE.MeshStandardMaterial({
+    color: "#ffffff",
+    map: texture,
+    roughness: rounded ? 0.23 : 0.28,
+    metalness: 0.58,
+    emissive: "#172c33",
+    emissiveIntensity: 0.16,
+  });
+}
+
+function createAsphaltMaterial() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const context = canvas.getContext("2d");
+  if (!context) return mat("#343a42", 0.97);
+  context.fillStyle = "#343a3d";
+  context.fillRect(0, 0, 512, 512);
+  let seed = 87231;
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  for (let index = 0; index < 12000; index++) {
+    const value = random();
+    context.fillStyle = value > 0.82 ? "rgba(205,207,193,.18)" : value > 0.48 ? "rgba(10,19,23,.12)" : "rgba(118,126,121,.13)";
+    const radius = 0.5 + random() * 1.7;
+    context.beginPath();
+    context.arc(random() * 512, random() * 512, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(3, 3);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return new THREE.MeshStandardMaterial({ color: "#ffffff", map: texture, roughness: 0.98, metalness: 0.01 });
+}
+
+function createPaverMaterial() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const context = canvas.getContext("2d");
+  if (!context) return mat("#c9c6b9", 0.95);
+  context.fillStyle = "#c9c6b9";
+  context.fillRect(0, 0, 512, 512);
+  const size = 64;
+  for (let row = 0; row < 8; row++) {
+    for (let column = 0; column < 8; column++) {
+      const shade = (row + column) % 3;
+      context.fillStyle = shade === 0 ? "#d4d0c4" : shade === 1 ? "#c4c1b7" : "#cbc8bd";
+      context.fillRect(column * size + 2, row * size + 2, size - 4, size - 4);
+      context.fillStyle = "rgba(255,255,255,.24)";
+      context.fillRect(column * size + 4, row * size + 4, size - 8, 2);
+      context.fillStyle = "rgba(63,68,67,.12)";
+      context.fillRect(column * size + 3, row * size + size - 5, size - 6, 2);
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(4, 4);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return new THREE.MeshStandardMaterial({ color: "#ffffff", map: texture, roughness: 0.96 });
+}
+
 function makeTower(scene: THREE.Scene, x: number, z: number, width: number, depth: number, floors: number, hue: string, rounded = false) {
   const group = new THREE.Group();
   const floorHeight = 0.43;
   const height = floors * floorHeight;
   const frame = mat(hue, 0.44, 0.3);
   const darkFrame = mat("#27373c", 0.52, 0.22);
-  const glass = new THREE.MeshStandardMaterial({
-    color: "#587d8b",
-    roughness: 0.17,
-    metalness: 0.62,
-    emissive: "#1d3541",
-    emissiveIntensity: 0.12,
-  });
+  const glass = createFacadeMaterial(hue, Math.round(Math.abs(x * 7 + z * 11)) % 19, rounded);
   const litGlass = new THREE.MeshStandardMaterial({
     color: "#e9d8ae",
     roughness: 0.24,
@@ -598,7 +724,7 @@ function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number
   return group;
 }
 function addRoadMarkings(scene: THREE.Scene) {
-  const asphalt = mat("#343a42", 0.94);
+  const asphalt = createAsphaltMaterial();
   const sidewalk = mat("#c4c4bc");
   const line = mat("#f5eee0", 0.7);
   const yellow = mat("#e7c777", 0.7);
@@ -984,7 +1110,7 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   sea.position.y = -0.32;
   scene.add(sea);
 
-  const land = new THREE.Mesh(new THREE.PlaneGeometry(52, 52), mat("#c9c6b9", 0.94));
+  const land = new THREE.Mesh(new THREE.PlaneGeometry(52, 52), createPaverMaterial());
   land.rotation.x = -Math.PI / 2;
   land.position.y = 0.35;
   land.receiveShadow = true;
