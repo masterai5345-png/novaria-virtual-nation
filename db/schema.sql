@@ -331,7 +331,7 @@ ALTER TABLE citizens DROP CONSTRAINT IF EXISTS citizens_avatar_species_check;
 ALTER TABLE citizens
   ADD CONSTRAINT citizens_avatar_species_check
   CHECK (avatar_species IN (
-    'otter', 'fox', 'cat', 'panda', 'rabbit', 'wolf', 'bear', 'raccoon',
+    'fox', 'cat', 'panda', 'rabbit', 'wolf', 'bear', 'raccoon',
     'capybara', 'penguin', 'deer', 'lion', 'tiger', 'red-panda', 'koala',
     'frog', 'duck', 'dog', 'cow', 'hamster', 'hedgehog', 'elephant',
     'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
@@ -348,6 +348,20 @@ SET avatar_species = (ARRAY[
   'elephant', 'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
 ]::text[])[1 + (get_byte(decode(md5(id::text), 'hex'), 0) % 27)]
 WHERE avatar_species = 'otter';
+
+-- City leadership is a distinct NPC persona, separate from resident mascot selection.
+ALTER TABLE city_leaders DROP CONSTRAINT IF EXISTS city_leaders_species_check;
+ALTER TABLE city_leaders
+  ADD CONSTRAINT city_leaders_species_check
+  CHECK (species IN (
+    'fox', 'cat', 'panda', 'rabbit', 'wolf', 'bear', 'raccoon',
+    'capybara', 'penguin', 'deer', 'lion', 'tiger', 'red-panda',
+    'koala', 'frog', 'duck', 'dog', 'cow', 'hamster', 'hedgehog',
+    'elephant', 'monkey', 'sloth', 'owl', 'horse', 'squirrel', 'beaver'
+  ));
+
+-- The city mascot population is diverse; the founding bear mayor is not a citizen species lock.
+ALTER TABLE city_leaders ALTER COLUMN species SET DEFAULT 'bear';
 
 
 -- Optional public Instagram username used by the city mascot finder.
