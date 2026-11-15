@@ -989,3 +989,135 @@ a { color: inherit; text-decoration: none; }
   .town-primary-action, .town-mission-card, .town-district-card,
   .town-species-grid > div { transition: none; }
 }
+
+
+/* Citizen identity pages follow the same premium coastal-city visual language. */
+.citizen-page-shell {
+  position: relative;
+  max-width: 1180px;
+  padding-inline: 32px;
+  color: #edf2e9;
+  background:
+    radial-gradient(ellipse at 85% 10%, #b78b5130, transparent 35%),
+    radial-gradient(ellipse at 4% 32%, #3a797033, transparent 38%),
+    linear-gradient(145deg, #0c2024, #102d31 58%, #0a1d22);
+}
+.citizen-page-shell::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 12%, #d4b17112, transparent 24%),
+    linear-gradient(160deg, #0a1c20, #102d31 60%, #08191e);
+  content: "";
+}
+.citizen-page-header { border-bottom-color: #d6b77a30; }
+.citizen-page-header .brand { color: #f4efe3; }
+.citizen-page-header .brand-mark {
+  border: 1px solid #e3c68e;
+  background: linear-gradient(145deg, #e7ca8c, #a97f4d);
+  color: #183536;
+  box-shadow: 0 4px 0 #745739, 0 10px 26px #050f1245;
+}
+.citizen-page-header .brand small { color: #aebfb3; }
+.citizen-return { color: #e6c78a; }
+.citizen-welcome-card {
+  margin-top: 30px;
+  border: 1px solid #e0c08740;
+  border-radius: 25px;
+  background:
+    radial-gradient(circle at 90% 4%, #e7bd7c20, transparent 34%),
+    linear-gradient(145deg, #1d4442, #102d31 68%, #10252a);
+  box-shadow: 0 20px 60px #04111466, inset 0 1px 0 #ffffff17;
+}
+.citizen-welcome-card h1 { color: #f4eee1; }
+.citizen-welcome-card > p { color: #b8c9bd; }
+.citizen-big-otter {
+  top: 22px;
+  right: 32px;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  border: 1px solid #e8c98e75;
+  border-radius: 28px;
+  background: linear-gradient(145deg, #e5d3ad, #b79c6d);
+  box-shadow: 0 14px 34px #07171970, inset 0 1px 0 #fff8e7;
+}
+.citizen-profile-grid div {
+  border-color: #ffffff1f;
+  background: linear-gradient(145deg, #102b2f, #0c2328);
+  box-shadow: inset 0 1px 0 #ffffff0b;
+}
+.citizen-profile-grid small { color: #a0b7a8; }
+.citizen-profile-grid strong { color: #f0dfba; }
+.citizen-welcome-card .citizen-next-step { color: #d9c394; }
+.citizen-tools-grid { gap: 16px; }
+.avatar-studio, .house-claim-card {
+  border-color: #d9bc8142;
+  border-radius: 21px;
+  background:
+    radial-gradient(circle at 100% 0%, #d7b37013, transparent 35%),
+    linear-gradient(145deg, #18383a, #0e292e);
+  color: #edf2e9;
+  box-shadow: 0 16px 42px #05141755, inset 0 1px 0 #ffffff13;
+}
+.avatar-studio-heading > span, .house-claim-icon {
+  border: 1px solid #d8b77d47;
+  background: linear-gradient(145deg, #d9b67827, #b1844e12);
+  color: #e7c98f;
+}
+.avatar-studio-heading b { color: #f1eadb; }
+.avatar-studio-heading small { color: #a4b8aa; }
+.avatar-preview-row {
+  border: 1px solid #e2c18835;
+  background:
+    radial-gradient(circle at 20% 15%, #d9b97b20, transparent 45%),
+    linear-gradient(145deg, #234447, #102a30);
+}
+.avatar-preview {
+  border: 1px solid #e4c68d9c;
+  background: radial-gradient(circle at 50% 18%, #f1e0bf, #a7b4a2 90%);
+  box-shadow: 0 9px 24px #07171966, inset 0 1px 0 #fff7e5;
+}
+.avatar-preview-copy .eyebrow { color: #d4b779; }
+.avatar-preview-copy h3 { color: #f5eddd; }
+.avatar-preview-copy p { color: #dfc58f; }
+.avatar-preview-copy small { color: #9fb3a7; }
+.avatar-label, .avatar-option-block > b { color: #e9d8b3; }
+.avatar-name-input {
+  border-color: #ffffff25;
+  background: #0c2429;
+  color: #f4eee1;
+}
+.avatar-name-input:focus { border-color: #d8b879; box-shadow: 0 0 0 3px #d8b87920; }
+.fur-options button, .outfit-options button, .accessory-options button {
+  border-color: #ffffff26;
+  background: #0e292e;
+  color: #dce7dc;
+}
+.outfit-options span { color: #f0e6d2; }
+.outfit-options small, .avatar-current-option { color: #9db3a6; }
+.fur-options button.selected, .outfit-options button.selected, .accessory-options button.selected {
+  border-color: #e1c183;
+  background: linear-gradient(145deg, #d7b4702b, #c0985b18);
+  box-shadow: 0 0 0 2px #d8b67717;
+}
+.avatar-save, .house-claim-content > button {
+  border: 1px solid #f1d49b;
+  background: linear-gradient(145deg, #efd49a, #c3975d);
+  color: #183838;
+  box-shadow: 0 4px 0 #856543, 0 10px 23px #06141755, inset 0 1px 0 #fff8e8;
+}
+.avatar-message { color: #a7ddb4; }
+.avatar-error { color: #f0a99c; }
+.house-claim-content h3 { color: #f1eadc; }
+.house-claim-content p { color: #a9bdb1; }
+.house-claim-refresh { color: #d4bd8b; }
+.house-claim-success { color: #a7ddb4; }
+.house-claim-error { color: #f0a99c; }
+@media (max-width: 620px) {
+  .citizen-page-shell { padding-inline: 14px; }
+  .citizen-welcome-card { margin-top: 20px; }
+  .citizen-big-otter { width: 68px; height: 68px; right: 15px; top: 14px; border-radius: 17px; font-size: 44px; }
+}
