@@ -127,20 +127,58 @@ function addTube(
   return mesh;
 }
 
+function createFurMaterial(color: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  const fallback = new THREE.MeshPhysicalMaterial({ color, roughness: 0.94, sheen: 0.25, sheenRoughness: 0.92 });
+  if (!context) return fallback;
+  context.fillStyle = "#858585";
+  context.fillRect(0, 0, 256, 256);
+  let seed = 7411;
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  for (let index = 0; index < 5200; index++) {
+    const brightness = Math.floor(90 + random() * 90);
+    context.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+    const x = random() * 256;
+    const y = random() * 256;
+    context.fillRect(x, y, 0.7 + random() * 1.6, 0.7 + random() * 2.2);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1.8, 1.8);
+  texture.anisotropy = 4;
+  return new THREE.MeshPhysicalMaterial({
+    color,
+    roughness: 0.96,
+    metalness: 0,
+    sheen: 0.28,
+    sheenColor: new THREE.Color(color).multiplyScalar(1.15),
+    sheenRoughness: 0.94,
+    bumpMap: texture,
+    bumpScale: 0.018,
+  });
+}
+
 function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyle = {}, outfitOverride?: string) {
   clearGroup(group);
   const species = ANIMAL_LOOKS[speciesName] ? speciesName : "fox";
   const look = ANIMAL_LOOKS[species];
   // Citizens can personalise coat colour while their species silhouette and markings remain recognisable.
   const coatColor = COAT_COLORS[style.furTone ?? ""] ?? look.coat;
-  const coat = mat(coatColor, 0.94);
+  const coat = createFurMaterial(coatColor);
   const belly = mat(look.belly, 0.96);
   const muzzle = mat(look.muzzle, 0.88);
   const dark = mat("#20282b", 0.42);
   const eyeWhite = mat("#fffaf0", 0.24);
   const iris = mat(species === "frog" ? "#6b8e44" : species === "wolf" || species === "cat" ? "#79a6a1" : "#9a6840", 0.25);
   const outfitColor = outfitOverride ?? OUTFIT_COLORS[style.outfit ?? "citizen-teal"] ?? OUTFIT_COLORS["citizen-teal"];
-  const outfit = mat(outfitColor, 0.66);
+  const outfit = new THREE.MeshPhysicalMaterial({ color: outfitColor, roughness: 0.82, metalness: 0.02, sheen: 0.38, sheenColor: new THREE.Color(outfitColor).multiplyScalar(1.1), sheenRoughness: 0.9 });
   const trim = mat("#e9d1a0", 0.48, 0.12);
   const gold = mat("#d6ad68", 0.36, 0.32);
   const sole = mat("#263238", 0.9);
@@ -725,7 +763,7 @@ function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number
 }
 function addRoadMarkings(scene: THREE.Scene) {
   const asphalt = createAsphaltMaterial();
-  const sidewalk = mat("#c4c4bc");
+  const sidewalk = createPaverMaterial();
   const line = mat("#f5eee0", 0.7);
   const yellow = mat("#e7c777", 0.7);
   const horizontal = new THREE.Mesh(new THREE.PlaneGeometry(52, 3.6), asphalt);
@@ -1459,7 +1497,7 @@ export default function WorldCanvas() {
       const dx = event.clientX - lastX;
       const dy = event.clientY - lastY;
       rotation += dx * 0.005;
-      camera.position.y = THREE.MathUtils.clamp(camera.position.y + dy * 0.025, 15, 37);
+      camera.position.y = THREE.MathUtils.clamp(camera.position.y + dy * 0.025, 13.5, 32);
       lastX = event.clientX;
       lastY = event.clientY;
     };
