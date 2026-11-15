@@ -1642,3 +1642,380 @@ a { color: inherit; text-decoration: none; }
   font-size: 8px;
   line-height: 1.5;
 }
+
+
+/* Kota Maskot reference skin: full-screen playful city canvas with a coral-and-cream HUD. */
+.town-experience {
+  color: #2b2a33;
+  background: #cfe8ff;
+  font-family: "Baloo 2", "DM Sans", system-ui, sans-serif;
+}
+.town-world-shade {
+  background: radial-gradient(ellipse at center, transparent 58%, rgba(15,12,30,.30) 100%);
+}
+.town-topbar {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  min-height: 54px;
+  padding: max(env(safe-area-inset-top), 8px) 14px 7px;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+.town-brand {
+  gap: 0;
+  color: #2b2a33;
+  pointer-events: auto;
+}
+.town-brand-mark { display: none; }
+.town-brand > span:last-child {
+  display: block;
+  padding: 3px 14px 4px;
+  border: 1px solid #e4dccf;
+  border-radius: 20px;
+  background: rgba(255,255,255,.93);
+  color: #2b2a33;
+  box-shadow: 0 3px 13px rgba(30,35,48,.08);
+}
+.town-brand strong {
+  color: #2b2a33;
+  font: 800 22px/1.2 "Baloo 2", "DM Sans", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+.town-brand small { display: none; }
+.town-topbar-center {
+  position: static;
+  transform: none;
+  margin-left: auto;
+  margin-right: 2px;
+  color: #2b2a33;
+  pointer-events: auto;
+}
+.town-population-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 3px 12px;
+  border: 1px solid #e4dccf;
+  border-radius: 20px;
+  background: rgba(255,255,255,.93);
+  color: #2b2a33;
+  font: 700 14px/1.25 "Baloo 2", "DM Sans", system-ui, sans-serif;
+  box-shadow: 0 3px 13px rgba(30,35,48,.08);
+  white-space: nowrap;
+}
+.town-topbar-actions {
+  gap: 6px;
+  pointer-events: auto;
+}
+.town-icon-control {
+  width: 42px;
+  height: 38px;
+  border: 0;
+  border-radius: 15px;
+  background: #ff8064;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(84,49,42,.15);
+}
+.town-icon-control:hover, .town-icon-control.active {
+  transform: translateY(-1px);
+  border: 0;
+  background: #f76549;
+  color: #fff;
+}
+.town-topbar .citizen-button {
+  border: 1px solid #e4dccf;
+  background: rgba(255,255,255,.93);
+  color: #2b2a33;
+  box-shadow: 0 3px 13px rgba(30,35,48,.08);
+}
+.town-topbar .citizen-button:hover { background: #fff; color: #2b2a33; }
+.town-profile-link {
+  border: 1px solid #e4dccf;
+  background: rgba(255,255,255,.93);
+  color: #2b2a33;
+  box-shadow: 0 3px 13px rgba(30,35,48,.08);
+}
+.town-search-dock {
+  left: 50%;
+  right: auto;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  width: min(460px, 94vw);
+  min-width: 0;
+  padding: 0;
+  gap: 8px;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.town-search-input-wrap {
+  min-height: 47px;
+  padding: 0 12px;
+  gap: 8px;
+  border: 2px solid #e4dccf;
+  border-radius: 16px;
+  background: rgba(255,255,255,.96);
+  color: #77717f;
+  box-shadow: 0 5px 18px rgba(30,35,48,.12);
+}
+.town-search-input-wrap input {
+  height: 43px;
+  color: #2b2a33;
+  font: 500 16px "Baloo 2", "DM Sans", system-ui, sans-serif;
+}
+.town-search-input-wrap input::placeholder { color: #888390; opacity: 1; }
+.town-search-button, .town-random-button {
+  height: 47px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 16px;
+  background: #ff6b4a;
+  color: #fff;
+  box-shadow: 0 5px 16px rgba(105,53,41,.14);
+  font: 700 16px "Baloo 2", "DM Sans", system-ui, sans-serif;
+}
+.town-search-button:hover { background: #f35b3c; }
+.town-random-button {
+  width: 86px;
+  padding: 0 15px;
+  border: 2px solid #e4dccf;
+  background: rgba(255,255,255,.94);
+  color: #2b2a33;
+}
+.town-random-button:hover { background: #fff; color: #2b2a33; }
+.town-search-feedback, .town-resident-results {
+  left: 50%;
+  right: auto;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+  width: min(460px, 94vw);
+  transform: translateX(-50%);
+  border: 1px solid #e4dccf;
+  border-radius: 17px;
+  background: rgba(255,255,255,.96);
+  color: #2b2a33;
+  box-shadow: 0 8px 30px rgba(0,0,0,.16);
+  backdrop-filter: blur(12px);
+}
+.town-search-feedback { color: #5c5663; }
+.town-resident-results-heading { color: #2b2a33; }
+.town-resident-results-heading button {
+  border: 1px solid #e4dccf;
+  background: #fff;
+  color: #2b2a33;
+}
+.town-resident-result {
+  border: 1px solid #e4dccf;
+  background: #fff;
+  color: #2b2a33;
+}
+.town-resident-result:hover { border-color: #ff9a81; background: #fff7f3; }
+.town-resident-result b { color: #2b2a33; }
+.town-resident-result small { color: #716b78; }
+.town-resident-result-arrow { color: #ff6b4a; }
+.town-resident-result-emoji {
+  border-color: #ead9ce;
+  background: #fff3e9;
+}
+.town-selected-resident {
+  left: 50%;
+  right: auto;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+  width: min(460px, 94vw);
+  transform: translateX(-50%);
+  border: 1px solid #e4dccf;
+  border-radius: 18px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 8px 30px rgba(0,0,0,.16);
+  backdrop-filter: blur(12px);
+}
+.town-selected-emoji {
+  border-color: #e4dccf;
+  background: #fff3e9;
+}
+.town-selected-copy small { color: #79717d; }
+.town-selected-copy b { color: #2b2a33; }
+.town-selected-resident > button:not(.town-close-selected) {
+  border: 0;
+  background: #ff6b4a;
+  color: #fff;
+  box-shadow: none;
+  font: 700 14px "Baloo 2", "DM Sans", system-ui, sans-serif;
+}
+.town-close-selected {
+  border-color: #e4dccf;
+  background: #fff;
+  color: #2b2a33;
+}
+.town-assistant-panel {
+  top: auto;
+  right: auto;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 130px);
+  width: min(460px, 94vw);
+  max-height: 46vh;
+  transform: translateX(-50%);
+  border: 1px solid #e4dccf;
+  border-radius: 18px;
+  background: rgba(255,255,255,.96);
+  color: #2b2a33;
+  box-shadow: 0 8px 30px rgba(0,0,0,.22);
+  backdrop-filter: blur(14px);
+}
+.town-assistant-panel > header {
+  border-bottom: 1px solid #e4dccf;
+  background: transparent;
+}
+.town-assistant-avatar {
+  border-color: #e4dccf;
+  background: #fff0e7;
+}
+.town-assistant-panel > header small { color: #a16c58; }
+.town-assistant-panel > header b { color: #2b2a33; }
+.town-assistant-panel > header button {
+  border-color: #e4dccf;
+  background: #fff;
+  color: #2b2a33;
+}
+.town-chat-message.assistant {
+  border-color: #e4dccf;
+  background: #fff;
+  color: #2b2a33;
+}
+.town-chat-message.user {
+  border: 0;
+  background: #ff6b4a;
+  color: #fff;
+}
+.town-chat-form { border-top: 1px solid #e4dccf; background: transparent; }
+.town-chat-form input {
+  border: 2px solid #e4dccf;
+  background: #fff;
+  color: #2b2a33;
+  font: 500 15px "Baloo 2", "DM Sans", system-ui, sans-serif;
+}
+.town-chat-form input::placeholder { color: #817a88; }
+.town-chat-form button {
+  border: 0;
+  background: #ff6b4a;
+  color: #fff;
+}
+.town-assistant-footnote { color: #77717f; }
+.town-bottom-hint { display: none; }
+.town-drawer {
+  top: 70px;
+  right: 12px;
+  bottom: 78px;
+  border: 1px solid #e4dccf;
+  border-radius: 18px;
+  background: rgba(255,255,255,.97);
+  color: #2b2a33;
+  box-shadow: 0 8px 30px rgba(0,0,0,.18);
+}
+.town-drawer-heading { border-bottom-color: #e4dccf; }
+.town-drawer-heading small { color: #a16c58; }
+.town-drawer-heading h2 { color: #2b2a33; }
+.town-drawer-heading > button {
+  border-color: #e4dccf;
+  background: #fff;
+  color: #2b2a33;
+}
+.town-overview-content > p { color: #6d6a78; }
+.town-drawer .quick-stats div { background: #f4f0e8; }
+.town-drawer .quick-stats small { color: #77717f; }
+.town-drawer .quick-stats strong { color: #2b2a33; }
+.town-mission-card, .town-district-card, .town-species-grid > div {
+  border-color: #e4dccf;
+  background: #fff;
+}
+.town-mission-copy b, .town-district-card b, .town-species-grid b { color: #2b2a33; }
+.town-mission-copy p, .town-district-card p, .town-muted { color: #716b78; }
+.town-mission-icon, .town-district-card > span {
+  background: #fff0e7;
+  color: #c26d55;
+}
+.town-mayor-profile {
+  border-color: #e4dccf;
+  background: #fff3e9;
+}
+.town-mayor-profile > span { background: #f5e3d4; }
+.town-mayor-profile b { color: #2b2a33; }
+.town-mayor-profile p { color: #716b78; }
+.town-species-heading b { color: #2b2a33; }
+.town-species-heading small { color: #a16c58; }
+.town-species-grid > div { background: #fff; }
+.town-primary-action {
+  background: #ff6b4a;
+  color: #fff;
+}
+.town-wallet { border-color: #e4dccf; background: #fff7ef; }
+.town-wallet small { color: #77717f; }
+.town-wallet b { color: #2b2a33; }
+.town-wallet em { color: #77717f; }
+
+@media (max-width: 760px) {
+  .town-topbar {
+    min-height: 48px;
+    height: auto;
+    padding: max(env(safe-area-inset-top), 7px) 10px 6px;
+  }
+  .town-brand > span:last-child { padding: 2px 11px 3px; }
+  .town-brand strong { font-size: 18px; }
+  .town-topbar-center { display: flex; }
+  .town-population-chip { min-height: 27px; padding: 2px 9px; font-size: 12px; }
+  .town-topbar-actions { gap: 5px; }
+  .town-icon-control { width: 34px; height: 32px; border-radius: 12px; }
+  .town-search-dock {
+    left: 50%;
+    right: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    width: min(460px, calc(100vw - 20px));
+    min-width: 0;
+    transform: translateX(-50%);
+    gap: 5px;
+  }
+  .town-search-input-wrap { min-height: 44px; padding: 0 9px; }
+  .town-search-input-wrap input { height: 40px; font-size: 14px; }
+  .town-search-button, .town-random-button { height: 44px; padding: 0 12px; font-size: 14px; }
+  .town-random-button { width: 56px; }
+  .town-search-feedback, .town-resident-results {
+    left: 50%;
+    right: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
+    width: min(460px, calc(100vw - 20px));
+    transform: translateX(-50%);
+  }
+  .town-selected-resident {
+    left: 50%;
+    right: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
+    width: min(460px, calc(100vw - 20px));
+    transform: translateX(-50%);
+  }
+  .town-selected-resident > button:not(.town-close-selected) { height: 35px; padding: 0 9px; font-size: 12px; }
+  .town-assistant-panel {
+    left: 50%;
+    right: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 116px);
+    width: min(460px, calc(100vw - 20px));
+    transform: translateX(-50%);
+    max-height: 48vh;
+  }
+  .town-drawer { top: 62px; right: 8px; bottom: 68px; left: auto; width: min(410px, calc(100vw - 16px)); }
+}
+@media (max-width: 430px) {
+  .town-brand small { display: none; }
+  .town-topbar-actions { gap: 4px; }
+  .town-icon-control { width: 31px; height: 30px; }
+  .town-topbar .citizen-button { padding: 7px 8px; font-size: 9px; }
+  .town-profile-link { padding: 7px 8px; }
+  .town-search-dock { width: calc(100vw - 16px); }
+  .town-search-feedback, .town-resident-results, .town-selected-resident { width: calc(100vw - 16px); }
+  .town-selected-resident > button:not(.town-close-selected) { padding: 0 7px; font-size: 10px; }
+}
