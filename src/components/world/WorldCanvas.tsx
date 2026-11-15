@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import * as THREE from "three";
-import { CITIZEN_SPECIES, type CitizenSpecies } from "@/lib/animals";
+import { CITIZEN_SPECIES } from "@/lib/animals";
 
 type AvatarStyle = { furTone?: string; outfit?: string; accessory?: string };
 type AnimalLook = {
@@ -347,7 +347,7 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
   scene.add(group);
 }
 
-function makeHouse(scene: THREE.Scene, x: number, z: number, variant: number) {
+function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number) {
   const group = new THREE.Group();
   const walls = ["#e8e1d4", "#d9e3df", "#e5d6c4", "#d5e0e0"];
   const roofs = ["#3e5b5a", "#786657", "#4e6671", "#9b7256"];
@@ -366,7 +366,8 @@ function makeHouse(scene: THREE.Scene, x: number, z: number, variant: number) {
     addBox(group, 0.9, 0.06, 0.4, roof, 0.28, 0.86, 0.98);
   }
   group.position.set(x, 0.42, z);
-  scene.add(group);
+  parent.add(group);
+  return group;
 }
 
 function addRoadMarkings(scene: THREE.Scene) {
@@ -417,7 +418,6 @@ function addRoadMarkings(scene: THREE.Scene) {
   const southWalk = northWalk.clone();
   southWalk.position.z = 4.16;
   scene.add(southWalk);
-  void sidewalk;
 }
 
 function makeTreeCluster(scene: THREE.Scene, centerX: number, centerZ: number, width: number, depth: number, count: number) {
@@ -547,7 +547,7 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
     [-17, -11, 0], [-14, -11, 1], [-11, -11, 2], [-8, -11, 3],
     [-17, -7.5, 1], [-14, -7.5, 2], [-11, -7.5, 3], [-8, -7.5, 0],
   ];
-  for (const [x, z, variant] of homePositions) makeHouse(scene, x, z, variant);
+  for (const [x, z, variant] of homePositions) makeHouse(houseGroup, x, z, variant);
 
   for (let index = 0; index < 15; index++) {
     const x = -22 + index * 3.1;
@@ -589,7 +589,6 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
     car.userData.startX = car.position.x;
   }
 
-  void houseGroup;
 }
 
 export default function WorldCanvas() {
@@ -665,15 +664,13 @@ export default function WorldCanvas() {
       })
       .then((data) => {
         if (!data || data.source !== "database" || !data.homes?.length) return;
+        clearGroup(houseGroup);
         data.homes.forEach((home, index) => {
           const x = home.x * 0.4 - 10;
           const z = home.z * 0.55 - 8.5;
           const variant = home.type === "premium" ? 2 : home.type === "patron" ? 3 : index % 4;
-          const homeModel = new THREE.Group();
-          makeHouseInto(homeModel, variant);
-          homeModel.position.set(x, 0.42, z);
+          const homeModel = makeHouse(houseGroup, x, z, variant);
           homeModel.rotation.y = home.rotation || 0;
-          houseGroup.add(homeModel);
         });
       })
       .catch(() => {
@@ -901,18 +898,3 @@ export default function WorldCanvas() {
   );
 }
 
-function makeHouseInto(parent: THREE.Group, variant: number) {
-  const walls = ["#e8e1d4", "#d9e3df", "#e5d6c4", "#d5e0e0"];
-  const roofs = ["#3e5b5a", "#786657", "#4e6671", "#9b7256"];
-  const wall = mat(walls[variant % walls.length]);
-  const roof = mat(roofs[variant % roofs.length]);
-  const glass = mat("#93c5c9", 0.18, 0.24);
-  addBox(parent, 2.1, 0.12, 1.7, mat("#555e5a"), 0, 0.08, 0);
-  addBox(parent, 1.9, 1.16 + (variant % 3) * 0.24, 1.5, wall, 0, 0.68 + (variant % 3) * 0.12, 0);
-  const levels = 1 + (variant % 3);
-  for (let floor = 0; floor < levels; floor++) {
-    for (const wx of [-0.58, 0.42]) addBox(parent, 0.36, 0.27, 0.045, glass, wx, 0.54 + floor * 0.45, 0.77, false);
-  }
-  addBox(parent, 2.05, 0.14, 1.65, roof, 0, 1.3 + (variant % 3) * 0.24, 0);
-  addBox(parent, 0.32, 0.58, 0.06, mat("#9b7658"), -0.52, 0.36, 0.78);
-}
