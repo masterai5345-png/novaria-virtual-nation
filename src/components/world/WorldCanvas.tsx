@@ -2175,12 +2175,12 @@ export default function WorldCanvas() {
       .then((data) => {
         if (!data || data.source !== "database" || !data.homes?.length) return;
         clearGroup(houseGroup);
-        const visibleHomes = data.homes.slice(0, lowPowerDevice ? 18 : 48);
+        const visibleHomes = data.homes.slice(0, lowPowerDevice ? 12 : 32);
         visibleHomes.forEach((home, index) => {
           const x = home.x * 0.4 - 10;
           const z = home.z * 0.55 - 8.5;
           const variant = home.type === "premium" ? 2 : home.type === "patron" ? 3 : index % 4;
-          const detail = !lowPowerDevice && index < 12 ? "full" : "simple";
+          const detail = !lowPowerDevice && index < 8 ? "full" : "simple";
           const homeModel = makeHouse(houseGroup, x, z, variant, detail);
           homeModel.rotation.y = home.rotation || 0;
         });
