@@ -926,13 +926,6 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
     emissive: "#1d3541",
     emissiveIntensity: 0.08,
   }));
-  const litGlass = cachedMaterial("tower-lit-glass", () => new THREE.MeshStandardMaterial({
-    color: "#e9d8ae",
-    roughness: 0.24,
-    metalness: 0.22,
-    emissive: "#d5a85e",
-    emissiveIntensity: 0.34,
-  }));
   const goldTrim = mat("#bd9862", 0.36, 0.46);
   const podium = mat("#59686a", 0.62, 0.2);
   const darkPodium = mat("#35474b", 0.58, 0.28);
