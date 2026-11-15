@@ -5,7 +5,7 @@ services:
     plan: starter
     region: singapore
     branch: foundation/mvp
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     buildCommand: npm install --include=dev && npm run build
     preDeployCommand: npm run db:migrate
     startCommand: npm start
@@ -44,7 +44,7 @@ services:
     plan: starter
     region: singapore
     branch: foundation/mvp
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     buildCommand: npm install
     startCommand: npm run worker
     envVars:
