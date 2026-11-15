@@ -612,24 +612,147 @@ function makeTreeCluster(scene: THREE.Scene, centerX: number, centerZ: number, w
 
 function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
   const car = new THREE.Group();
-  const body = mat(color, 0.4, 0.2);
-  const window = mat("#a8c6ca", 0.14, 0.38);
-  const wheel = mat("#252a2d", 0.95);
-  addBox(car, 1.55, 0.42, 0.78, body, 0, 0.38, 0);
-  addBox(car, 0.82, 0.37, 0.65, window, -0.08, 0.76, 0);
+  const body = mat(color, 0.32, 0.24);
+  const glass = new THREE.MeshStandardMaterial({
+    color: "#8fb6c0",
+    roughness: 0.14,
+    metalness: 0.52,
+    transparent: true,
+    opacity: 0.94,
+  });
+  const rubber = mat("#20262a", 0.96);
+  const chrome = mat("#b9c6c4", 0.24, 0.78);
+  const headlamp = new THREE.MeshStandardMaterial({ color: "#fff4cf", emissive: "#ffdc91", emissiveIntensity: 0.65, roughness: 0.25 });
+  const tailLamp = new THREE.MeshStandardMaterial({ color: "#c94842", emissive: "#9e2722", emissiveIntensity: 0.4 });
+  addBox(car, 1.72, 0.38, 0.82, body, 0, 0.39, 0);
+  addBox(car, 0.96, 0.43, 0.68, glass, -0.05, 0.76, 0);
+  addBox(car, 0.13, 0.36, 0.72, body, -0.53, 0.68, 0);
+  addBox(car, 0.12, 0.36, 0.72, body, 0.48, 0.68, 0);
+  addBox(car, 0.15, 0.12, 0.9, chrome, 0.89, 0.34, 0, false);
+  addBox(car, 0.15, 0.12, 0.9, darkFrameMaterial(), -0.89, 0.34, 0, false);
+  addBox(car, 0.055, 0.12, 0.16, headlamp, 0.89, 0.47, -0.27, false);
+  addBox(car, 0.055, 0.12, 0.16, headlamp, 0.89, 0.47, 0.27, false);
+  addBox(car, 0.055, 0.14, 0.15, tailLamp, -0.88, 0.47, -0.28, false);
+  addBox(car, 0.055, 0.14, 0.15, tailLamp, -0.88, 0.47, 0.28, false);
+  addBox(car, 0.035, 0.16, 0.24, chrome, 0.92, 0.4, 0, false);
+  addBox(car, 0.045, 0.035, 0.18, chrome, 0, 0.2, 0, false);
   for (const side of [-1, 1]) {
-    for (const axle of [-0.48, 0.48]) {
-      const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.11, 12), wheel);
+    for (const axle of [-0.56, 0.55]) {
+      const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.13, 18), rubber);
       tyre.rotation.z = Math.PI / 2;
-      tyre.position.set(axle, 0.2, side * 0.39);
+      tyre.position.set(axle, 0.2, side * 0.405);
       car.add(tyre);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.14, 16), chrome);
+      hub.rotation.z = Math.PI / 2;
+      hub.position.copy(tyre.position);
+      car.add(hub);
     }
+    for (const doorX of [-0.28, 0.26]) {
+      addBox(car, 0.38, 0.018, 0.015, chrome, doorX, 0.53, side * 0.421, false);
+    }
+    addBox(car, 0.14, 0.09, 0.13, body, 0.36, 0.76, side * 0.41);
+    addBox(car, 0.17, 0.035, 0.08, chrome, 0.36, 0.82, side * 0.47, false);
   }
   car.position.set(x, 0.42, z);
   scene.add(car);
   return car;
 }
 
+function darkFrameMaterial() {
+  return mat("#29383c", 0.68, 0.16);
+}
+
+function createBench(scene: THREE.Scene, x: number, z: number, rotation = 0) {
+  const bench = new THREE.Group();
+  const wood = mat("#956d4d", 0.72);
+  const metal = mat("#34494a", 0.58, 0.3);
+  for (let slat = 0; slat < 4; slat++) {
+    addBox(bench, 1.15, 0.055, 0.12, wood, 0, 0.48 + slat * 0.07, -0.18 + slat * 0.12);
+  }
+  addBox(bench, 1.15, 0.055, 0.12, wood, 0, 0.42, -0.15);
+  for (const side of [-1, 1]) {
+    addBox(bench, 0.075, 0.46, 0.075, metal, side * 0.43, 0.23, -0.12);
+    addBox(bench, 0.075, 0.48, 0.075, metal, side * 0.43, 0.64, 0.18);
+    addBox(bench, 0.075, 0.075, 0.42, metal, side * 0.43, 0.43, 0.01);
+  }
+  bench.position.set(x, 0.42, z);
+  bench.rotation.y = rotation;
+  scene.add(bench);
+}
+
+function createPlanter(scene: THREE.Scene, x: number, z: number, width = 1.25) {
+  const planter = new THREE.Group();
+  const stone = mat("#b8b7a9", 0.95);
+  const soil = mat("#594a3a", 1);
+  addBox(planter, width, 0.42, 0.72, stone, 0, 0.21, 0);
+  addBox(planter, width - 0.14, 0.06, 0.56, soil, 0, 0.44, 0, false);
+  for (let index = 0; index < 5; index++) {
+    const plant = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), mat(index % 2 ? "#56865d" : "#679467", 0.98));
+    plant.position.set((index - 2) * (width - 0.28) / 4, 0.63 + (index % 2) * 0.06, Math.sin(index) * 0.13);
+    plant.scale.set(1, 0.75, 0.85);
+    planter.add(plant);
+  }
+  planter.position.set(x, 0.41, z);
+  scene.add(planter);
+}
+
+function createStreetLamp(scene: THREE.Scene, x: number, z: number, height = 2.9) {
+  const lamp = new THREE.Group();
+  const iron = mat("#34494a", 0.48, 0.38);
+  const warm = new THREE.MeshStandardMaterial({ color: "#fff0c7", emissive: "#e9b75d", emissiveIntensity: 0.75, roughness: 0.3 });
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.075, height, 10), iron);
+  pole.position.y = height / 2;
+  lamp.add(pole);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.48, 8), iron);
+  arm.rotation.z = Math.PI / 2;
+  arm.position.set(0.2, height - 0.12, 0);
+  lamp.add(arm);
+  addSphere(lamp, 0.13, warm, 0.42, height - 0.15, 0, 1.25, 0.62, 1.1);
+  const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.08, 12), iron);
+  shade.position.set(0.42, height - 0.06, 0);
+  lamp.add(shade);
+  lamp.position.set(x, 0.4, z);
+  scene.add(lamp);
+}
+
+function createTrafficSignal(scene: THREE.Scene, x: number, z: number, rotation = 0) {
+  const signal = new THREE.Group();
+  const pole = mat("#3a4547", 0.48, 0.3);
+  const casing = mat("#252f33", 0.6, 0.2);
+  const red = new THREE.MeshStandardMaterial({ color: "#e24c42", emissive: "#b92e28", emissiveIntensity: 0.45 });
+  const amber = new THREE.MeshStandardMaterial({ color: "#e9b548", emissive: "#c18a20", emissiveIntensity: 0.34 });
+  const green = new THREE.MeshStandardMaterial({ color: "#5da978", emissive: "#3c8f5c", emissiveIntensity: 0.3 });
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 2.55, 9), pole);
+  stem.position.y = 1.28;
+  signal.add(stem);
+  addBox(signal, 0.28, 0.78, 0.22, casing, 0, 2.52, 0);
+  addSphere(signal, 0.075, red, 0, 2.78, 0.12);
+  addSphere(signal, 0.075, amber, 0, 2.53, 0.12);
+  addSphere(signal, 0.075, green, 0, 2.28, 0.12);
+  signal.position.set(x, 0.4, z);
+  signal.rotation.y = rotation;
+  scene.add(signal);
+}
+
+function addStreetFurniture(scene: THREE.Scene) {
+  createBench(scene, -12.8, 8.9, Math.PI / 2);
+  createBench(scene, -7.2, 8.9, -Math.PI / 2);
+  createBench(scene, -10, 13.2, 0);
+  createPlanter(scene, -5.8, 8.4, 1.4);
+  createPlanter(scene, -14.1, 8.4, 1.4);
+  createPlanter(scene, 6.2, 11.7, 1.25);
+  createPlanter(scene, 13.8, 7.2, 1.25);
+  createStreetLamp(scene, -15, 5.3, 2.7);
+  createStreetLamp(scene, -5, 5.3, 2.7);
+  createStreetLamp(scene, 5, 5.5, 2.7);
+  createStreetLamp(scene, 15, 5.5, 2.7);
+  createStreetLamp(scene, -15, 14.8, 2.7);
+  createStreetLamp(scene, -5, 14.8, 2.7);
+  createStreetLamp(scene, 5, 14.8, 2.7);
+  createStreetLamp(scene, 15, 14.8, 2.7);
+  createTrafficSignal(scene, -2.2, 3.9, 0);
+  createTrafficSignal(scene, 2.2, -0.3, Math.PI);
+}
 function addDistrictLabel(scene: THREE.Scene, label: string, x: number, z: number, tint = "#183a3a") {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
