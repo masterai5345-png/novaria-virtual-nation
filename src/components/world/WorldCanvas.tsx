@@ -656,7 +656,7 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
   const floorHeight = 0.43;
   const height = floors * floorHeight;
   const frame = mat(hue, 0.44, 0.3);
-  const darkFrame = mat("#27373c", 0.52, 0.22);
+  const darkFrame = mat("#46575b", 0.52, 0.28);
   const facade = createFacadeMaterial(hue, Math.round(Math.abs(x * 7 + z * 11)) % 19, rounded);
   const glass = new THREE.MeshStandardMaterial({
     color: "#587d8b",
@@ -672,26 +672,54 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
     emissive: "#d5a85e",
     emissiveIntensity: 0.34,
   });
-  const podium = mat("#303e42", 0.62, 0.16);
+  const podium = mat("#59686a", 0.62, 0.2);
   const goldTrim = mat("#bd9862", 0.36, 0.46);
-  const roofHeight = 1.0 + height;
+  const roofHeight = 1.38 + height;
 
-  // Deep podium and recessed glass lobby make each tower sit convincingly on its plot.
+  // A warm stone podium with active retail glazing anchors every tower at street level.
   addBox(group, width + 1.0, 0.6, depth + 1.0, darkFrame, 0, 0.3, 0);
   addBox(group, width + 0.48, 0.66, depth + 0.48, podium, 0, 0.86, 0);
   addBox(group, width + 0.2, 0.12, depth + 0.2, goldTrim, 0, 1.23, 0);
-  addBox(group, width * 0.42, 0.72, 0.05, glass, 0, 0.82, depth / 2 + 0.255, false);
-  addBox(group, width * 0.18, 0.78, 0.07, darkFrame, 0, 0.83, depth / 2 + 0.3, false);
+
+  const shopCount = Math.max(3, Math.min(6, Math.floor(width / 0.7)));
+  const shopWidth = (width + 0.1) / shopCount;
+  for (let shop = 0; shop < shopCount; shop++) {
+    const shopX = -width / 2 + shopWidth * (shop + 0.5);
+    addBox(group, shopWidth * 0.78, 0.46, 0.045, glass, shopX, 0.83, depth / 2 + 0.255, false);
+    addBox(group, 0.035, 0.5, 0.06, goldTrim, shopX - shopWidth * 0.48, 0.83, depth / 2 + 0.27, false);
+    addBox(group, shopWidth * 0.78, 0.045, 0.065, darkFrame, shopX, 1.08, depth / 2 + 0.27, false);
+  }
+  // A recessed double-height lobby breaks the shopfront rhythm at the centre.
+  addBox(group, 0.62, 0.65, 0.075, darkFrame, 0, 0.84, depth / 2 + 0.32, false);
+  addBox(group, 0.26, 0.58, 0.035, glass, -0.16, 0.85, depth / 2 + 0.37, false);
+  addBox(group, 0.26, 0.58, 0.035, glass, 0.16, 0.85, depth / 2 + 0.37, false);
+  addBox(group, width * 0.68, 0.08, 0.68, frame, 0, 1.27, depth / 2 + 0.35);
+  addBox(group, width * 0.68, 0.035, 0.68, goldTrim, 0, 1.22, depth / 2 + 0.35, false);
   for (const side of [-1, 1]) {
     addBox(group, 0.14, 0.78, 0.08, goldTrim, side * width * 0.25, 0.83, depth / 2 + 0.3, false);
-    addBox(group, 0.16, 0.62, depth * 0.62, glass, side * (width / 2 + 0.245), 0.84, 0, false);
+    addBox(group, 0.045, 0.5, depth * 0.68, glass, side * (width / 2 + 0.245), 0.83, 0, false);
+    addBox(group, 0.055, 0.54, depth * 0.72, darkFrame, side * (width / 2 + 0.27), 0.83, 0, false);
   }
-  // Entrance canopy and polished columns.
-  addBox(group, width * 0.55, 0.1, 0.72, frame, 0, 1.34, depth / 2 + 0.34);
-  for (const side of [-1, 1]) {
-    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.7, 12), goldTrim);
-    column.position.set(side * width * 0.2, 0.86, depth / 2 + 0.62);
-    group.add(column);
+  // Ground-floor signage makes the repeated towers feel like occupied city addresses.
+  const signCanvas = document.createElement("canvas");
+  signCanvas.width = 512;
+  signCanvas.height = 128;
+  const signContext = signCanvas.getContext("2d");
+  if (signContext) {
+    signContext.fillStyle = "#203b3e";
+    signContext.fillRect(0, 0, 512, 128);
+    signContext.fillStyle = "#d5b577";
+    signContext.fillRect(0, 0, 512, 6);
+    signContext.fillStyle = "#f6ecd5";
+    signContext.font = "700 43px Arial";
+    signContext.textAlign = "center";
+    signContext.textBaseline = "middle";
+    signContext.fillText("NOVARIA  ·  DISTRICT", 256, 68);
+    const signTexture = new THREE.CanvasTexture(signCanvas);
+    signTexture.colorSpace = THREE.SRGBColorSpace;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.52, 0.26), new THREE.MeshBasicMaterial({ map: signTexture }));
+    sign.position.set(0, 1.42, depth / 2 + 0.3);
+    group.add(sign);
   }
 
   if (rounded) {
@@ -763,34 +791,34 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
   }
 
   // Crown, rooftop plant room, discreet mechanical services and aerial beacon.
-  addBox(group, width + 0.42, 0.2, depth + 0.42, frame, 0, roofHeight + 1.32, 0);
-  addBox(group, width * 0.38, 0.58, depth * 0.42, darkFrame, width * 0.1, roofHeight + 1.7, -depth * 0.08);
-  addBox(group, width * 0.17, 0.24, depth * 0.2, goldTrim, -width * 0.22, roofHeight + 1.66, depth * 0.13);
+  addBox(group, width + 0.42, 0.2, depth + 0.42, frame, 0, roofHeight + 0.08, 0);
+  addBox(group, width * 0.38, 0.58, depth * 0.42, darkFrame, width * 0.1, roofHeight + 0.43, -depth * 0.08);
+  addBox(group, width * 0.17, 0.24, depth * 0.2, goldTrim, -width * 0.22, roofHeight + 0.37, depth * 0.13);
   const hvac = mat("#788487", 0.7, 0.24);
   const fanDark = mat("#34454a", 0.66, 0.22);
   for (let unit = 0; unit < 3; unit++) {
     const unitX = -width * 0.34 + unit * width * 0.32;
-    addBox(group, 0.46, 0.3, 0.42, hvac, unitX, roofHeight + 1.5, depth * 0.28);
-    addBox(group, 0.35, 0.045, 0.32, fanDark, unitX, roofHeight + 1.67, depth * 0.28, false);
+    addBox(group, 0.46, 0.3, 0.42, hvac, unitX, roofHeight + 0.24, depth * 0.28);
+    addBox(group, 0.35, 0.045, 0.32, fanDark, unitX, roofHeight + 0.41, depth * 0.28, false);
     const fan = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 6, 16), goldTrim);
-    fan.position.set(unitX, roofHeight + 1.7, depth * 0.28);
+    fan.position.set(unitX, roofHeight + 0.44, depth * 0.28);
     group.add(fan);
   }
   // A small rooftop communications dish and safety rail distinguish the roof line.
   const dish = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), mat("#c5c9c3", 0.35, 0.5));
-  dish.position.set(width * 0.34, roofHeight + 1.55, -depth * 0.25);
+  dish.position.set(width * 0.34, roofHeight + 0.28, -depth * 0.25);
   dish.rotation.x = -Math.PI / 2.3;
   group.add(dish);
   for (const side of [-1, 1]) {
-    addBox(group, 0.055, 0.3, depth * 0.7, goldTrim, side * width * 0.48, roofHeight + 1.47, 0, false);
+    addBox(group, 0.055, 0.3, depth * 0.7, goldTrim, side * width * 0.48, roofHeight + 0.2, 0, false);
   }
   const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.8, 9), goldTrim);
-  antenna.position.set(width * 0.12, roofHeight + 2.18, 0);
+  antenna.position.set(width * 0.12, roofHeight + 0.94, 0);
   group.add(antenna);
   const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), mat("#d64c43", 0.32));
-  beacon.position.set(width * 0.12, roofHeight + 2.62, 0);
+  beacon.position.set(width * 0.12, roofHeight + 1.38, 0);
   group.add(beacon);
-  group.position.set(x, 0, z);
+  group.position.set(x, 0.35, z);
   scene.add(group);
 }
 function createStuccoMaterial(color: string, seed: number) {
@@ -1563,6 +1591,8 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
     [20, -6, 3.1, 3.2, 10, "#927b60", false],
     [-20, 10, 3.3, 3.1, 8, "#526c78", false],
     [20, 12, 3.2, 3.2, 9, "#7b776b", true],
+    [-16.5, -1.5, 3.4, 3.1, 7, "#9a866c", false],
+    [16.4, -10.5, 3.35, 3.1, 8, "#506b75", true],
     [-22, -24, 3.0, 3.1, 14, "#627982", true],
     [-15, -24, 3.3, 3.0, 9, "#a18a6e", false],
     [-7.5, -24, 3.0, 3.2, 12, "#486671", true],
@@ -1589,7 +1619,7 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   }
   createWaterfrontPier(scene);
   // Tropical waterfront planting and layered hedgerows soften the hard urban edges.
-  for (const [x, z, size] of [[7.6, 21.8, 1.02], [13.4, 22.3, 0.9], [17.1, 20.8, 0.82], [5.2, 24.2, 0.82]] as [number, number, number][]) {
+  for (const [x, z, size] of [[6.7, 18.2, 0.9], [14.3, 18.1, 0.9], [18.2, 23.2, 0.82], [4.5, 23.8, 0.76]] as [number, number, number][]) {
     makePalmTree(scene, x, z, size);
   }
   makeHedge(scene, -15.1, 7.1, 2.1, 0.52);
@@ -1702,7 +1732,7 @@ export default function WorldCanvas() {
     scene.fog = new THREE.Fog("#b9c9c7", 58, 118);
 
     const camera = new THREE.PerspectiveCamera(39, 1, 0.1, 220);
-    camera.position.set(0, 20, 34);
+    camera.position.set(0, 26, 34);
     camera.lookAt(0, 0.6, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
