@@ -1,6 +1,7 @@
 name: NOVARIA CI
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main, foundation/mvp]
   push:
