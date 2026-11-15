@@ -586,7 +586,14 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
   const height = floors * floorHeight;
   const frame = mat(hue, 0.44, 0.3);
   const darkFrame = mat("#27373c", 0.52, 0.22);
-  const glass = createFacadeMaterial(hue, Math.round(Math.abs(x * 7 + z * 11)) % 19, rounded);
+  const facade = createFacadeMaterial(hue, Math.round(Math.abs(x * 7 + z * 11)) % 19, rounded);
+  const glass = new THREE.MeshStandardMaterial({
+    color: "#587d8b",
+    roughness: 0.16,
+    metalness: 0.62,
+    emissive: "#1d3541",
+    emissiveIntensity: 0.1,
+  });
   const litGlass = new THREE.MeshStandardMaterial({
     color: "#e9d8ae",
     roughness: 0.24,
@@ -647,7 +654,7 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
       group.add(mullion);
     }
   } else {
-    const core = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), glass);
+    const core = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), facade);
     core.position.set(0, 1.38 + height / 2, 0);
     core.castShadow = true;
     group.add(core);
