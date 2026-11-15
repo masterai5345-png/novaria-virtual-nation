@@ -36,7 +36,7 @@ export default function CityMetrics({ compact = false }: { compact?: boolean }) 
   }, []);
 
   if (!overview) {
-    if (compact) return <span className="town-population-chip">Kota preview</span>;
+    if (compact) return <span className="town-population-chip">28 warga demo</span>;
     return (
       <div className="quick-stats" aria-label="Preview city metrics">
         <div><small>DEMO HOMES</small><strong>842</strong></div>
@@ -47,7 +47,7 @@ export default function CityMetrics({ compact = false }: { compact?: boolean }) 
   }
 
   if (overview.database !== "connected") {
-    if (compact) return <span className="town-population-chip">Kota preview</span>;
+    if (compact) return <span className="town-population-chip">28 warga demo</span>;
     return (
       <div className="quick-stats" aria-label="Preview city metrics">
         <div><small>DEMO HOMES</small><strong>842</strong></div>
