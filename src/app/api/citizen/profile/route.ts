@@ -89,7 +89,7 @@ export async function PATCH(request: NextRequest) {
 
   const style = input.avatarStyle;
   if (!style || typeof style !== "object") {
-    return NextResponse.json({ error: "Choose an Otter outfit before saving." }, { status: 400 });
+    return NextResponse.json({ error: "Choose an outfit before saving." }, { status: 400 });
   }
 
   const furTone = typeof style.furTone === "string" ? style.furTone : "";
@@ -103,7 +103,6 @@ export async function PATCH(request: NextRequest) {
     const updated = await query<ProfileRow>(
       `UPDATE citizens
        SET display_name = $2,
-           avatar_species = 'otter',
            avatar_style = $3::jsonb,
            updated_at = NOW()
        WHERE id = $1 AND account_status = 'active'
@@ -115,7 +114,7 @@ export async function PATCH(request: NextRequest) {
 
     await query(
       `INSERT INTO audit_events (actor_type, actor_id, action, resource_type, resource_id, outcome, detail)
-       VALUES ('citizen', $1, 'customize_otter_avatar', 'citizen', $1, 'success', $2::jsonb)`,
+       VALUES ('citizen', $1, 'customize_animal_mascot', 'citizen', $1, 'success', $2::jsonb)`,
       [citizenId, JSON.stringify({ furTone, outfit, accessory })],
     );
 
