@@ -13,6 +13,7 @@ type ProfileResponse = {
     displayName: string;
     species: string;
     avatarStyle: Partial<AvatarStyle>;
+    publicHandle?: string | null;
   };
 };
 
@@ -39,6 +40,7 @@ const accessoryOptions: { id: Accessory; label: string }[] = [
 export default function AvatarStudio() {
   const [displayName, setDisplayName] = useState("");
   const [species, setSpecies] = useState<CitizenSpecies>("fox");
+  const [publicHandle, setPublicHandle] = useState("");
   const [style, setStyle] = useState<AvatarStyle>(defaultStyle);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,6 +58,7 @@ export default function AvatarStudio() {
         if (!mounted) return;
         setDisplayName(data.profile.displayName || "");
         setSpecies(isCitizenSpecies(data.profile.species) ? data.profile.species : "fox");
+        setPublicHandle(data.profile.publicHandle ?? "");
         setStyle({
           furTone: furOptions.some((item) => item.id === data.profile.avatarStyle?.furTone) ? data.profile.avatarStyle!.furTone as FurTone : "river-brown",
           outfit: outfitOptions.some((item) => item.id === data.profile.avatarStyle?.outfit) ? data.profile.avatarStyle!.outfit as Outfit : "citizen-teal",
@@ -77,11 +80,11 @@ export default function AvatarStudio() {
       const response = await fetch("/api/citizen/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName, avatarStyle: style }),
+        body: JSON.stringify({ displayName, avatarStyle: style, publicHandle }),
       });
       const data = await response.json() as { error?: string };
       if (!response.ok) throw new Error(data.error || "Could not save your mascot.");
-      setMessage("Your animal mascot look has been saved. Your species stays permanent.");
+      setMessage("Your mascot look and public username settings have been saved.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not save your mascot.");
     } finally {
@@ -117,6 +120,23 @@ export default function AvatarStudio() {
 
       <label className="avatar-label" htmlFor="citizen-display-name">Citizen name</label>
       <input id="citizen-display-name" className="avatar-name-input" value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={28} minLength={2} />
+
+      <label className="avatar-label" htmlFor="citizen-instagram-handle">Instagram username <span>Optional · public</span></label>
+      <div className="avatar-handle-field">
+        <span>@</span>
+        <input
+          id="citizen-instagram-handle"
+          className="avatar-name-input"
+          value={publicHandle}
+          onChange={(event) => setPublicHandle(event.target.value.replace(/^@/, "").toLowerCase())}
+          placeholder="username"
+          maxLength={30}
+          autoCapitalize="none"
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </div>
+      <small className="avatar-public-note">Share this username to appear in the city's public mascot finder. Leave it empty to stay unlisted.</small>
 
       <div className="avatar-option-block"><b>Coat color</b><div className="fur-options">{furOptions.map((item) => <button key={item.id} type="button" className={style.furTone === item.id ? "selected" : ""} onClick={() => setStyle((current) => ({ ...current, furTone: item.id }))} aria-label={item.label} title={item.label}><span style={{ background: item.color }} />{style.furTone === item.id ? <Check size={12}/> : null}</button>)}</div><small className="avatar-current-option">{furOptions.find((item) => item.id === style.furTone)?.label}</small></div>
       <div className="avatar-option-block"><b>Outfit</b><div className="outfit-options">{outfitOptions.map((item) => <button key={item.id} type="button" className={style.outfit === item.id ? "selected" : ""} onClick={() => setStyle((current) => ({ ...current, outfit: item.id }))}><span>{item.label}</span><small>{item.description}</small></button>)}</div></div>
