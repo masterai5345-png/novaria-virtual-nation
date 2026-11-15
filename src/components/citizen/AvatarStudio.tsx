@@ -2,13 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { Check, PawPrint, Save } from "lucide-react";
+import { ANIMAL_EMOJI, ANIMAL_LABELS, isCitizenSpecies, type CitizenSpecies } from "@/lib/animals";
 
 type FurTone = "river-brown" | "warm-cocoa" | "silver" | "honey";
 type Outfit = "citizen-teal" | "explorer" | "builder" | "harbor-guard";
 type Accessory = "none" | "scarf" | "cap" | "backpack";
-
 type AvatarStyle = { furTone: FurTone; outfit: Outfit; accessory: Accessory };
-type ProfileResponse = { profile: { displayName: string; avatarStyle: Partial<AvatarStyle> } };
+type ProfileResponse = {
+  profile: {
+    displayName: string;
+    species: string;
+    avatarStyle: Partial<AvatarStyle>;
+  };
+};
 
 const defaultStyle: AvatarStyle = { furTone: "river-brown", outfit: "citizen-teal", accessory: "none" };
 const furOptions: { id: FurTone; label: string; color: string }[] = [
@@ -32,6 +38,7 @@ const accessoryOptions: { id: Accessory; label: string }[] = [
 
 export default function AvatarStudio() {
   const [displayName, setDisplayName] = useState("");
+  const [species, setSpecies] = useState<CitizenSpecies>("fox");
   const [style, setStyle] = useState<AvatarStyle>(defaultStyle);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,6 +55,7 @@ export default function AvatarStudio() {
       .then((data) => {
         if (!mounted) return;
         setDisplayName(data.profile.displayName || "");
+        setSpecies(isCitizenSpecies(data.profile.species) ? data.profile.species : "fox");
         setStyle({
           furTone: furOptions.some((item) => item.id === data.profile.avatarStyle?.furTone) ? data.profile.avatarStyle!.furTone as FurTone : "river-brown",
           outfit: outfitOptions.some((item) => item.id === data.profile.avatarStyle?.outfit) ? data.profile.avatarStyle!.outfit as Outfit : "citizen-teal",
@@ -72,10 +80,10 @@ export default function AvatarStudio() {
         body: JSON.stringify({ displayName, avatarStyle: style }),
       });
       const data = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(data.error || "Could not save your Otter.");
-      setMessage("Your citizen name and Otter look have been saved.");
+      if (!response.ok) throw new Error(data.error || "Could not save your mascot.");
+      setMessage("Your animal mascot look has been saved. Your species stays permanent.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save your Otter.");
+      setError(caught instanceof Error ? caught.message : "Could not save your mascot.");
     } finally {
       setSaving(false);
     }
@@ -83,12 +91,13 @@ export default function AvatarStudio() {
 
   const fur = furOptions.find((item) => item.id === style.furTone)?.color ?? "#8d654b";
   const outfitColor = style.outfit === "builder" ? "#d18a3e" : style.outfit === "explorer" ? "#55734e" : style.outfit === "harbor-guard" ? "#263f61" : "#1c5555";
+  const speciesLabel = ANIMAL_LABELS[species];
 
   return (
     <section className="avatar-studio">
-      <div className="avatar-studio-heading"><span><PawPrint size={17}/></span><div><b>Customize your Otter</b><small>Your look is saved to your citizen profile.</small></div></div>
+      <div className="avatar-studio-heading"><span><PawPrint size={17}/></span><div><b>Your animal mascot</b><small>Your assigned species is permanent and saved to your citizen profile.</small></div></div>
       <div className="avatar-preview-row">
-        <div className="avatar-preview" aria-label={`Otter preview with ${style.outfit} outfit`}>
+        <div className="avatar-preview" aria-label={`${speciesLabel} mascot preview with ${style.outfit} outfit`}>
           <div className="avatar-tail" style={{ background: fur }} />
           <div className="avatar-body" style={{ background: outfitColor }} />
           <div className="avatar-head" style={{ background: fur }}>
@@ -99,22 +108,23 @@ export default function AvatarStudio() {
             <i className="avatar-muzzle" />
             {style.accessory === "cap" ? <i className="avatar-cap" /> : null}
           </div>
+          <span className="avatar-species-emoji" aria-hidden="true">{ANIMAL_EMOJI[species]}</span>
           {style.accessory === "scarf" ? <i className="avatar-scarf" /> : null}
           {style.accessory === "backpack" ? <i className="avatar-backpack" /> : null}
         </div>
-        <div className="avatar-preview-copy"><span className="eyebrow">YOUR CHARACTER</span><h3>{displayName || "NOVARIA Citizen"}</h3><p>Otter · {outfitOptions.find((item) => item.id === style.outfit)?.label}</p><small>3D world model customization will use these saved preferences.</small></div>
+        <div className="avatar-preview-copy"><span className="eyebrow">YOUR PERMANENT SPECIES</span><h3>{displayName || "NOVARIA Citizen"}</h3><p>{ANIMAL_EMOJI[species]} {speciesLabel} · {outfitOptions.find((item) => item.id === style.outfit)?.label}</p><small>Your 3D resident mascot keeps this animal identity when you return to NOVARIA.</small></div>
       </div>
 
       <label className="avatar-label" htmlFor="citizen-display-name">Citizen name</label>
       <input id="citizen-display-name" className="avatar-name-input" value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={28} minLength={2} />
 
-      <div className="avatar-option-block"><b>Fur color</b><div className="fur-options">{furOptions.map((item) => <button key={item.id} type="button" className={style.furTone === item.id ? "selected" : ""} onClick={() => setStyle((current) => ({ ...current, furTone: item.id }))} aria-label={item.label} title={item.label}><span style={{ background: item.color }} />{style.furTone === item.id ? <Check size={12}/> : null}</button>)}</div><small className="avatar-current-option">{furOptions.find((item) => item.id === style.furTone)?.label}</small></div>
+      <div className="avatar-option-block"><b>Coat color</b><div className="fur-options">{furOptions.map((item) => <button key={item.id} type="button" className={style.furTone === item.id ? "selected" : ""} onClick={() => setStyle((current) => ({ ...current, furTone: item.id }))} aria-label={item.label} title={item.label}><span style={{ background: item.color }} />{style.furTone === item.id ? <Check size={12}/> : null}</button>)}</div><small className="avatar-current-option">{furOptions.find((item) => item.id === style.furTone)?.label}</small></div>
       <div className="avatar-option-block"><b>Outfit</b><div className="outfit-options">{outfitOptions.map((item) => <button key={item.id} type="button" className={style.outfit === item.id ? "selected" : ""} onClick={() => setStyle((current) => ({ ...current, outfit: item.id }))}><span>{item.label}</span><small>{item.description}</small></button>)}</div></div>
       <div className="avatar-option-block"><b>Accessory</b><div className="accessory-options">{accessoryOptions.map((item) => <button key={item.id} type="button" className={style.accessory === item.id ? "selected" : ""} onClick={() => setStyle((current) => ({ ...current, accessory: item.id }))}>{item.label}</button>)}</div></div>
 
       {message ? <p className="avatar-message" role="status">{message}</p> : null}
       {error ? <p className="avatar-error" role="alert">{error}</p> : null}
-      <button type="button" className="avatar-save" disabled={loading || saving || displayName.trim().length < 2} onClick={() => void save()}><Save size={14}/>{loading ? "Loading…" : saving ? "Saving…" : "Save my Otter"}</button>
+      <button type="button" className="avatar-save" disabled={loading || saving || displayName.trim().length < 2} onClick={() => void save()}><Save size={14}/>{loading ? "Loading…" : saving ? "Saving…" : "Save my mascot look"}</button>
     </section>
   );
 }
