@@ -1322,13 +1322,13 @@ function makeTreeCluster(scene: THREE.Scene, centerX: number, centerZ: number, w
 
 function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
   const car = new THREE.Group();
-  const body = new THREE.MeshPhysicalMaterial({ color, roughness: 0.28, metalness: 0.18, clearcoat: 0.88, clearcoatRoughness: 0.16 });
-  const glass = new THREE.MeshPhysicalMaterial({ color: "#7199a5", roughness: 0.11, metalness: 0.42, transparent: true, opacity: 0.92, clearcoat: 1 });
+  const body = cachedMaterial(`car-body:${color}`, () => new THREE.MeshPhysicalMaterial({ color, roughness: 0.28, metalness: 0.18, clearcoat: 0.88, clearcoatRoughness: 0.16 }));
+  const glass = cachedMaterial("car-glass", () => new THREE.MeshPhysicalMaterial({ color: "#7199a5", roughness: 0.11, metalness: 0.42, transparent: true, opacity: 0.92, clearcoat: 1 }));
   const rubber = mat("#202528", 0.96);
   const chrome = mat("#bcc8c4", 0.22, 0.82);
   const darkChrome = mat("#263437", 0.45, 0.54);
-  const headlamp = new THREE.MeshStandardMaterial({ color: "#fff4cf", emissive: "#ffdc91", emissiveIntensity: 0.78, roughness: 0.2 });
-  const tailLamp = new THREE.MeshStandardMaterial({ color: "#d34b42", emissive: "#a72a26", emissiveIntensity: 0.48 });
+  const headlamp = cachedMaterial("car-headlamp", () => new THREE.MeshStandardMaterial({ color: "#fff4cf", emissive: "#ffdc91", emissiveIntensity: 0.78, roughness: 0.2 }));
+  const tailLamp = cachedMaterial("car-tail-lamp", () => new THREE.MeshStandardMaterial({ color: "#d34b42", emissive: "#a72a26", emissiveIntensity: 0.48 }));
   const wheels: THREE.Group[] = [];
 
   // Sculpted body shell with a curved bonnet, roofline and boot.
@@ -1344,7 +1344,7 @@ function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
   shell.quadraticCurveTo(1.0, 0.53, 1.0, 0.32);
   shell.lineTo(0.94, 0.2);
   shell.closePath();
-  const shellGeometry = new THREE.ExtrudeGeometry(shell, {
+  const shellGeometry = cachedGeometry("car-shell-extrude", () => new THREE.ExtrudeGeometry(shell, {
     depth: 0.82,
     bevelEnabled: true,
     bevelSegments: 4,
@@ -1352,7 +1352,7 @@ function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
     bevelSize: 0.035,
     bevelThickness: 0.04,
     curveSegments: 10,
-  });
+  }));
   const shellMesh = new THREE.Mesh(shellGeometry, body);
   shellMesh.position.z = -0.41;
   shellMesh.castShadow = true;
@@ -1367,7 +1367,7 @@ function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
   cabin.lineTo(0.45, 0.61);
   cabin.closePath();
   const cabinMesh = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(cabin, { depth: 0.58, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.018, bevelThickness: 0.025, curveSegments: 10 }),
+    cachedGeometry("car-cabin-extrude", () => new THREE.ExtrudeGeometry(cabin, { depth: 0.58, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.018, bevelThickness: 0.025, curveSegments: 10 })),
     darkChrome,
   );
   cabinMesh.position.z = -0.29;
@@ -1403,30 +1403,42 @@ function createCar(scene: THREE.Scene, x: number, z: number, color: string) {
     addBox(car, 0.04, 0.045, 0.1, mat("#f0dfb3", 0.34, 0.12), -0.92, 0.33, side * 0.34, false);
   }
 
-  // Realistic four-wheel layout: rubber sidewalls, alloy rims and brake discs.
+  // Reusable wheel assemblies: a tyre, polished alloy face and sidewall ring per wheel.
+  const wheels: THREE.Group[] = [];
+  const tyreGeometry = cachedGeometry("car-tyre-geometry", () => new THREE.CylinderGeometry(0.19, 0.19, 0.14, 20));
+  const ringGeometry = cachedGeometry("car-sidewall-ring", () => new THREE.TorusGeometry(0.145, 0.018, 7, 20));
+  const alloyGeometry = cachedGeometry("car-alloy-face", () => {
+    const shape = new THREE.Shape();
+    const points = 10;
+    for (let point = 0; point < points; point++) {
+      const angle = (point / points) * Math.PI * 2 - Math.PI / 2;
+      const radius = point % 2 === 0 ? 0.115 : 0.05;
+      const px = Math.cos(angle) * radius;
+      const py = Math.sin(angle) * radius;
+      if (point === 0) shape.moveTo(px, py);
+      else shape.lineTo(px, py);
+    }
+    shape.closePath();
+    return new THREE.ExtrudeGeometry(shape, { depth: 0.026, bevelEnabled: true, bevelSegments: 2, bevelSize: 0.006, bevelThickness: 0.006, curveSegments: 5 });
+  });
+  const wheelFaceMaterial = cachedMaterial("car-alloy-material", () => new THREE.MeshStandardMaterial({ color: "#dce2dc", roughness: 0.25, metalness: 0.78 }));
+  const hub = mat("#263437", 0.42, 0.58);
   for (const side of [-1, 1]) {
     for (const axle of [-0.62, 0.62]) {
       const assembly = new THREE.Group();
-      const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.14, 24), rubber);
+      const tyre = new THREE.Mesh(tyreGeometry, rubber);
       tyre.rotation.x = Math.PI / 2;
       assembly.add(tyre);
-      const sidewall = new THREE.Mesh(new THREE.TorusGeometry(0.145, 0.018, 7, 24), darkChrome);
+      const sidewall = new THREE.Mesh(ringGeometry, darkChrome);
       sidewall.position.z = side * 0.076;
       assembly.add(sidewall);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.15, 20), chrome);
-      hub.rotation.x = Math.PI / 2;
-      assembly.add(hub);
-      const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.154, 16), darkChrome);
-      hubCap.rotation.x = Math.PI / 2;
-      hubCap.position.z = side * 0.01;
-      assembly.add(hubCap);
-      for (let spoke = 0; spoke < 5; spoke++) {
-        const angle = (spoke / 5) * Math.PI * 2;
-        const detail = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.085, 0.018), mat("#e3e8e2", 0.25, 0.8));
-        detail.position.set(Math.cos(angle) * 0.058, Math.sin(angle) * 0.058, side * 0.085);
-        detail.rotation.z = angle;
-        assembly.add(detail);
-      }
+      const alloy = new THREE.Mesh(alloyGeometry, wheelFaceMaterial);
+      alloy.position.z = side * 0.079;
+      assembly.add(alloy);
+      const centre = new THREE.Mesh(cachedGeometry("car-wheel-hub-cap", () => new THREE.CylinderGeometry(0.043, 0.043, 0.028, 14)), hub);
+      centre.rotation.x = Math.PI / 2;
+      centre.position.z = side * 0.096;
+      assembly.add(centre);
       assembly.position.set(axle, 0.2, side * 0.405);
       car.add(assembly);
       wheels.push(assembly);
