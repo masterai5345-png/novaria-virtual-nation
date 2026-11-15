@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "NOVARIA — A Living Virtual Nation",
   description:
-    "Explore a living virtual town, meet the otter citizens, complete missions, and help NOVARIA grow.",
+    "Enter a living 3D coastal metropolis, meet animal mascot citizens, explore city districts, and help NOVARIA grow.",
   applicationName: "NOVARIA",
   manifest: "/manifest.webmanifest",
 };
