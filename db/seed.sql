@@ -9,7 +9,7 @@ SET leader_key = 'mayor-bear',
     title = 'Mayor',
     is_active = TRUE,
     profile = '{"role":"official in-world city leader","visual_identity":"friendly bear mayor in a tailored navy civic jacket, warm red tie and gold city badge"}'::jsonb
-WHERE leader_key = 'mayor-bear';
+WHERE leader_key = 'mayor-otti';
 
 INSERT INTO city_leaders (leader_key, display_name, species, title, is_active, profile)
 VALUES (
@@ -35,6 +35,12 @@ VALUES
   ('green-common', 'Green Common', 'social', 'Parks, community spaces and public recreation.', '{"starter_zone":true}'::jsonb),
   ('waterfront', 'Waterfront Promenade', 'harbor', 'A coastal public promenade and harbor walkway.', '{"starter_zone":true}'::jsonb)
 ON CONFLICT (slug) DO NOTHING;
+
+UPDATE agent_definitions
+SET agent_key = 'mayor-bear',
+    display_name = 'Pak Wali Kota Beruang',
+    description = 'Produces civic messages from verified city records.'
+WHERE agent_key = 'mayor-otti';
 
 INSERT INTO agent_definitions (agent_key, display_name, department, description, enabled)
 VALUES
