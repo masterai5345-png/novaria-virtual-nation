@@ -114,167 +114,257 @@ function clearGroup(group: THREE.Group) {
   }
 }
 
+function addTube(
+  parent: THREE.Object3D,
+  points: THREE.Vector3[],
+  radius: number,
+  material: THREE.Material,
+) {
+  const curve = new THREE.CatmullRomCurve3(points);
+  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 12, radius, 7, false), material);
+  mesh.castShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
 function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyle = {}, outfitOverride?: string) {
   clearGroup(group);
   const species = ANIMAL_LOOKS[speciesName] ? speciesName : "fox";
   const look = ANIMAL_LOOKS[species];
-  const coatColor = COAT_COLORS[style.furTone ?? ""] ?? look.coat;
-  const coat = mat(coatColor);
-  const belly = mat(look.belly);
-  const muzzle = mat(look.muzzle);
-  const dark = mat("#252b2b", 0.48);
-  const eyeWhite = mat("#fffaf1", 0.3);
-  const outfit = mat(outfitOverride ?? OUTFIT_COLORS[style.outfit ?? "citizen-teal"] ?? OUTFIT_COLORS["citizen-teal"]);
-  const gold = mat("#e4b65f", 0.45, 0.2);
+  // Keep each species' signature coat. The legacy fur selector is reserved for Otti.
+  const coatColor = species === "otter" ? COAT_COLORS[style.furTone ?? ""] ?? look.coat : look.coat;
+  const coat = mat(coatColor, 0.94);
+  const belly = mat(look.belly, 0.96);
+  const muzzle = mat(look.muzzle, 0.88);
+  const dark = mat("#20282b", 0.42);
+  const eyeWhite = mat("#fffaf0", 0.24);
+  const iris = mat(species === "frog" ? "#6b8e44" : species === "wolf" || species === "cat" ? "#79a6a1" : "#9a6840", 0.25);
+  const outfitColor = outfitOverride ?? OUTFIT_COLORS[style.outfit ?? "citizen-teal"] ?? OUTFIT_COLORS["citizen-teal"];
+  const outfit = mat(outfitColor, 0.66);
+  const trim = mat("#e9d1a0", 0.48, 0.12);
+  const gold = mat("#d6ad68", 0.36, 0.32);
+  const sole = mat("#263238", 0.9);
 
-  // Compact mascot proportions: oversized head, rounded body, short limbs.
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.31, 0.43, 4, 9), outfit);
-  torso.position.set(0, 0.66, 0);
-  torso.scale.set(1, 1, 0.83);
-  torso.castShadow = true;
-  group.add(torso);
-  addSphere(group, 0.25, belly, 0, 0.66, 0.235, 0.86, 1.06, 0.42);
-
-  for (const side of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.095, 0.28, 3, 7), coat);
-    arm.position.set(side * 0.36, 0.71, 0.02);
-    arm.rotation.z = side * -0.35;
-    group.add(arm);
-    const foot = addSphere(group, 0.15, dark, side * 0.2, 0.12, 0.08, 1.08, 0.6, 1.35);
-    foot.castShadow = true;
+  // Tail is placed behind the body first so it sits naturally in the silhouette.
+  if (look.tail === "bushy") {
+    const tailRoot = addSphere(group, 0.26, coat, 0.02, 0.48, -0.4, 0.9, 0.92, 1.45);
+    tailRoot.rotation.x = -0.25;
+    addSphere(group, 0.17, belly, 0.02, 0.5, -0.72, 0.82, 0.82, 0.8);
+  } else if (look.tail === "long") {
+    const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.55, 5, 10), coat);
+    tail.position.set(0, 0.43, -0.5);
+    tail.rotation.x = Math.PI / 2.6;
+    tail.rotation.z = -0.22;
+    group.add(tail);
+    addSphere(group, 0.09, coat, 0, 0.42, -0.82, 1, 0.9, 1.25);
+  } else if (look.tail === "short") {
+    addSphere(group, 0.11, coat, 0, 0.43, -0.39, 1, 0.88, 1);
   }
 
-  if (look.special === "mane") addSphere(group, 0.55, mat("#9a5e2d"), 0, 1.39, -0.035, 1.12, 1.08, 0.78);
+  // Soft rounded legs, tailored jacket and detailed shoes.
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.23, 4, 9), coat);
+    leg.position.set(side * 0.18, 0.27, 0.015);
+    group.add(leg);
+    addSphere(group, 0.135, sole, side * 0.19, 0.105, 0.11, 1.18, 0.55, 1.45);
+    addSphere(group, 0.105, outfit, side * 0.19, 0.16, 0.18, 1.05, 0.48, 1.2);
 
-  const head = addSphere(group, 0.43, coat, 0, 1.4, 0.015, 1.02, 0.97, 0.9);
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.31, 5, 9), coat);
+    arm.position.set(side * 0.36, 0.78, 0.015);
+    arm.rotation.z = side * -0.36;
+    group.add(arm);
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.092, 0.092, 0.105, 16), trim);
+    cuff.position.set(side * 0.465, 0.64, 0.04);
+    cuff.rotation.z = side * -0.36;
+    group.add(cuff);
+    addSphere(group, 0.105, coat, side * 0.48, 0.55, 0.055, 1, 0.94, 0.95);
+  }
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.31, 0.46, 6, 12), outfit);
+  torso.position.set(0, 0.67, 0);
+  torso.scale.set(1.02, 1.0, 0.86);
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Tailored chest panel, lapels, buttons, pockets and a fine gold waist line.
+  addSphere(group, 0.255, belly, 0, 0.69, 0.245, 0.83, 1.05, 0.38);
+  addBox(group, 0.48, 0.055, 0.045, trim, 0, 1.025, 0.286, false);
+  addBox(group, 0.17, 0.13, 0.035, outfit, -0.19, 0.88, 0.292, false);
+  addBox(group, 0.17, 0.13, 0.035, outfit, 0.19, 0.88, 0.292, false);
+  addBox(group, 0.075, 0.23, 0.045, trim, -0.18, 0.83, 0.31, false);
+  addBox(group, 0.075, 0.23, 0.045, trim, 0.18, 0.83, 0.31, false);
+  for (const y of [0.73, 0.86]) addSphere(group, 0.027, gold, 0.045, y, 0.325, 1, 1, 0.48);
+  addBox(group, 0.18, 0.16, 0.035, outfit, -0.19, 0.57, 0.28, false);
+  addBox(group, 0.18, 0.16, 0.035, outfit, 0.19, 0.57, 0.28, false);
+  addBox(group, 0.2, 0.025, 0.04, gold, 0.19, 0.66, 0.302, false);
+
+  // Neckline and a small official-style enamel badge make clothing feel finished.
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.035, 7, 24), trim);
+  collar.position.set(0, 1.02, 0.035);
+  collar.rotation.x = Math.PI / 2;
+  group.add(collar);
+  addSphere(group, 0.072, gold, 0.235, 0.91, 0.29, 1, 1, 0.55);
+  addSphere(group, 0.033, mat("#fff0c4", 0.28, 0.28), 0.235, 0.91, 0.33, 1, 1, 0.45);
+
+  // Lion's mane and the head are layered, giving the face a soft silhouette.
+  if (look.special === "mane") {
+    const mane = mat("#9a5e2d", 0.98);
+    addSphere(group, 0.55, mane, 0, 1.47, -0.055, 1.14, 1.1, 0.82);
+    for (let index = 0; index < 9; index++) {
+      const angle = (index / 9) * Math.PI * 2;
+      addSphere(group, 0.13, mane, Math.cos(angle) * 0.43, 1.47 + Math.sin(angle) * 0.42, -0.015, 0.9, 1.18, 0.8);
+    }
+  }
+  const head = addSphere(group, 0.45, coat, 0, 1.47, 0.035, 1.04, 0.98, 0.9);
   head.castShadow = true;
 
+  // Species-specific ears with inset inner-ear details.
   for (const side of [-1, 1]) {
     if (look.ears === "point") {
-      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.38, 7), coat);
-      ear.position.set(side * 0.29, 1.78, 0.015);
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.145, 0.4, 12), coat);
+      ear.position.set(side * 0.29, 1.83, 0.015);
       ear.rotation.z = side * -0.18;
       group.add(ear);
+      const inner = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.25, 10), muzzle);
+      inner.position.set(side * 0.29, 1.84, 0.12);
+      inner.rotation.z = side * -0.18;
+      group.add(inner);
     } else if (look.ears === "long") {
-      const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.095, 0.46, 4, 8), coat);
-      ear.position.set(side * 0.2, 1.92, 0.01);
-      ear.rotation.z = side * -0.1;
+      const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.5, 5, 10), coat);
+      ear.position.set(side * 0.2, 1.94, 0.01);
+      ear.rotation.z = side * -0.12;
       group.add(ear);
+      const inner = new THREE.Mesh(new THREE.CapsuleGeometry(0.043, 0.34, 4, 8), muzzle);
+      inner.position.set(side * 0.2, 1.96, 0.095);
+      inner.rotation.z = side * -0.12;
+      group.add(inner);
     } else if (look.ears === "floppy") {
-      const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.34, 4, 8), coat);
-      ear.position.set(side * 0.36, 1.57, 0.015);
-      ear.rotation.z = side * -0.72;
+      const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.37, 5, 9), coat);
+      ear.position.set(side * 0.37, 1.58, 0.015);
+      ear.rotation.z = side * -0.76;
       group.add(ear);
+      addSphere(group, 0.055, muzzle, side * 0.4, 1.57, 0.105, 0.8, 1.2, 0.55);
     } else if (look.ears === "round" || look.ears === "antler") {
-      addSphere(group, look.ears === "antler" ? 0.13 : 0.15, coat, side * 0.34, 1.72, 0.015, 1, 1, 0.72);
+      addSphere(group, look.ears === "antler" ? 0.13 : 0.15, coat, side * 0.34, 1.76, 0.015, 1, 1, 0.72);
+      addSphere(group, 0.07, muzzle, side * 0.34, 1.765, 0.12, 1, 1, 0.4);
     }
   }
 
-  // A few species-specific silhouettes make the residents recognisable at town scale.
+  // Deer antlers, frog eye turrets, elephant ears and owl wings.
   if (look.ears === "antler") {
     for (const side of [-1, 1]) {
-      const antler = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.045, 0.36, 6), gold);
-      antler.position.set(side * 0.22, 1.99, 0.0);
-      antler.rotation.z = side * 0.38;
+      const antler = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.045, 0.38, 9), gold);
+      antler.position.set(side * 0.22, 2.04, 0);
+      antler.rotation.z = side * 0.36;
       group.add(antler);
-      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.2, 6), gold);
-      branch.position.set(side * 0.34, 2.08, 0.02);
-      branch.rotation.z = side * -0.7;
+      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.028, 0.22, 8), gold);
+      branch.position.set(side * 0.34, 2.15, 0.015);
+      branch.rotation.z = side * -0.66;
       group.add(branch);
     }
   }
   if (look.face === "frog") {
+    for (const side of [-1, 1]) addSphere(group, 0.16, coat, side * 0.22, 1.82, 0.14);
+  }
+  if (look.special === "trunk") {
+    for (const side of [-1, 1]) addSphere(group, 0.24, coat, side * 0.42, 1.47, -0.005, 1, 1.12, 0.45);
+  }
+  if (look.special === "wings") {
+    for (const side of [-1, 1]) addSphere(group, 0.2, coat, side * 0.4, 0.83, -0.015, 0.68, 1.28, 0.48);
+  }
+
+  // Expressive eyes: dark socket, warm iris, glossy pupil and tiny catchlight.
+  const eyeY = look.face === "frog" ? 1.83 : 1.53;
+  for (const side of [-1, 1]) {
+    if (look.face === "panda") addSphere(group, 0.125, dark, side * 0.175, eyeY, 0.36, 1, 1.18, 0.42);
+    if (look.face === "raccoon") addSphere(group, 0.12, dark, side * 0.175, eyeY, 0.365, 1.36, 0.78, 0.36);
+    const socket = addSphere(group, 0.093, dark, side * 0.165, eyeY, 0.37, 1, 1.12, 0.5);
+    const sclera = addSphere(group, 0.073, eyeWhite, side * 0.165, eyeY, 0.415, 1, 1.08, 0.45);
+    addSphere(group, 0.047, iris, side * 0.155, eyeY - 0.005, 0.451, 1, 1.08, 0.46);
+    addSphere(group, 0.027, dark, side * 0.155, eyeY - 0.006, 0.471, 1, 1.1, 0.42);
+    addSphere(group, 0.014, eyeWhite, side * 0.17 - 0.012, eyeY + 0.019, 0.49, 1, 1, 0.45);
+    addTube(group, [
+      new THREE.Vector3(side * 0.255, eyeY + 0.115, 0.38),
+      new THREE.Vector3(side * 0.17, eyeY + 0.145, 0.4),
+      new THREE.Vector3(side * 0.085, eyeY + 0.11, 0.38),
+    ], 0.018, coat);
+    socket.castShadow = false;
+    sclera.castShadow = false;
+  }
+
+  // Cheeks, muzzle, nose and a curved smile add a friendly character expression.
+  addSphere(group, 0.16, muzzle, -0.105, 1.3, 0.36, 1.03, 0.78, 0.72);
+  addSphere(group, 0.16, muzzle, 0.105, 1.3, 0.36, 1.03, 0.78, 0.72);
+  const noseColor = look.special === "beak" ? mat("#e99a32", 0.35) : dark;
+  if (look.special === "beak") {
+    const upperBeak = new THREE.Mesh(new THREE.ConeGeometry(0.145, 0.24, 8), noseColor);
+    upperBeak.position.set(0, 1.34, 0.49);
+    upperBeak.rotation.x = Math.PI / 2;
+    group.add(upperBeak);
+    addSphere(group, 0.09, noseColor, 0, 1.27, 0.46, 1.25, 0.45, 0.9);
+  } else if (look.special === "trunk") {
+    const trunk = new THREE.Mesh(new THREE.CapsuleGeometry(0.082, 0.43, 6, 10), coat);
+    trunk.position.set(0, 1.18, 0.47);
+    trunk.rotation.x = -0.16;
+    group.add(trunk);
+    addSphere(group, 0.086, muzzle, 0, 0.96, 0.51, 1, 0.7, 0.85);
+  } else {
+    addSphere(group, 0.052, noseColor, 0, 1.39, 0.51, 1.15, 0.83, 0.75);
+    addTube(group, [
+      new THREE.Vector3(0, 1.35, 0.51),
+      new THREE.Vector3(0, 1.29, 0.53),
+      new THREE.Vector3(-0.075, 1.25, 0.5),
+    ], 0.012, dark);
+    addTube(group, [
+      new THREE.Vector3(0, 1.29, 0.53),
+      new THREE.Vector3(0.075, 1.25, 0.5),
+    ], 0.012, dark);
+  }
+
+  // Whisker pores and species markings.
+  if (["cat", "fox", "otter", "tiger", "raccoon"].includes(species)) {
     for (const side of [-1, 1]) {
-      addSphere(group, 0.16, coat, side * 0.22, 1.76, 0.16);
+      for (let dot = 0; dot < 3; dot++) addSphere(group, 0.012, dark, side * (0.16 + (dot % 2) * 0.025), 1.27 - Math.floor(dot / 2) * 0.035, 0.49, 1, 1, 0.6);
     }
   }
-
-  const eyeY = look.face === "frog" ? 1.78 : 1.48;
-  for (const side of [-1, 1]) {
-    if (look.face === "panda") addSphere(group, 0.115, dark, side * 0.17, eyeY, 0.355, 1, 1.12, 0.45);
-    if (look.face === "raccoon") addSphere(group, 0.11, dark, side * 0.17, eyeY, 0.36, 1.3, 0.72, 0.34);
-    const eye = addSphere(group, 0.064, eyeWhite, side * 0.16, eyeY, 0.373, 1, 1.1, 0.7);
-    addSphere(group, 0.034, dark, side * 0.16, eyeY - 0.005, 0.421, 1, 1.15, 0.6);
-    eye.castShadow = false;
-  }
-
-  if (look.special === "beak") {
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.24, 6), mat("#e99a32"));
-    beak.position.set(0, 1.29, 0.48);
-    beak.rotation.x = Math.PI / 2;
-    group.add(beak);
-  } else if (look.special === "trunk") {
-    const trunk = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.38, 4, 8), coat);
-    trunk.position.set(0, 1.22, 0.47);
-    trunk.rotation.x = -0.24;
-    group.add(trunk);
-  } else {
-    addSphere(group, 0.17, muzzle, 0, 1.28, 0.37, 1.18, 0.75, 0.62);
-    addSphere(group, 0.045, dark, 0, 1.35, 0.52, 1.1, 0.7, 0.7);
-  }
-
   if (look.face === "tiger") {
     for (const side of [-1, 1]) {
-      for (let stripe = 0; stripe < 2; stripe++) {
-        const mark = addBox(group, 0.055, 0.19, 0.025, dark, side * (0.28 + stripe * 0.045), 1.69 - stripe * 0.09, 0.33, false);
-        mark.rotation.z = side * 0.2;
+      for (let stripe = 0; stripe < 3; stripe++) {
+        const mark = addBox(group, 0.045, 0.18, 0.026, dark, side * (0.29 + stripe * 0.055), 1.77 - stripe * 0.1, 0.32, false);
+        mark.rotation.z = side * (0.17 + stripe * 0.08);
       }
     }
   }
   if (look.face === "cow") {
-    addSphere(group, 0.13, dark, -0.25, 1.55, -0.03, 1, 1.2, 0.45);
-    addSphere(group, 0.095, dark, 0.24, 1.22, -0.03, 1.2, 0.8, 0.45);
+    addSphere(group, 0.13, dark, -0.25, 1.6, -0.03, 1, 1.2, 0.45);
+    addSphere(group, 0.09, dark, 0.24, 1.26, -0.03, 1.2, 0.8, 0.45);
   }
   if (look.special === "spines") {
-    for (let index = 0; index < 7; index++) {
-      const x = (index - 3) * 0.085;
-      const spine = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.2, 5), mat("#65452f"));
-      spine.position.set(x, 1.76 + Math.abs(3 - index) * -0.012, -0.13);
-      spine.rotation.z = x * 0.7;
+    for (let index = 0; index < 9; index++) {
+      const x = (index - 4) * 0.08;
+      const spine = new THREE.Mesh(new THREE.ConeGeometry(0.047, 0.2, 7), mat("#65452f", 0.97));
+      spine.position.set(x, 1.82 - Math.abs(4 - index) * 0.012, -0.14);
+      spine.rotation.z = x * 0.62;
       group.add(spine);
     }
   }
-  if (look.special === "wings") {
-    for (const side of [-1, 1]) {
-      addSphere(group, 0.2, coat, side * 0.38, 0.82, -0.005, 0.68, 1.28, 0.46);
-    }
-  }
 
-  if (look.tail === "bushy") {
-    const tail = addSphere(group, 0.25, coat, 0, 0.42, -0.42, 0.8, 0.8, 1.7);
-    tail.rotation.x = -0.35;
-    addSphere(group, 0.13, belly, 0, 0.52, -0.72, 0.86, 0.86, 0.86);
-  } else if (look.tail === "long") {
-    const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.46, 4, 8), coat);
-    tail.position.set(0, 0.42, -0.43);
-    tail.rotation.x = Math.PI / 2.7;
-    tail.rotation.z = -0.26;
-    group.add(tail);
-  } else if (look.tail === "short") {
-    addSphere(group, 0.105, coat, 0, 0.42, -0.36, 1, 0.85, 1);
-  }
-
-  if (look.special === "trunk") {
-    // Elephants receive broad ears to balance the trunk silhouette.
-    for (const side of [-1, 1]) addSphere(group, 0.23, coat, side * 0.42, 1.4, -0.015, 1, 1.12, 0.42);
-  }
-
-  const accessory = style.accessory;
-  if (accessory === "cap") {
-    addSphere(group, 0.25, gold, 0, 1.82, 0.04, 1.2, 0.35, 1);
-    addBox(group, 0.48, 0.055, 0.23, mat("#bd8e4d"), 0, 1.79, 0.22, false);
-  } else if (accessory === "scarf") {
-    addBox(group, 0.66, 0.13, 0.15, gold, 0, 1.05, 0.19);
-    addBox(group, 0.14, 0.32, 0.1, gold, 0.2, 0.89, 0.24);
-  } else if (accessory === "backpack") {
-    addBox(group, 0.38, 0.48, 0.22, mat("#a66d43"), 0, 0.72, -0.34);
+  // Optional accessory. Metal and fabric tones are shared with the city design system.
+  if (style.accessory === "cap") {
+    addSphere(group, 0.26, gold, 0, 1.91, 0.025, 1.22, 0.34, 1);
+    addBox(group, 0.5, 0.05, 0.23, mat("#b98d52", 0.52), 0, 1.88, 0.22, false);
+  } else if (style.accessory === "scarf") {
+    addBox(group, 0.67, 0.12, 0.15, gold, 0, 1.09, 0.2);
+    addBox(group, 0.14, 0.31, 0.1, trim, 0.2, 0.91, 0.24);
+  } else if (style.accessory === "backpack") {
+    addBox(group, 0.39, 0.48, 0.22, mat("#98633e"), 0, 0.72, -0.34);
+    addBox(group, 0.24, 0.08, 0.035, gold, 0, 0.77, -0.47, false);
   }
 
   group.userData.species = species;
   group.userData.coatMaterial = coat;
   group.userData.outfitMaterial = outfit;
 }
-
 function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
   const group = new THREE.Group();
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08 * size, 0.12 * size, 0.62 * size, 7), mat("#745139"));
