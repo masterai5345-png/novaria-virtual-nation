@@ -933,7 +933,7 @@ function createPaverMaterial() {
 
 function makeTower(scene: THREE.Scene, x: number, z: number, width: number, depth: number, floors: number, hue: string, rounded = false) {
   const group = new THREE.Group();
-  const floorHeight = 0.43;
+  const floorHeight = 0.62;
   const height = floors * floorHeight;
   const seed = Math.round(Math.abs(x * 7 + z * 11)) % 19;
   const frame = mat(hue, 0.44, 0.3);
@@ -1779,10 +1779,10 @@ function createSkyDome(scene: THREE.Scene) {
   const context = canvas.getContext("2d");
   if (context) {
     const gradient = context.createLinearGradient(0, 0, 0, 512);
-    gradient.addColorStop(0, "#607d91");
-    gradient.addColorStop(0.42, "#a7bdc2");
-    gradient.addColorStop(0.72, "#d9c6a9");
-    gradient.addColorStop(1, "#f1d1a8");
+    gradient.addColorStop(0, "#5d9be8");
+    gradient.addColorStop(0.38, "#a5c8e8");
+    gradient.addColorStop(0.68, "#e8d3bb");
+    gradient.addColorStop(1, "#f6dcc0");
     context.fillStyle = gradient;
     context.fillRect(0, 0, 1024, 512);
     // A warm, low sun and layered high-altitude cloud banks give the city a cinematic horizon.
@@ -1820,6 +1820,7 @@ function createSkyDome(scene: THREE.Scene) {
     new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, depthWrite: false }),
   );
   sky.renderOrder = -10;
+  scene.userData.skyDome = sky;
   scene.add(sky);
   return texture;
 }
@@ -2156,7 +2157,7 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
 
     acquireSharedSceneResources();
     const scene = new THREE.Scene();
-    const daySky = new THREE.Color("#b9c9c7");
+    const daySky = new THREE.Color("#f6dcc0");
     const nightSky = new THREE.Color("#17243a");
     scene.background = daySky.clone();
     scene.fog = new THREE.Fog(daySky, 58, 118);
@@ -2424,6 +2425,8 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
         const target = activeNight ? nightSky : daySky;
         scene.background = target.clone();
         scene.fog?.color.copy(target);
+        const skyDome = scene.userData.skyDome as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> | undefined;
+        if (skyDome?.material) skyDome.material.color.set(activeNight ? "#344064" : "#ffffff");
         sun.color.set(activeNight ? "#a9c4ff" : "#ffe3bb");
         sun.intensity = activeNight ? 0.78 : 3.35;
         hemisphere.intensity = activeNight ? 0.85 : 2.1;
