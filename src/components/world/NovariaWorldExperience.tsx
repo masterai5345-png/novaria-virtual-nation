@@ -82,7 +82,7 @@ export default function NovariaWorldExperience() {
   const [chatInput, setChatInput] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
   const [chatMessages, setChatMessages] = useState<CityChatMessage[]>([
-    { role: "assistant", content: "Halo warga! Aku Pak Wali Kota Pak Wali Kota Beruang 🐻. Mau mencari maskot, menjelajahi distrik, atau bertanya tentang NOVARIA?" },
+    { role: "assistant", content: "Halo warga! Aku Pak Wali Kota Beruang 🐻, pemimpin kota para maskot. Mau mencari maskotmu atau menjelajahi kota?" },
   ]);
   const [cardOpen, setCardOpen] = useState(false);
 
@@ -431,20 +431,20 @@ export default function NovariaWorldExperience() {
         <section className="town-assistant-panel" aria-label="Pak Wali Kota Beruang assistant">
           <header>
             <span className="town-assistant-avatar">🐻</span>
-            <span><small>ASISTEN KOTA NOVARIA</small><b>Pak Wali Kota Pak Wali Kota Beruang</b></span>
+            <span><small>ASISTEN KOTA NOVARIA</small><b>Pak Wali Kota Beruang</b></span>
             <button type="button" onClick={() => setAssistantOpen(false)} aria-label="Close assistant"><X size={17}/></button>
           </header>
           <div className="town-chat-log" aria-live="polite">
             {chatMessages.map((item, index) => (
               <div className={`town-chat-message ${item.role === "user" ? "user" : "assistant"}`} key={index}>{item.content}</div>
             ))}
-            {chatBusy ? <div className="town-chat-message assistant">Pak Pak Wali Kota Beruang sedang berpikir…</div> : null}
+            {chatBusy ? <div className="town-chat-message assistant">Pak Wali Kota Beruang sedang berpikir…</div> : null}
           </div>
           <form className="town-chat-form" onSubmit={(event) => { event.preventDefault(); void sendMayorMessage(); }}>
             <input value={chatInput} onChange={(event) => setChatInput(event.target.value)} placeholder="Tanya Pak Wali Kota…" maxLength={1200} />
             <button type="submit" disabled={!chatInput.trim() || chatBusy} aria-label="Send message"><Send size={16}/></button>
           </form>
-          <small className="town-assistant-footnote">Asisten dapat memakai panduan lokal; AI provider aktif jika dikonfigurasi admin.</small>
+          <small className="town-assistant-footnote">Asisten kota · Panduan lokal dan AI jika dikonfigurasi admin.</small>
         </section>
       ) : null}
 
@@ -470,9 +470,9 @@ export default function NovariaWorldExperience() {
       ) : null}
 
       <div className="town-bottom-hint">
-        <span>W A S D</span> MOVE
+        <span>W A S D</span> GERAK
         <i />
-        <span>DRAG</span> ROTATE
+        <span>GESER</span> PUTAR
         <i />
         <span>SCROLL</span> ZOOM
       </div>
@@ -481,15 +481,15 @@ export default function NovariaWorldExperience() {
         <section className="town-drawer" aria-label="NOVARIA city panel">
           <div className="town-drawer-heading">
             <div>
-              <small>EXPLORE NOVARIA</small>
-              <h2>{panel === "overview" ? "City overview" : panel === "missions" ? "City missions" : panel === "districts" ? "Discover districts" : "Meet the residents"}</h2>
+              <small>JELAJAHI KOTA MASKOT</small>
+              <h2>{panel === "overview" ? "Ringkasan Kota" : panel === "missions" ? "Misi Kota" : panel === "districts" ? "Jelajahi Distrik" : "Temui Warga"}</h2>
             </div>
             <button type="button" onClick={() => setPanel(null)} aria-label="Close panel"><X size={18}/></button>
           </div>
 
           {panel === "overview" ? (
             <div className="town-overview-content">
-              <p>A modern coastal city shaped by its districts, residents and community. Walk the streets, visit the plazas and discover your place in NOVARIA.</p>
+              <p>Kota pesisir modern yang dihuni banyak spesies hewan maskot. Jelajahi jalan, taman, pasar, dan lingkungan tempat tinggal warga.</p>
               <CityMetrics />
               <div className="town-wallet">
                 <span><small>YOUR NOVA COIN WALLET</small><b>{walletBalance === null ? "—" : walletBalance.toLocaleString("en-US")} NVC</b></span>
@@ -527,13 +527,13 @@ export default function NovariaWorldExperience() {
                   <div><small>{district.category}</small><b>{district.name}</b><p>{district.description}</p></div>
                 </article>;
               })}
-              <p className="town-muted">Use the city controls to explore the districts, then select a resident from the public mascot finder.</p>
+              <p className="town-muted">Pilih distrik untuk mengenal taman, pusat kota, pasar modern, dan kawasan perumahan.</p>
             </div>
           ) : null}
 
           {panel === "residents" ? (
             <div className="town-residents-content">
-              <div className="town-mayor-profile"><span>🐻</span><div><small>PEMIMPIN KOTA</small><b>Pak Wali Kota Beruang</b><p>The founding bear mayor. Pak Wali Kota Beruang is a unique city character and is never randomly reassigned.</p></div></div>
+              <div className="town-mayor-profile"><span>🐻</span><div><small>PEMIMPIN KOTA</small><b>Pak Wali Kota Beruang</b><p>Pemimpin kota yang ramah dan menjaga komunitas berbagai spesies hewan maskot.</p></div></div>
               <div className="town-species-heading"><b>Warga dari berbagai spesies</b><small>27 SPESIES MASKOT</small></div>
               <div className="town-species-grid">
                 {CITIZEN_SPECIES.map((species) => (
