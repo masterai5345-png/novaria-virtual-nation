@@ -870,13 +870,105 @@ function addDistrictLabel(scene: THREE.Scene, label: string, x: number, z: numbe
   scene.add(sprite);
 }
 
+function createSkyDome(scene: THREE.Scene) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 512;
+  const context = canvas.getContext("2d");
+  if (context) {
+    const gradient = context.createLinearGradient(0, 0, 0, 512);
+    gradient.addColorStop(0, "#607d91");
+    gradient.addColorStop(0.42, "#a7bdc2");
+    gradient.addColorStop(0.72, "#d9c6a9");
+    gradient.addColorStop(1, "#f1d1a8");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 1024, 512);
+    context.globalAlpha = 0.18;
+    for (let index = 0; index < 7; index++) {
+      const x = 100 + index * 150;
+      context.fillStyle = "#fff7e6";
+      context.beginPath();
+      context.ellipse(x, 175 + (index % 3) * 28, 76, 18, 0, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+  if (!context) return;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(145, 36, 24),
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, depthWrite: false }),
+  );
+  sky.renderOrder = -10;
+  scene.add(sky);
+  return texture;
+}
+
+function createWaterfrontPier(scene: THREE.Scene) {
+  const pier = new THREE.Group();
+  const decking = mat("#947858", 0.78);
+  const sideRail = mat("#354c4d", 0.5, 0.25);
+  const brass = mat("#c4a16b", 0.36, 0.4);
+  addBox(pier, 2.25, 0.2, 10.5, decking, 0, 0.58, 0);
+  for (let plank = 0; plank < 18; plank++) {
+    const board = addBox(pier, 2.2, 0.025, 0.48, mat(plank % 2 ? "#a78965" : "#8f7355", 0.82), 0, 0.695, -4.78 + plank * 0.56, false);
+    board.receiveShadow = true;
+  }
+  for (const side of [-1, 1]) {
+    addBox(pier, 0.08, 0.72, 10.5, sideRail, side * 1.04, 0.98, 0);
+    for (let post = 0; post < 8; post++) {
+      addBox(pier, 0.1, 0.78, 0.1, brass, side * 1.04, 1.0, -4.55 + post * 1.3);
+    }
+    addBox(pier, 0.07, 0.07, 10.3, brass, side * 1.04, 1.38, 0, false);
+    for (const z of [-4.2, -1.4, 1.4, 4.2]) {
+      const pile = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 1.2, 10), mat("#5a554c", 0.98));
+      pile.position.set(side * 0.86, -0.02, z);
+      pier.add(pile);
+    }
+  }
+  pier.position.set(10.5, 0, 23.4);
+  scene.add(pier);
+  createStreetLamp(scene, 9.35, 20.1, 2.8);
+  createStreetLamp(scene, 11.65, 26.8, 2.8);
+
+  // A compact passenger launch gives the waterfront a recognisable maritime landmark.
+  const boat = new THREE.Group();
+  const hull = mat("#f0eee4", 0.42, 0.16);
+  const navy = mat("#315765", 0.28, 0.3);
+  const cabinGlass = new THREE.MeshStandardMaterial({ color: "#8eb8c3", roughness: 0.1, metalness: 0.55 });
+  const hullShape = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), navy);
+  hullShape.scale.set(1.9, 0.28, 0.72);
+  hullShape.position.y = 0.25;
+  boat.add(hullShape);
+  addBox(boat, 3.0, 0.18, 1.05, hull, 0, 0.4, 0);
+  addBox(boat, 1.5, 0.6, 0.78, cabinGlass, -0.25, 0.78, 0);
+  addBox(boat, 2.2, 0.08, 1.1, hull, -0.25, 1.12, 0);
+  addBox(boat, 0.15, 0.48, 0.95, navy, 1.2, 0.62, 0);
+  for (const side of [-1, 1]) {
+    for (let window = 0; window < 3; window++) {
+      addBox(boat, 0.28, 0.18, 0.025, cabinGlass, -0.75 + window * 0.48, 0.82, side * 0.405, false);
+    }
+  }
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.15, 8), brass);
+  mast.position.set(-0.78, 1.55, 0);
+  boat.add(mast);
+  addBox(boat, 0.44, 0.28, 0.035, mat("#e6d7b5", 0.82), -0.55, 1.85, 0, false);
+  boat.position.set(13.5, -0.1, 29.3);
+  boat.rotation.y = -0.14;
+  scene.add(boat);
+}
+
 function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat("#477f88", 0.32, 0.12));
+  createSkyDome(scene);
+  const sea = new THREE.Mesh(
+    new THREE.PlaneGeometry(150, 150, 48, 48),
+    new THREE.MeshStandardMaterial({ color: "#477f88", roughness: 0.23, metalness: 0.18, envMapIntensity: 0.65 }),
+  );
   sea.rotation.x = -Math.PI / 2;
   sea.position.y = -0.32;
   scene.add(sea);
 
-  const land = new THREE.Mesh(new THREE.PlaneGeometry(52, 52), mat("#c9c6b9"));
+  const land = new THREE.Mesh(new THREE.PlaneGeometry(52, 52), mat("#c9c6b9", 0.94));
   land.rotation.x = -Math.PI / 2;
   land.position.y = 0.35;
   land.receiveShadow = true;
@@ -963,8 +1055,11 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
 
   for (let index = 0; index < 15; index++) {
     const x = -22 + index * 3.1;
+    // Preserve a clear opening for the marina boardwalk on the eastern shoreline.
+    if (x > -2 && x < 15) continue;
     makeTree(scene, x, 21.2, 0.58 + (index % 3) * 0.08);
   }
+  createWaterfrontPier(scene);
 
   // Premium street furniture, park benches, planters and traffic controls.
   addStreetFurniture(scene);
