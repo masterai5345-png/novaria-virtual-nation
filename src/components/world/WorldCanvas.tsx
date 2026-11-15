@@ -1985,10 +1985,10 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   makeHedge(scene, 6.1, 5.3, 1.7, 0.48);
   makeHedge(scene, 14.1, 12.8, 1.7, 0.48);
   createHedgeBatch(scene);
-  createPlanterBatch(scene);
 
   // Premium street furniture, park benches, planters and traffic controls.
   addStreetFurniture(scene);
+  createPlanterBatch(scene);
   createBusShelter(scene, 6.8, -1.5);
   createRoadArrow(scene, -11.5, 1.8, 0);
   createRoadArrow(scene, 11.5, 1.8, Math.PI);
