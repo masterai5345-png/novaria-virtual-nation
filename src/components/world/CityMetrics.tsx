@@ -12,7 +12,7 @@ type Overview = {
   note?: string;
 };
 
-export default function CityMetrics() {
+export default function CityMetrics({ compact = false }: { compact?: boolean }) {
   const [overview, setOverview] = useState<Overview | null>(null);
 
   useEffect(() => {
@@ -36,6 +36,7 @@ export default function CityMetrics() {
   }, []);
 
   if (!overview) {
+    if (compact) return <span className="town-population-chip">Kota preview</span>;
     return (
       <div className="quick-stats" aria-label="Preview city metrics">
         <div><small>DEMO HOMES</small><strong>842</strong></div>
@@ -46,6 +47,7 @@ export default function CityMetrics() {
   }
 
   if (overview.database !== "connected") {
+    if (compact) return <span className="town-population-chip">Kota preview</span>;
     return (
       <div className="quick-stats" aria-label="Preview city metrics">
         <div><small>DEMO HOMES</small><strong>842</strong></div>
@@ -54,6 +56,8 @@ export default function CityMetrics() {
       </div>
     );
   }
+
+  if (compact) return <span className="town-population-chip">{(overview.activeCitizens ?? 0).toLocaleString("id-ID")} warga</span>;
 
   return (
     <div className="quick-stats" aria-label="Live city metrics">
