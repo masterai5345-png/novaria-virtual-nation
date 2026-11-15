@@ -59,13 +59,11 @@ export default function NovariaWorldExperience() {
   const [missionBusy, setMissionBusy] = useState("");
   const [missionMessage, setMissionMessage] = useState("");
   const [missionError, setMissionError] = useState("");
-  const [residentMascot, setResidentMascot] = useState<{ displayName: string; species: string } | null>(null);
+  const [residentMascot, setResidentMascot] = useState<{ citizenId: string; displayName: string; species: string } | null>(null);
 
   useEffect(() => {
-    if (!session?.user?.id) {
-      setResidentMascot(null);
-      return;
-    }
+    if (!session?.user?.id) return;
+    const citizenId = session.user.id;
     const fallbackName = session.user?.name || "Citizen";
     const controller = new AbortController();
     fetch("/api/citizen/profile", { cache: "no-store", signal: controller.signal })
@@ -76,6 +74,7 @@ export default function NovariaWorldExperience() {
       .then((data) => {
         if (data?.profile?.species) {
           setResidentMascot({
+            citizenId,
             displayName: data.profile.displayName || fallbackName,
             species: data.profile.species,
           });
@@ -175,7 +174,7 @@ export default function NovariaWorldExperience() {
           {session?.user?.id ? (
             <Link href="/citizen" className="town-profile-link">
               <PawPrint size={15}/>
-              {residentMascot && isCitizenSpecies(residentMascot.species)
+              {residentMascot?.citizenId === session.user.id && isCitizenSpecies(residentMascot.species)
                 ? `${ANIMAL_EMOJI[residentMascot.species]} ${ANIMAL_LABELS[residentMascot.species]}`
                 : "My mascot"}
             </Link>
