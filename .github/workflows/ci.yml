@@ -2,7 +2,7 @@ name: NOVARIA CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, foundation/mvp]
   push:
     branches: [main]
 
