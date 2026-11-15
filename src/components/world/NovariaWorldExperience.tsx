@@ -48,13 +48,13 @@ type MissionResponse = {
 };
 
 const previewMissions: Mission[] = [
-  { missionKey: "welcome-to-novaria", title: "Meet Mayor Otti", detail: "Visit City Hall and explore the civic plaza.", rewardNvc: 120, completed: false },
+  { missionKey: "welcome-to-novaria", title: "Meet Pak Wali Kota Beruang", detail: "Visit City Hall and explore the civic plaza.", rewardNvc: 120, completed: false },
   { missionKey: "visit-the-harbor", title: "Discover the waterfront", detail: "Walk along the coastal promenade and look around the harbor.", rewardNvc: 180, completed: false },
   { missionKey: "help-the-town", title: "Help shape the city", detail: "Visit the town center and review a city proposal.", rewardNvc: 250, completed: false },
 ];
 
 const districts = [
-  { icon: Landmark, name: "City Hall", category: "GOVERNMENT", description: "Mayor Otti's civic headquarters and the heart of the city." },
+  { icon: Landmark, name: "City Hall", category: "GOVERNMENT", description: "Pak Wali Kota Beruang's civic headquarters and the heart of the city." },
   { icon: Building2, name: "Central Business District", category: "CITY CENTER", description: "A modern skyline of glass towers, offices and city landmarks." },
   { icon: Sparkles, name: "Modern Market", category: "COMMERCE", description: "A lively shopping square with stores, cafés and local activity." },
   { icon: Compass, name: "Green Park", category: "PUBLIC SPACE", description: "A leafy city park with walking paths, trees and a central fountain." },
@@ -82,7 +82,7 @@ export default function NovariaWorldExperience() {
   const [chatInput, setChatInput] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
   const [chatMessages, setChatMessages] = useState<CityChatMessage[]>([
-    { role: "assistant", content: "Halo warga! Aku Pak Wali Kota Otti 🦦. Mau mencari maskot, menjelajahi distrik, atau bertanya tentang NOVARIA?" },
+    { role: "assistant", content: "Halo warga! Aku Pak Wali Kota Pak Wali Kota Beruang 🐻. Mau mencari maskot, menjelajahi distrik, atau bertanya tentang NOVARIA?" },
   ]);
   const [cardOpen, setCardOpen] = useState(false);
 
@@ -254,7 +254,7 @@ export default function NovariaWorldExperience() {
     context.fillText("NOVARIA", 360, 100);
     context.fillStyle = "#af8750";
     context.font = "700 18px Arial";
-    context.fillText("VIRTUAL CITIZEN CARD", 360, 136);
+    context.fillText("KARTU WARGA VIRTUAL", 360, 136);
 
     context.fillStyle = "#e3d8c0";
     context.beginPath();
@@ -290,7 +290,7 @@ export default function NovariaWorldExperience() {
     context.textAlign = "center";
     context.fillStyle = "#9a927e";
     context.font = "15px Arial";
-    context.fillText("A virtual community identity — not a government-issued ID", 360, 950);
+    context.fillText("Identitas komunitas virtual, bukan KTP pemerintah", 360, 950);
 
     const link = document.createElement("a");
     link.download = `novaria-citizen-${selectedResident.publicHandle}.png`;
@@ -343,22 +343,22 @@ export default function NovariaWorldExperience() {
       <div className="town-world-shade" aria-hidden="true" />
 
       <header className="town-topbar">
-        <Link href="/" className="town-brand" aria-label="NOVARIA city home">
-          <span className="town-brand-mark">N</span>
-          <span><strong>NOVARIA</strong><small>COASTAL METROPOLIS</small></span>
+        <Link href="/" className="town-brand" aria-label="Kota Maskot">
+          <span className="town-brand-mark">🐾</span>
+          <span><strong>Kota Maskot</strong><small>NOVARIA · KOTA PARA HEWAN</small></span>
         </Link>
         <div className="town-topbar-center">
-          <span className="town-status-dot" />
-          <span>YOUR WORLD IS WAITING</span>
+          <CityMetrics compact />
         </div>
         <div className="town-topbar-actions">
-          <button type="button" className="town-icon-control" onClick={() => setIsNight((value) => !value)} aria-label={isNight ? "Switch to daytime" : "Switch to nighttime"} title={isNight ? "Daytime" : "Nighttime"}>
+          <button type="button" className="town-icon-control" onClick={() => openPanel("districts")} aria-label="Pilih distrik" title="Distrik Kota"><MapPinned size={17}/></button>
+          <button type="button" className="town-icon-control" onClick={() => setIsNight((value) => !value)} aria-label={isNight ? "Aktifkan siang" : "Aktifkan malam"} title={isNight ? "Siang" : "Malam"}>
             {isNight ? <Sun size={17}/> : <Moon size={17}/>}
           </button>
           <button type="button" className="town-icon-control" onClick={() => setQuality((value) => value === "high" ? "low" : "high")} aria-label={quality === "high" ? "Switch to low graphics" : "Switch to high graphics"} title={quality === "high" ? "High quality" : "Lightweight quality"}>
             {quality === "high" ? <Sparkles size={17}/> : <Zap size={17}/>}
           </button>
-          <button type="button" className={`town-icon-control${assistantOpen ? " active" : ""}`} onClick={() => setAssistantOpen((value) => !value)} aria-label="Open Mayor Otti assistant" title="Ask Mayor Otti">
+          <button type="button" className={`town-icon-control${assistantOpen ? " active" : ""}`} onClick={() => setAssistantOpen((value) => !value)} aria-label="Open Pak Wali Kota Beruang assistant" title="Ask Pak Wali Kota Beruang">
             <Bot size={17}/>
           </button>
           {session?.user?.id ? (
@@ -373,33 +373,14 @@ export default function NovariaWorldExperience() {
         </div>
       </header>
 
-      <nav className="town-rail" aria-label="City navigation">
-        <button type="button" className={!panel ? "active" : ""} onClick={() => setPanel(null)} aria-label="Show city" title="City"><Compass size={19}/></button>
-        <button type="button" className={panel === "overview" ? "active" : ""} onClick={() => openPanel("overview")} aria-label="City overview" title="Overview"><MapPinned size={19}/></button>
-        <button type="button" className={panel === "missions" ? "active" : ""} onClick={() => openPanel("missions")} aria-label="Missions" title="Missions"><Trophy size={19}/></button>
-        <button type="button" className={panel === "districts" ? "active" : ""} onClick={() => openPanel("districts")} aria-label="Districts" title="Districts"><Building2 size={19}/></button>
-        <button type="button" className={panel === "residents" ? "active" : ""} onClick={() => openPanel("residents")} aria-label="Animal residents" title="Residents"><Users size={19}/></button>
-      </nav>
-
-      <div className="town-location-tag">
-        <span className="town-location-pin">✦</span>
-        <span><b>NOVARIA</b><small>METROPOLITAN ISLAND</small></span>
-      </div>
-
-      <aside className="town-mayor-card">
-        <span className="town-mayor-avatar">🦦</span>
-        <span className="town-mayor-copy"><small>YOUR MAYOR</small><b>Mayor Otti</b><em>Welcome to our city!</em></span>
-        <button type="button" onClick={() => openPanel("residents")} aria-label="Meet the residents">→</button>
-      </aside>
-
-      <section className="town-search-dock" aria-label="Mascot resident search">
+      <section className="town-search-dock" aria-label="Pencarian warga maskot">
         <div className="town-search-input-wrap">
           <Search size={16}/>
           <input
             value={searchTerm}
             onChange={(event) => { setSearchTerm(event.target.value); setSearchError(""); }}
             onKeyDown={(event) => { if (event.key === "Enter") void searchResidents(false); }}
-            placeholder="Ketik username Instagram warga"
+            placeholder="Ketik username IG kamu"
             autoCapitalize="none"
             autoComplete="off"
             spellCheck={false}
@@ -441,23 +422,23 @@ export default function NovariaWorldExperience() {
             <small>WARGA TERPILIH · @ {selectedResident.publicHandle}</small>
             <b>{selectedResident.displayName}</b>
           </span>
-          <button type="button" onClick={() => setCardOpen(true)}><IdCard size={15}/> Lihat KTP</button>
+          <button type="button" onClick={() => setCardOpen(true)}><IdCard size={15}/> Lihat KTP Maskot</button>
           <button type="button" className="town-close-selected" onClick={() => setSelectedResident(null)} aria-label="Clear selected resident"><X size={16}/></button>
         </section>
       ) : null}
 
       {assistantOpen ? (
-        <section className="town-assistant-panel" aria-label="Mayor Otti assistant">
+        <section className="town-assistant-panel" aria-label="Pak Wali Kota Beruang assistant">
           <header>
-            <span className="town-assistant-avatar">🦦</span>
-            <span><small>ASISTEN KOTA NOVARIA</small><b>Pak Wali Kota Otti</b></span>
+            <span className="town-assistant-avatar">🐻</span>
+            <span><small>ASISTEN KOTA NOVARIA</small><b>Pak Wali Kota Pak Wali Kota Beruang</b></span>
             <button type="button" onClick={() => setAssistantOpen(false)} aria-label="Close assistant"><X size={17}/></button>
           </header>
           <div className="town-chat-log" aria-live="polite">
             {chatMessages.map((item, index) => (
               <div className={`town-chat-message ${item.role === "user" ? "user" : "assistant"}`} key={index}>{item.content}</div>
             ))}
-            {chatBusy ? <div className="town-chat-message assistant">Otti sedang berpikir…</div> : null}
+            {chatBusy ? <div className="town-chat-message assistant">Pak Pak Wali Kota Beruang sedang berpikir…</div> : null}
           </div>
           <form className="town-chat-form" onSubmit={(event) => { event.preventDefault(); void sendMayorMessage(); }}>
             <input value={chatInput} onChange={(event) => setChatInput(event.target.value)} placeholder="Tanya Pak Wali Kota…" maxLength={1200} />
@@ -479,11 +460,11 @@ export default function NovariaWorldExperience() {
               <div className="town-ktp-details">
                 <div><small>SPECIES</small><b>{ANIMAL_LABELS[isCitizenSpecies(selectedResident.species) ? selectedResident.species : "fox"]}</b></div>
                 <div><small>COMMUNITY</small><b>NOVARIA</b></div>
-                <div><small>MEMBERSHIP</small><b>PUBLIC CITIZEN PROFILE</b></div>
+                <div><small>MEMBERSHIP</small><b>PROFIL WARGA PUBLIK</b></div>
               </div>
               <small className="town-ktp-disclaimer">Virtual community identity — not a government-issued ID.</small>
             </div>
-            <button type="button" className="town-ktp-download" onClick={downloadCitizenCard}><Download size={16}/> Download card</button>
+            <button type="button" className="town-ktp-download" onClick={downloadCitizenCard}><Download size={16}/> Unduh KTP</button>
           </section>
         </div>
       ) : null}
@@ -552,14 +533,14 @@ export default function NovariaWorldExperience() {
 
           {panel === "residents" ? (
             <div className="town-residents-content">
-              <div className="town-mayor-profile"><span>🦦</span><div><small>OFFICIAL CITY LEADER</small><b>Mayor Otti</b><p>The founding otter mayor. Otti is a unique city character and is never randomly reassigned.</p></div></div>
-              <div className="town-species-heading"><b>Animal citizens</b><small>27 PERMANENT SPECIES</small></div>
+              <div className="town-mayor-profile"><span>🐻</span><div><small>PEMIMPIN KOTA</small><b>Pak Wali Kota Beruang</b><p>The founding bear mayor. Pak Wali Kota Beruang is a unique city character and is never randomly reassigned.</p></div></div>
+              <div className="town-species-heading"><b>Warga dari berbagai spesies</b><small>27 SPESIES MASKOT</small></div>
               <div className="town-species-grid">
                 {CITIZEN_SPECIES.map((species) => (
                   <div key={species}><span>{ANIMAL_EMOJI[species]}</span><b>{ANIMAL_LABELS[species]}</b></div>
                 ))}
               </div>
-              <p className="town-muted">Every registered citizen receives one randomly assigned animal mascot. Their species stays the same whenever they sign in.</p>
+              <p className="town-muted">Setiap warga memiliki maskot hewan permanen. Kota ini dihuni banyak spesies—bukan satu jenis hewan saja.</p>
               {session?.user?.id ? <Link href="/citizen" className="town-primary-action">Customize my mascot <span>→</span></Link> : null}
             </div>
           ) : null}
