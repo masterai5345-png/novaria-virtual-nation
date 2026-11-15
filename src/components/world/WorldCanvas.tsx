@@ -1436,7 +1436,7 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
 
   // Premium street furniture, park benches, planters and traffic controls.
   addStreetFurniture(scene);
-  createBusShelter(scene, 16.7, 5.7);
+  createBusShelter(scene, 6.8, -1.5);
   createRoadArrow(scene, -11.5, 1.8, 0);
   createRoadArrow(scene, 11.5, 1.8, Math.PI);
 
