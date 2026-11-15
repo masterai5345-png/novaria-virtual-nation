@@ -472,16 +472,16 @@ function createFacadeMaterial(baseColor: string, seed: number, rounded = false) 
       const x = column * cellW;
       const lit = ((row * 17 + column * 29 + seed * 13) % 11) < 3;
       const tone = lit ? "#e4d6ad" : (row + column) % 3 === 0 ? "#9bb7ba" : "#52717c";
-      const gradient = context.createLinearGradient(x, floorY + 12, x + cellW, floorY + cellH - 12);
+      const gradient = context.createLinearGradient(x, floorY + 4, x + cellW, floorY + cellH - 4);
       gradient.addColorStop(0, lit ? "#f4e5c3" : "#7997a0");
       gradient.addColorStop(0.22, tone);
       gradient.addColorStop(1, lit ? "#c3b18a" : "#294550");
       context.fillStyle = gradient;
-      context.fillRect(x + 11, floorY + 17, cellW - 22, cellH - 32);
+      context.fillRect(x + 7, floorY + 5, cellW - 14, Math.max(5, cellH - 9));
       context.fillStyle = "rgba(229,241,235,.28)";
-      context.fillRect(x + 15, floorY + 20, Math.max(2, cellW * 0.025), cellH - 38);
+      context.fillRect(x + 9, floorY + 6, Math.max(1, cellW * 0.025), Math.max(4, cellH - 11));
       context.fillStyle = "rgba(14,28,34,.5)";
-      context.fillRect(x + cellW - 14, floorY + 17, 3, cellH - 32);
+      context.fillRect(x + cellW - 9, floorY + 5, 2, Math.max(5, cellH - 9));
     }
   }
 
