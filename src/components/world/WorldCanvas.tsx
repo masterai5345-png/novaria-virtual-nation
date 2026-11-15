@@ -73,6 +73,15 @@ function cachedMaterial<T extends THREE.Material>(key: string, create: () => T):
   return material;
 }
 
+function cachedGeometry<T extends THREE.BufferGeometry>(key: string, create: () => T): T {
+  const existing = sharedGeometryCache.get(key);
+  if (existing) return existing as T;
+  const geometry = create();
+  sharedGeometries.add(geometry);
+  sharedGeometryCache.set(key, geometry);
+  return geometry;
+}
+
 function unitBoxGeometry() {
   const key = "unit-box";
   let geometry = sharedGeometryCache.get(key);
@@ -207,7 +216,7 @@ function createFurMaterial(color: string) {
   });
 }
 
-function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyle = {}, outfitOverride?: string) {
+function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyle = {}, outfitOverride?: string, detail: "full" | "crowd" = "full") {
   clearGroup(group);
   const species = ANIMAL_LOOKS[speciesName] ? speciesName : "fox";
   const look = ANIMAL_LOOKS[species];
@@ -226,6 +235,106 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   const sole = mat("#263238", 0.9);
   const animatedArms: THREE.Object3D[] = [];
   const animatedLegs: THREE.Object3D[] = [];
+
+  if (detail === "crowd") {
+    // Distant citizens use a compact silhouette: recognisable species, expression and clothing,
+    // but far fewer draw calls than the hero character.
+    const body = new THREE.Mesh(
+      cachedGeometry("crowd-body-capsule", () => new THREE.CapsuleGeometry(0.29, 0.42, 4, 8)),
+      outfit,
+    );
+    body.position.set(0, 0.68, 0);
+    body.scale.set(1, 1, 0.84);
+    group.add(body);
+
+    addSphere(group, 0.43, coat, 0, 1.45, 0.02, 1.02, 0.98, 0.88);
+    addSphere(group, 0.2, belly, 0, 0.64, 0.245, 0.84, 1, 0.36);
+    addSphere(group, 0.13, trim, 0, 1.02, 0.04, 1.25, 0.26, 0.7);
+
+    const legGeometry = cachedGeometry("crowd-leg-capsule", () => new THREE.CapsuleGeometry(0.095, 0.2, 3, 7));
+    const armGeometry = cachedGeometry("crowd-arm-capsule", () => new THREE.CapsuleGeometry(0.075, 0.24, 3, 7));
+    for (const side of [-1, 1]) {
+      const leg = new THREE.Mesh(legGeometry, coat);
+      leg.position.set(side * 0.16, 0.27, 0.02);
+      group.add(leg);
+      animatedLegs.push(leg);
+      addSphere(group, 0.105, sole, side * 0.16, 0.1, 0.12, 1.3, 0.58, 1.45);
+
+      const arm = new THREE.Mesh(armGeometry, coat);
+      arm.position.set(side * 0.34, 0.78, 0.01);
+      arm.rotation.z = side * -0.32;
+      group.add(arm);
+      animatedArms.push(arm);
+    }
+
+    // Species-defining ear silhouette, without high-poly inner-ear geometry.
+    for (const side of [-1, 1]) {
+      if (look.ears === "point") {
+        const ear = new THREE.Mesh(cachedGeometry("crowd-point-ear", () => new THREE.ConeGeometry(0.13, 0.35, 8)), coat);
+        ear.position.set(side * 0.28, 1.8, 0);
+        ear.rotation.z = side * -0.18;
+        group.add(ear);
+      } else if (look.ears === "long") {
+        const ear = new THREE.Mesh(cachedGeometry("crowd-long-ear", () => new THREE.CapsuleGeometry(0.075, 0.42, 3, 7)), coat);
+        ear.position.set(side * 0.18, 1.91, 0);
+        ear.rotation.z = side * -0.1;
+        group.add(ear);
+      } else if (look.ears === "floppy") {
+        const ear = new THREE.Mesh(cachedGeometry("crowd-floppy-ear", () => new THREE.CapsuleGeometry(0.09, 0.3, 3, 7)), coat);
+        ear.position.set(side * 0.35, 1.52, 0);
+        ear.rotation.z = side * -0.68;
+        group.add(ear);
+      } else if (look.ears === "round" || look.ears === "antler") {
+        addSphere(group, look.ears === "antler" ? 0.12 : 0.14, coat, side * 0.32, 1.74, 0);
+      }
+    }
+
+    const eyeY = look.face === "frog" ? 1.78 : 1.48;
+    for (const side of [-1, 1]) {
+      if (look.face === "panda" || look.face === "raccoon") {
+        addSphere(group, 0.12, dark, side * 0.17, eyeY, 0.34, 1.2, 0.9, 0.45);
+      }
+      addSphere(group, 0.062, eyeWhite, side * 0.16, eyeY, 0.37, 1, 1.05, 0.5);
+      addSphere(group, 0.034, iris, side * 0.155, eyeY - 0.005, 0.4, 1, 1.1, 0.48);
+    }
+    if (look.special === "beak") {
+      addSphere(group, 0.12, mat("#e99a32", 0.35), 0, 1.3, 0.42, 1.2, 0.55, 0.85);
+    } else if (look.special === "trunk") {
+      const trunk = new THREE.Mesh(cachedGeometry("crowd-trunk", () => new THREE.CapsuleGeometry(0.075, 0.34, 3, 7)), coat);
+      trunk.position.set(0, 1.16, 0.42);
+      trunk.rotation.x = -0.15;
+      group.add(trunk);
+    } else {
+      addSphere(group, 0.13, muzzle, 0, 1.28, 0.35, 1.25, 0.75, 0.72);
+      addSphere(group, 0.045, dark, 0, 1.38, 0.45, 1.1, 0.85, 0.7);
+    }
+
+    if (look.tail === "bushy") addSphere(group, 0.23, coat, 0, 0.45, -0.42, 0.92, 0.9, 1.35);
+    else if (look.tail === "long") {
+      const tail = new THREE.Mesh(cachedGeometry("crowd-tail", () => new THREE.CapsuleGeometry(0.07, 0.42, 3, 7)), coat);
+      tail.position.set(0, 0.43, -0.49);
+      tail.rotation.x = Math.PI / 2.3;
+      group.add(tail);
+    }
+    if (look.special === "mane") addSphere(group, 0.49, mat("#9a5e2d", 0.98), 0, 1.43, -0.06, 1.1, 1.08, 0.76);
+    if (look.special === "spines") {
+      const quills = new THREE.Mesh(cachedGeometry("crowd-quills", () => new THREE.ConeGeometry(0.36, 0.28, 8)), mat("#65452f", 0.97));
+      quills.position.set(0, 1.76, -0.12);
+      quills.rotation.x = -Math.PI / 2;
+      group.add(quills);
+    }
+    if (look.face === "tiger") {
+      for (const side of [-1, 1]) addBox(group, 0.035, 0.13, 0.025, dark, side * 0.27, 1.7, 0.3, false);
+    }
+    if (style.accessory === "cap") addSphere(group, 0.22, gold, 0, 1.83, 0.02, 1.2, 0.32, 1);
+    if (style.accessory === "scarf") addBox(group, 0.58, 0.1, 0.13, gold, 0, 1.02, 0.16, false);
+    group.userData.species = species;
+    group.userData.coatMaterial = coat;
+    group.userData.outfitMaterial = outfit;
+    group.userData.animatedArms = animatedArms;
+    group.userData.animatedLegs = animatedLegs;
+    return;
+  }
 
   // Tail is placed behind the body first so it sits naturally in the silhouette.
   if (look.tail === "bushy") {
@@ -1933,15 +2042,11 @@ export default function WorldCanvas() {
     const npcGroups: THREE.Group[] = [];
     const npcSpots: [number, number][] = [
       // Park visitors and people around the fountain.
-      [-11, 7], [-8, 10], [-12, 12], [-7, 7], [-10, 5], [-5, 11],
-      [-13.7, 9.2], [-6.4, 8.7], [-12.5, 13.5], [-7.1, 12.7],
+      [-11, 7], [-8, 10], [-12, 12], [-7, 7], [-10, 5], [-5, 11], [-13.7, 9.2], [-6.4, 8.7],
       // Market shoppers and café visitors.
-      [8, 6], [10, 9], [12, 11], [7, 12], [13, 7], [9, 14],
-      [6.2, 9.5], [8.6, 12.1], [10.2, 5.8], [13.8, 8.6], [14.2, 12.1],
-      // Civic square, central avenue and neighbourhood footpaths.
-      [-2.5, -3.6], [2.8, -3.8], [4.5, 5.4], [-4.6, 6.2], [15, 2], [-16, 2],
-      [3.8, 15.7], [-4.5, 15.4], [-13, 8.4], [-11.5, 12.8], [-8.5, 11.5],
-      [6.5, 8.8], [11.5, 12], [-15, -8], [16, 14],
+      [8, 6], [10, 9], [12, 11], [7, 12], [13, 7], [9, 14], [6.2, 9.5], [13.8, 8.6],
+      // Civic square and central avenue.
+      [-2.5, -3.6], [2.8, -3.8], [4.5, 5.4], [-4.6, 6.2], [15, 2], [-16, 2], [3.8, 15.7], [-4.5, 15.4],
       // Marina walk and transit stop.
       [7.2, 19.2], [14.4, 19.0], [5.2, -1.1], [8.2, -1.2],
     ];
@@ -1951,7 +2056,7 @@ export default function WorldCanvas() {
       createMascot(npc, npcSpecies[index % npcSpecies.length], {
         outfit: ["citizen-teal", "explorer", "builder", "harbor-guard"][index % 4],
         accessory: ["none", "scarf", "cap", "backpack"][index % 4],
-      });
+      }, undefined, "crowd");
       const size = 0.68 + (index % 4) * 0.035;
       npc.scale.setScalar(size);
       npc.position.set(x, 0.42, z);
