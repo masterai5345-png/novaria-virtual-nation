@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "../../../auth";
 import { query } from "@/lib/db";
+import { ANIMAL_EMOJI, ANIMAL_LABELS, isCitizenSpecies } from "@/lib/animals";
 import type { QueryResultRow } from "pg";
 import AvatarStudio from "@/components/citizen/AvatarStudio";
 import HouseClaimCard from "@/components/citizen/HouseClaimCard";
@@ -30,25 +31,27 @@ export default async function CitizenPage() {
   );
   const citizen = result.rows[0];
   if (!citizen) redirect("/");
+  const species = isCitizenSpecies(citizen.avatar_species) ? citizen.avatar_species : "fox";
+  const speciesLabel = ANIMAL_LABELS[species];
 
   return (
     <main className="citizen-page-shell">
       <header className="citizen-page-header">
         <Link href="/" className="brand"><span className="brand-mark">N</span><span><strong>NOVARIA</strong><small>A LIVING VIRTUAL NATION</small></span></Link>
-        <Link href="/" className="citizen-return">Return to town →</Link>
+        <Link href="/" className="citizen-return">Return to city →</Link>
       </header>
       <section className="citizen-welcome-card">
         <div className="citizen-big-otter" aria-hidden="true">🦦</div>
         <span className="eyebrow">OFFICIAL CITIZEN PROFILE</span>
         <h1>Welcome to NOVARIA, {citizen.display_name}.</h1>
-        <p>Your Google account has been registered as a NOVARIA citizen. Your permanent profile is stored in the city database.</p>
+        <p>Your Google account has been registered as a NOVARIA citizen. Your animal species is assigned permanently and stored in the city database.</p>
         <div className="citizen-profile-grid">
           <div><small>CITIZEN ID</small><strong>{citizen.id.slice(0, 8).toUpperCase()}</strong></div>
-          <div><small>AVATAR SPECIES</small><strong>Otter</strong></div>
+          <div><small>YOUR ANIMAL MASCOT</small><strong>{ANIMAL_EMOJI[species]} {speciesLabel}</strong></div>
           <div><small>ACCOUNT ROLE</small><strong>{citizen.account_role}</strong></div>
           <div><small>REGISTERED EMAIL</small><strong>{citizen.email}</strong></div>
         </div>
-        <p className="citizen-next-step">Choose your Otter look and claim your first community home in Harbor View.</p>
+        <p className="citizen-next-step">Customize your mascot outfit, coat color and accessories, then claim your first community home.</p>
       </section>
 
       <div className="citizen-tools-grid">
