@@ -366,7 +366,7 @@ export default function NovariaWorldExperience() {
               <PawPrint size={15}/>
               {residentMascot?.citizenId === session.user.id && isCitizenSpecies(residentMascot.species)
                 ? `${ANIMAL_EMOJI[residentMascot.species]} ${ANIMAL_LABELS[residentMascot.species]}`
-                : "My mascot"}
+                : "Maskotku"}
             </Link>
           ) : null}
           <CitizenButton />
@@ -450,19 +450,19 @@ export default function NovariaWorldExperience() {
 
       {cardOpen && selectedResident ? (
         <div className="town-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCardOpen(false); }}>
-          <section className="town-ktp-modal" role="dialog" aria-modal="true" aria-label="NOVARIA virtual citizen card">
+          <section className="town-ktp-modal" role="dialog" aria-modal="true" aria-label="Kartu warga virtual Kota Maskot">
             <button type="button" className="town-modal-close" onClick={() => setCardOpen(false)} aria-label="Close card"><X size={18}/></button>
             <div className="town-ktp-card">
-              <div className="town-ktp-brand"><span>N</span><div><b>NOVARIA</b><small>VIRTUAL CITIZEN CARD</small></div></div>
+              <div className="town-ktp-brand"><span>🐾</span><div><b>KOTA MASKOT</b><small>KARTU WARGA VIRTUAL</small></div></div>
               <div className="town-ktp-avatar">{ANIMAL_EMOJI[isCitizenSpecies(selectedResident.species) ? selectedResident.species : "fox"]}</div>
               <h2>{selectedResident.displayName}</h2>
               <p className="town-ktp-handle">@{selectedResident.publicHandle}</p>
               <div className="town-ktp-details">
-                <div><small>SPECIES</small><b>{ANIMAL_LABELS[isCitizenSpecies(selectedResident.species) ? selectedResident.species : "fox"]}</b></div>
-                <div><small>COMMUNITY</small><b>NOVARIA</b></div>
-                <div><small>MEMBERSHIP</small><b>PROFIL WARGA PUBLIK</b></div>
+                <div><small>JENIS MASKOT</small><b>{ANIMAL_LABELS[isCitizenSpecies(selectedResident.species) ? selectedResident.species : "fox"]}</b></div>
+                <div><small>KOTA</small><b>NOVARIA</b></div>
+                <div><small>KEANGGOTAAN</small><b>WARGA KOTA MASKOT</b></div>
               </div>
-              <small className="town-ktp-disclaimer">Virtual community identity — not a government-issued ID.</small>
+              <small className="town-ktp-disclaimer">Identitas komunitas virtual, bukan KTP pemerintah.</small>
             </div>
             <button type="button" className="town-ktp-download" onClick={downloadCitizenCard}><Download size={16}/> Unduh KTP</button>
           </section>
@@ -495,7 +495,7 @@ export default function NovariaWorldExperience() {
                 <span><small>YOUR NOVA COIN WALLET</small><b>{walletBalance === null ? "—" : walletBalance.toLocaleString("en-US")} NVC</b></span>
                 <em>Non-cash game balance</em>
               </div>
-              <button className="town-primary-action" type="button" onClick={() => setPanel("missions")}>Explore city missions <span>→</span></button>
+              <button className="town-primary-action" type="button" onClick={() => setPanel("missions")}>Jelajahi misi kota <span>→</span></button>
             </div>
           ) : null}
 
@@ -512,7 +512,7 @@ export default function NovariaWorldExperience() {
                   </button>
                 </article>
               ))}
-              <p className="town-muted">Mission completion is currently self-confirmed. NOVA Coin is a non-cash game balance.</p>
+              <p className="town-muted">Misi saat ini dikonfirmasi oleh pemain. NOVA Coin adalah saldo virtual dalam game, bukan uang tunai.</p>
               {missionMessage ? <p className="town-success" role="status">{missionMessage}</p> : null}
               {missionError ? <p className="town-error" role="alert">{missionError}</p> : null}
             </div>
@@ -541,7 +541,7 @@ export default function NovariaWorldExperience() {
                 ))}
               </div>
               <p className="town-muted">Setiap warga memiliki maskot hewan permanen. Kota ini dihuni banyak spesies—bukan satu jenis hewan saja.</p>
-              {session?.user?.id ? <Link href="/citizen" className="town-primary-action">Customize my mascot <span>→</span></Link> : null}
+              {session?.user?.id ? <Link href="/citizen" className="town-primary-action">Atur maskotku <span>→</span></Link> : null}
             </div>
           ) : null}
         </section>
