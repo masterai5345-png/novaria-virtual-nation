@@ -794,6 +794,54 @@ function addStreetFurniture(scene: THREE.Scene) {
   createTrafficSignal(scene, -2.2, 3.9, 0);
   createTrafficSignal(scene, 2.2, -0.3, Math.PI);
 }
+function createShopKiosk(scene: THREE.Scene, x: number, z: number, label: string, accent: string) {
+  const shop = new THREE.Group();
+  const plaster = mat("#e9e4d9", 0.84);
+  const stone = mat("#a9a99e", 0.92);
+  const trim = mat("#3d5354", 0.48, 0.2);
+  const glass = new THREE.MeshStandardMaterial({ color: "#a2c7c9", roughness: 0.12, metalness: 0.35 });
+  const accentMat = mat(accent, 0.52, 0.08);
+  addBox(shop, 2.45, 0.16, 1.9, stone, 0, 0.08, 0);
+  addBox(shop, 2.3, 1.45, 1.72, plaster, 0, 0.9, 0);
+  addBox(shop, 2.42, 0.13, 1.84, trim, 0, 1.64, 0);
+  addBox(shop, 2.36, 0.14, 1.8, accentMat, 0, 1.78, 0);
+  // Full-height storefront glass framed in dark anodised metal.
+  addBox(shop, 1.55, 0.97, 0.045, glass, -0.25, 0.78, 0.88, false);
+  addBox(shop, 0.42, 1.02, 0.065, trim, 0.78, 0.79, 0.89);
+  addBox(shop, 0.055, 1.04, 0.07, trim, -1.05, 0.79, 0.9, false);
+  addBox(shop, 0.055, 1.04, 0.07, trim, 0.54, 0.79, 0.9, false);
+  addBox(shop, 0.055, 0.98, 0.07, trim, -0.25, 0.79, 0.92, false);
+  addBox(shop, 1.9, 0.09, 0.58, accentMat, 0, 1.48, 1.13);
+  addBox(shop, 2.05, 0.1, 0.12, trim, 0, 1.39, 1.22);
+  for (const side of [-1, 1]) {
+    addBox(shop, 0.1, 1.3, 0.1, trim, side * 1.08, 0.88, 0.86);
+    addBox(shop, 0.42, 0.055, 1.25, trim, side * 1.12, 0.2, 0, false);
+  }
+  // Illuminated sign above the canopy.
+  const canvas = document.createElement("canvas");
+  canvas.width = 640;
+  canvas.height = 180;
+  const context = canvas.getContext("2d");
+  if (context) {
+    context.fillStyle = "#203a3b";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = "#d7b577";
+    context.lineWidth = 8;
+    context.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+    context.fillStyle = "#f5ecd9";
+    context.font = "800 54px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(label.toUpperCase(), 320, 90);
+    const texture = new THREE.CanvasTexture(canvas);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.55, 0.44), new THREE.MeshBasicMaterial({ map: texture }));
+    sign.position.set(-0.08, 1.9, 0.91);
+    shop.add(sign);
+  }
+  shop.position.set(x, 0.4, z);
+  scene.add(shop);
+}
+
 function addDistrictLabel(scene: THREE.Scene, label: string, x: number, z: number, tint = "#183a3a") {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -839,30 +887,44 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   addRoadMarkings(scene);
 
   // A landscaped public park, a modern market plaza and a waterfront square.
-  const park = new THREE.Mesh(new THREE.PlaneGeometry(11, 10), mat("#9cb989"));
+  const park = new THREE.Mesh(new THREE.PlaneGeometry(11, 10), mat("#a3c08f", 0.98));
   park.rotation.x = -Math.PI / 2;
   park.position.set(-10, 0.39, 9);
   scene.add(park);
-  const parkPath = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 9.4), mat("#e5dcc8"));
+  const parkPath = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 9.4), mat("#e5dcc8", 0.94));
   parkPath.rotation.x = -Math.PI / 2;
   parkPath.position.set(-10, 0.405, 9);
   scene.add(parkPath);
-  const fountainBase = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.22, 28), mat("#d9d2c4"));
-  fountainBase.position.set(-10, 0.53, 9);
+  const crossPath = new THREE.Mesh(new THREE.PlaneGeometry(9.8, 0.9), mat("#e5dcc8", 0.94));
+  crossPath.rotation.x = -Math.PI / 2;
+  crossPath.position.set(-10, 0.407, 9);
+  scene.add(crossPath);
+  const fountainBase = new THREE.Mesh(new THREE.CylinderGeometry(1.14, 1.26, 0.28, 40), mat("#d0c7b6", 0.66, 0.08));
+  fountainBase.position.set(-10, 0.55, 9);
   scene.add(fountainBase);
-  const fountainWater = new THREE.Mesh(new THREE.CylinderGeometry(0.83, 0.85, 0.08, 28), mat("#72b6c0", 0.22, 0.2));
+  const fountainRim = new THREE.Mesh(new THREE.TorusGeometry(1.06, 0.08, 9, 40), mat("#eee5d3", 0.48, 0.12));
+  fountainRim.rotation.x = Math.PI / 2;
+  fountainRim.position.set(-10, 0.72, 9);
+  scene.add(fountainRim);
+  const fountainWater = new THREE.Mesh(new THREE.CylinderGeometry(0.96, 0.98, 0.08, 36), new THREE.MeshStandardMaterial({ color: "#78c1ce", roughness: 0.16, metalness: 0.24, transparent: true, opacity: 0.92 }));
   fountainWater.position.set(-10, 0.68, 9);
   scene.add(fountainWater);
+  const fountainColumn = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.72, 16), mat("#ded8c8", 0.52, 0.12));
+  fountainColumn.position.set(-10, 1.08, 9);
+  scene.add(fountainColumn);
+  addSphere(scene, 0.22, mat("#8bd2d5", 0.16, 0.18), -10, 1.48, 9, 0.88, 1.2, 0.88);
   makeTreeCluster(scene, -10, 9, 10, 9, 12);
 
-  const market = new THREE.Mesh(new THREE.PlaneGeometry(10, 9), mat("#ddd5c6"));
+  const market = new THREE.Mesh(new THREE.PlaneGeometry(10, 9), mat("#ded8ca", 0.94));
   market.rotation.x = -Math.PI / 2;
   market.position.set(10, 0.392, 9);
   scene.add(market);
-  addBox(scene, 2.3, 1.0, 1.35, mat("#e7e0d4"), 7.3, 0.92, 7.0);
-  addBox(scene, 2.3, 0.12, 1.5, mat("#df8c59"), 7.3, 1.45, 7.0);
-  addBox(scene, 2.3, 1.0, 1.35, mat("#d8e4e0"), 12.3, 0.92, 10.5);
-  addBox(scene, 2.3, 0.12, 1.5, mat("#6d9aa7"), 12.3, 1.45, 10.5);
+  createShopKiosk(scene, 7.3, 7.0, "Harbor Café", "#b96e54");
+  createShopKiosk(scene, 12.3, 10.5, "City Market", "#638d9b");
+  createPlanter(scene, 7.0, 12.3, 1.35);
+  createPlanter(scene, 13.1, 6.3, 1.35);
+  addDistrictLabel(scene, "Green Park", -10, 14);
+  addDistrictLabel(scene, "Modern Market", 10, 14);
   addDistrictLabel(scene, "Green Park", -10, 14);
   addDistrictLabel(scene, "Modern Market", 10, 14);
 
@@ -898,6 +960,9 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
     makeTree(scene, x, 21.2, 0.58 + (index % 3) * 0.08);
   }
 
+  // Premium street furniture, park benches, planters and traffic controls.
+  addStreetFurniture(scene);
+
   // Street lights, benches and bollards around the central plazas.
   const lampMaterial = mat("#38484a", 0.55, 0.25);
   const lampLight = new THREE.MeshStandardMaterial({ color: "#ffe7ad", emissive: "#d5a34d", emissiveIntensity: 0.65 });
@@ -913,16 +978,42 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
     makeTree(scene, x, z, 0.58);
   }
 
-  // A recognizable civic hall keeps Mayor Otti's place in the city distinct.
+  // Monumental civic hall with a glass entry, colonnade, steps and a gold city crest.
   const hall = new THREE.Group();
-  addBox(hall, 4.2, 1.9, 3.1, mat("#eee7d9"), 0, 1.15, 0);
-  addBox(hall, 4.55, 0.18, 3.4, mat("#1c5a5b"), 0, 2.18, 0);
-  addBox(hall, 1.0, 1.3, 0.12, mat("#9a704c"), 0, 0.68, 1.62);
-  for (const x of [-1.45, -0.5, 0.5, 1.45]) {
-    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 1.52, 10), mat("#fff8eb"));
-    pillar.position.set(x, 0.88, 1.7);
+  const limestone = mat("#e7e0d2", 0.82);
+  const civicTeal = mat("#205a59", 0.52, 0.16);
+  const civicGold = mat("#c9a36b", 0.34, 0.42);
+  const civicGlass = new THREE.MeshStandardMaterial({ color: "#9bc2c8", roughness: 0.15, metalness: 0.46 });
+  addBox(hall, 5.2, 0.26, 4.0, mat("#8f9388"), 0, 0.13, 0);
+  addBox(hall, 4.65, 2.0, 3.2, limestone, 0, 1.25, -0.08);
+  addBox(hall, 4.9, 0.2, 3.42, civicTeal, 0, 2.36, -0.08);
+  addBox(hall, 4.42, 0.09, 3.1, civicGold, 0, 2.5, -0.08);
+  addBox(hall, 2.3, 1.35, 0.05, civicGlass, 0, 1.05, 1.55, false);
+  addBox(hall, 0.13, 1.42, 0.1, civicGold, -1.2, 1.02, 1.59, false);
+  addBox(hall, 0.13, 1.42, 0.1, civicGold, 1.2, 1.02, 1.59, false);
+  for (const x of [-1.8, -0.9, 0, 0.9, 1.8]) {
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.1, 1.65, 16), limestone);
+    pillar.position.set(x, 0.96, 1.85);
     hall.add(pillar);
+    const capital = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 16), civicGold);
+    capital.position.set(x, 1.78, 1.85);
+    hall.add(capital);
   }
+  for (const x of [-1.6, 0, 1.6]) {
+    addBox(hall, 0.68, 0.56, 0.035, civicGlass, x, 1.38, 1.61, false);
+    addBox(hall, 0.08, 0.6, 0.05, civicGold, x, 1.38, 1.64, false);
+  }
+  addBox(hall, 2.1, 0.13, 0.75, limestone, 0, 0.42, 2.02);
+  addBox(hall, 2.6, 0.13, 0.9, civicGold, 0, 0.25, 2.12);
+  addBox(hall, 3.0, 0.13, 1.05, limestone, 0, 0.08, 2.22);
+  const crest = new THREE.Mesh(new THREE.CircleGeometry(0.27, 32), civicGold);
+  crest.position.set(0, 2.08, 1.69);
+  hall.add(crest);
+  addSphere(hall, 0.14, mat("#f2e8cf", 0.38, 0.18), 0, 2.08, 1.72);
+  const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.6, 8), civicGold);
+  flagPole.position.set(0, 3.35, -0.08);
+  hall.add(flagPole);
+  addBox(hall, 0.68, 0.34, 0.035, civicTeal, 0.34, 3.87, -0.08);
   hall.position.set(0, 0.4, -7.8);
   scene.add(hall);
   addDistrictLabel(scene, "City Hall", 0, -5.1);
