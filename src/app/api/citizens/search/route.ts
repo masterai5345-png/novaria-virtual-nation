@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       source: "database",
       residents: result.rows.map((resident) => ({
-        id: resident.id,
+        id: `handle:${resident.social_handle.toLowerCase()}`,
         displayName: resident.display_name,
         publicHandle: resident.social_handle,
         species: resident.avatar_species,
