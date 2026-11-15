@@ -148,6 +148,32 @@ function addSphere(
   return mesh;
 }
 
+
+function addInstancedBoxes(
+  parent: THREE.Object3D,
+  material: THREE.Material,
+  transforms: { position: [number, number, number]; scale: [number, number, number]; rotation?: [number, number, number] }[],
+  castShadow = false,
+) {
+  if (!transforms.length) return null;
+  const instances = new THREE.InstancedMesh(unitBoxGeometry(), material, transforms.length);
+  const dummy = new THREE.Object3D();
+  transforms.forEach((transform, index) => {
+    dummy.position.set(...transform.position);
+    dummy.scale.set(...transform.scale);
+    if (transform.rotation) dummy.rotation.set(...transform.rotation);
+    else dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    instances.setMatrixAt(index, dummy.matrix);
+  });
+  instances.instanceMatrix.needsUpdate = true;
+  instances.castShadow = castShadow;
+  instances.receiveShadow = true;
+  parent.add(instances);
+  return instances;
+}
+
+
 function clearGroup(group: THREE.Group) {
   for (const child of [...group.children]) {
     group.remove(child);
@@ -838,71 +864,55 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
   const group = new THREE.Group();
   const floorHeight = 0.43;
   const height = floors * floorHeight;
+  const seed = Math.round(Math.abs(x * 7 + z * 11)) % 19;
   const frame = mat(hue, 0.44, 0.3);
   const darkFrame = mat("#46575b", 0.52, 0.28);
-  const facade = createFacadeMaterial(hue, Math.round(Math.abs(x * 7 + z * 11)) % 19, rounded);
-  const glass = new THREE.MeshStandardMaterial({
-    color: "#587d8b",
-    roughness: 0.16,
+  const facade = createFacadeMaterial(hue, seed, rounded);
+  const glass = cachedMaterial("tower-glass", () => new THREE.MeshPhysicalMaterial({
+    color: "#718e99",
+    roughness: 0.14,
     metalness: 0.62,
+    clearcoat: 0.8,
+    clearcoatRoughness: 0.12,
     emissive: "#1d3541",
-    emissiveIntensity: 0.1,
-  });
-  const litGlass = new THREE.MeshStandardMaterial({
+    emissiveIntensity: 0.08,
+  }));
+  const litGlass = cachedMaterial("tower-lit-glass", () => new THREE.MeshStandardMaterial({
     color: "#e9d8ae",
     roughness: 0.24,
     metalness: 0.22,
     emissive: "#d5a85e",
     emissiveIntensity: 0.34,
-  });
-  const podium = mat("#59686a", 0.62, 0.2);
+  }));
   const goldTrim = mat("#bd9862", 0.36, 0.46);
-  const roofHeight = 1.38 + height;
+  const podium = mat("#59686a", 0.62, 0.2);
+  const darkPodium = mat("#35474b", 0.58, 0.28);
+  const roofTop = 1.38 + height;
 
-  // A warm stone podium with active retail glazing anchors every tower at street level.
-  addBox(group, width + 1.0, 0.6, depth + 1.0, darkFrame, 0, 0.3, 0);
+  // Deep stone podium, glass retail frontage and a recessed double-height lobby.
+  addBox(group, width + 1.0, 0.6, depth + 1.0, darkPodium, 0, 0.3, 0);
   addBox(group, width + 0.48, 0.66, depth + 0.48, podium, 0, 0.86, 0);
   addBox(group, width + 0.2, 0.12, depth + 0.2, goldTrim, 0, 1.23, 0);
 
   const shopCount = Math.max(3, Math.min(6, Math.floor(width / 0.7)));
   const shopWidth = (width + 0.1) / shopCount;
+  const shopWindows: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+  const shopMullions: { position: [number, number, number]; scale: [number, number, number] }[] = [];
   for (let shop = 0; shop < shopCount; shop++) {
     const shopX = -width / 2 + shopWidth * (shop + 0.5);
-    addBox(group, shopWidth * 0.78, 0.46, 0.045, glass, shopX, 0.83, depth / 2 + 0.255, false);
-    addBox(group, 0.035, 0.5, 0.06, goldTrim, shopX - shopWidth * 0.48, 0.83, depth / 2 + 0.27, false);
-    addBox(group, shopWidth * 0.78, 0.045, 0.065, darkFrame, shopX, 1.08, depth / 2 + 0.27, false);
+    shopWindows.push({ position: [shopX, 0.82, depth / 2 + 0.27], scale: [shopWidth * 0.75, 0.47, 0.035] });
+    shopMullions.push({ position: [shopX - shopWidth * 0.49, 0.83, depth / 2 + 0.3], scale: [0.045, 0.54, 0.05] });
   }
-  // A recessed double-height lobby breaks the shopfront rhythm at the centre.
-  addBox(group, 0.62, 0.65, 0.075, darkFrame, 0, 0.84, depth / 2 + 0.32, false);
+  addInstancedBoxes(group, glass, shopWindows);
+  addInstancedBoxes(group, goldTrim, shopMullions);
+  addBox(group, 0.62, 0.65, 0.075, darkFrame, 0, 0.84, depth / 2 + 0.32);
   addBox(group, 0.26, 0.58, 0.035, glass, -0.16, 0.85, depth / 2 + 0.37, false);
   addBox(group, 0.26, 0.58, 0.035, glass, 0.16, 0.85, depth / 2 + 0.37, false);
   addBox(group, width * 0.68, 0.08, 0.68, frame, 0, 1.27, depth / 2 + 0.35);
   addBox(group, width * 0.68, 0.035, 0.68, goldTrim, 0, 1.22, depth / 2 + 0.35, false);
   for (const side of [-1, 1]) {
-    addBox(group, 0.14, 0.78, 0.08, goldTrim, side * width * 0.25, 0.83, depth / 2 + 0.3, false);
+    addBox(group, 0.12, 0.78, 0.08, goldTrim, side * width * 0.25, 0.83, depth / 2 + 0.3, false);
     addBox(group, 0.045, 0.5, depth * 0.68, glass, side * (width / 2 + 0.245), 0.83, 0, false);
-    addBox(group, 0.055, 0.54, depth * 0.72, darkFrame, side * (width / 2 + 0.27), 0.83, 0, false);
-  }
-  // Ground-floor signage makes the repeated towers feel like occupied city addresses.
-  const signCanvas = document.createElement("canvas");
-  signCanvas.width = 512;
-  signCanvas.height = 128;
-  const signContext = signCanvas.getContext("2d");
-  if (signContext) {
-    signContext.fillStyle = "#203b3e";
-    signContext.fillRect(0, 0, 512, 128);
-    signContext.fillStyle = "#d5b577";
-    signContext.fillRect(0, 0, 512, 6);
-    signContext.fillStyle = "#f6ecd5";
-    signContext.font = "700 43px Arial";
-    signContext.textAlign = "center";
-    signContext.textBaseline = "middle";
-    signContext.fillText("NOVARIA  ·  DISTRICT", 256, 68);
-    const signTexture = new THREE.CanvasTexture(signCanvas);
-    signTexture.colorSpace = THREE.SRGBColorSpace;
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.52, 0.26), new THREE.MeshBasicMaterial({ map: signTexture }));
-    sign.position.set(0, 1.42, depth / 2 + 0.3);
-    group.add(sign);
   }
 
   if (rounded) {
@@ -911,96 +921,107 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
     core.position.y = 1.38 + height / 2;
     core.castShadow = true;
     group.add(core);
+
+    const floorRings = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(1, 1, 1, 32),
+      goldTrim,
+      floors,
+    );
+    const ringDummy = new THREE.Object3D();
     for (let floor = 0; floor < floors; floor++) {
       const y = 1.4 + floor * floorHeight;
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(radius * 1.035, radius * 1.035, 0.055, 32), frame);
-      band.position.y = y;
-      group.add(band);
-      const lightRing = new THREE.Mesh(new THREE.CylinderGeometry(radius * 1.04, radius * 1.04, 0.018, 32), goldTrim);
-      lightRing.position.y = y + 0.055;
-      group.add(lightRing);
+      ringDummy.position.set(0, y, 0);
+      ringDummy.scale.set(radius * 2.08, 0.055, radius * 2.08);
+      ringDummy.updateMatrix();
+      floorRings.setMatrixAt(floor, ringDummy.matrix);
+    }
+    floorRings.instanceMatrix.needsUpdate = true;
+    floorRings.castShadow = false;
+    group.add(floorRings);
+
+    const panes: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
+    const mullions: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
+    for (let floor = 0; floor < floors; floor++) {
+      const y = 1.4 + floor * floorHeight + floorHeight * 0.42;
       for (let pane = 0; pane < 10; pane++) {
         const angle = (pane / 10) * Math.PI * 2;
-        const paneMaterial = (floor + pane) % 5 === 0 ? litGlass : glass;
-        const windowPane = new THREE.Mesh(new THREE.PlaneGeometry(0.42, floorHeight * 0.55), paneMaterial);
-        windowPane.position.set(Math.sin(angle) * (radius + 0.012), y + floorHeight * 0.42, Math.cos(angle) * (radius + 0.012));
-        windowPane.rotation.y = angle;
-        group.add(windowPane);
+        panes.push({
+          position: [Math.sin(angle) * (radius + 0.025), y, Math.cos(angle) * (radius + 0.025)],
+          scale: [0.4, floorHeight * 0.54, 0.028],
+          rotation: [0, angle, 0],
+        });
       }
     }
     for (let fin = 0; fin < 8; fin++) {
       const angle = (fin / 8) * Math.PI * 2;
-      const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.065, height, 0.08), goldTrim);
-      mullion.position.set(Math.sin(angle) * (radius + 0.035), 1.38 + height / 2, Math.cos(angle) * (radius + 0.035));
-      mullion.rotation.y = angle;
-      group.add(mullion);
+      mullions.push({
+        position: [Math.sin(angle) * (radius + 0.035), 1.38 + height / 2, Math.cos(angle) * (radius + 0.035)],
+        scale: [0.06, height, 0.065],
+        rotation: [0, angle, 0],
+      });
     }
+    addInstancedBoxes(group, glass, panes);
+    addInstancedBoxes(group, frame, mullions);
   } else {
-    const core = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), facade);
-    core.position.set(0, 1.38 + height / 2, 0);
-    core.castShadow = true;
-    group.add(core);
-
-    const columns = Math.max(4, Math.min(7, Math.floor(width / 0.66)));
-    const frontPaneWidth = (width - 0.36) / columns;
-    for (let floor = 0; floor < floors; floor++) {
-      const floorY = 1.4 + floor * floorHeight;
-      // Strong horizontal slab edges and a slender metallic spandrel.
-      addBox(group, width + 0.13, 0.055, depth + 0.13, frame, 0, floorY, 0, false);
-      addBox(group, width + 0.04, 0.018, depth + 0.04, goldTrim, 0, floorY + 0.045, 0, false);
-      for (let column = 0; column < columns; column++) {
-        const paneX = -width / 2 + 0.18 + (column + 0.5) * frontPaneWidth;
-        const paneMaterial = (floor * 2 + column * 3) % 7 === 0 ? litGlass : glass;
-        addBox(group, frontPaneWidth * 0.76, floorHeight * 0.53, 0.035, paneMaterial, paneX, floorY + floorHeight * 0.42, depth / 2 + 0.025, false);
-        addBox(group, frontPaneWidth * 0.035, floorHeight * 0.7, 0.06, darkFrame, paneX - frontPaneWidth * 0.48, floorY + floorHeight * 0.4, depth / 2 + 0.04, false);
-      }
-      const sideColumns = 3;
-      const sidePaneWidth = (depth - 0.3) / sideColumns;
-      for (let side = -1; side <= 1; side += 2) {
-        for (let column = 0; column < sideColumns; column++) {
-          const paneZ = -depth / 2 + 0.15 + (column + 0.5) * sidePaneWidth;
-          addBox(group, 0.035, floorHeight * 0.53, sidePaneWidth * 0.75, (floor + column) % 6 === 0 ? litGlass : glass, side * (width / 2 + 0.025), floorY + floorHeight * 0.42, paneZ, false);
-        }
-      }
+    // A few towers use a stepped crown for a recognisable skyline silhouette.
+    const stepped = seed % 4 === 0 && floors >= 10;
+    if (stepped) {
+      const lowerHeight = height * 0.76;
+      const lowerCore = new THREE.Mesh(new THREE.BoxGeometry(width, lowerHeight, depth), facade);
+      lowerCore.position.set(0, 1.38 + lowerHeight / 2, 0);
+      lowerCore.castShadow = true;
+      group.add(lowerCore);
+      const upperWidth = width * 0.76;
+      const upperDepth = depth * 0.78;
+      const upperCore = new THREE.Mesh(new THREE.BoxGeometry(upperWidth, height - lowerHeight, upperDepth), facade);
+      upperCore.position.set(width * 0.08, 1.38 + lowerHeight + (height - lowerHeight) / 2, -depth * 0.04);
+      upperCore.castShadow = true;
+      group.add(upperCore);
+    } else {
+      const core = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), facade);
+      core.position.set(0, 1.38 + height / 2, 0);
+      core.castShadow = true;
+      group.add(core);
     }
-    // Vertical fins, corner piers and recessed rooftop glass create a premium facade.
+
+    const horizontalBands = [];
+    const verticalFins = [];
+    for (let floor = 0; floor <= floors; floor++) {
+      const floorY = 1.4 + floor * floorHeight;
+      horizontalBands.push({ position: [0, floorY, 0] as [number, number, number], scale: [width + 0.12, 0.045, depth + 0.12] as [number, number, number] });
+    }
+    const columns = Math.max(4, Math.min(7, Math.floor(width / 0.66)));
     for (let column = 0; column <= columns; column++) {
       const finX = -width / 2 + (column / columns) * width;
-      addBox(group, 0.055, height + 0.05, 0.11, goldTrim, finX, 1.4 + height / 2, depth / 2 + 0.055, false);
+      verticalFins.push({ position: [finX, 1.4 + height / 2, depth / 2 + 0.045] as [number, number, number], scale: [0.045, height, 0.075] as [number, number, number] });
     }
-    for (const side of [-1, 1]) {
-      addBox(group, 0.11, height + 0.04, depth + 0.08, frame, side * (width / 2 + 0.035), 1.4 + height / 2, 0, false);
-    }
+    addInstancedBoxes(group, frame, horizontalBands);
+    addInstancedBoxes(group, goldTrim, verticalFins);
   }
 
-  // Crown, rooftop plant room, discreet mechanical services and aerial beacon.
-  addBox(group, width + 0.42, 0.2, depth + 0.42, frame, 0, roofHeight + 0.08, 0);
-  addBox(group, width * 0.38, 0.58, depth * 0.42, darkFrame, width * 0.1, roofHeight + 0.43, -depth * 0.08);
-  addBox(group, width * 0.17, 0.24, depth * 0.2, goldTrim, -width * 0.22, roofHeight + 0.37, depth * 0.13);
+  // Refined crown with accessible mechanical equipment and a compact rooftop garden.
+  addBox(group, width + 0.42, 0.2, depth + 0.42, frame, 0, roofTop + 0.08, 0);
+  addBox(group, width * 0.38, 0.58, depth * 0.42, darkFrame, width * 0.1, roofTop + 0.43, -depth * 0.08);
+  addBox(group, width * 0.17, 0.24, depth * 0.2, goldTrim, -width * 0.22, roofTop + 0.37, depth * 0.13);
+
   const hvac = mat("#788487", 0.7, 0.24);
-  const fanDark = mat("#34454a", 0.66, 0.22);
+  const hvacUnits: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+  const fanGrilles: { position: [number, number, number]; scale: [number, number, number] }[] = [];
   for (let unit = 0; unit < 3; unit++) {
     const unitX = -width * 0.34 + unit * width * 0.32;
-    addBox(group, 0.46, 0.3, 0.42, hvac, unitX, roofHeight + 0.24, depth * 0.28);
-    addBox(group, 0.35, 0.045, 0.32, fanDark, unitX, roofHeight + 0.41, depth * 0.28, false);
-    const fan = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 6, 16), goldTrim);
-    fan.position.set(unitX, roofHeight + 0.44, depth * 0.28);
-    group.add(fan);
+    hvacUnits.push({ position: [unitX, roofTop + 0.24, depth * 0.28], scale: [0.46, 0.3, 0.42] });
+    fanGrilles.push({ position: [unitX, roofTop + 0.41, depth * 0.28], scale: [0.35, 0.045, 0.32] });
   }
-  // A small rooftop communications dish and safety rail distinguish the roof line.
-  const dish = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), mat("#c5c9c3", 0.35, 0.5));
-  dish.position.set(width * 0.34, roofHeight + 0.28, -depth * 0.25);
-  dish.rotation.x = -Math.PI / 2.3;
-  group.add(dish);
-  for (const side of [-1, 1]) {
-    addBox(group, 0.055, 0.3, depth * 0.7, goldTrim, side * width * 0.48, roofHeight + 0.2, 0, false);
-  }
+  addInstancedBoxes(group, hvac, hvacUnits);
+  addInstancedBoxes(group, darkFrame, fanGrilles);
+
   const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.8, 9), goldTrim);
-  antenna.position.set(width * 0.12, roofHeight + 0.94, 0);
+  antenna.position.set(width * 0.12, roofTop + 0.94, 0);
   group.add(antenna);
   const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), mat("#d64c43", 0.32));
-  beacon.position.set(width * 0.12, roofHeight + 1.38, 0);
+  beacon.position.set(width * 0.12, roofTop + 1.38, 0);
   group.add(beacon);
+
   group.position.set(x, 0.35, z);
   scene.add(group);
 }
