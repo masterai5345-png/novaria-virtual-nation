@@ -20,7 +20,7 @@ export async function GET() {
   if (!databaseConfigured) {
     return NextResponse.json({
       source: "preview",
-      mayor: { name: "Mayor Otti", species: "otter" },
+      mayor: { name: "Pak Wali Kota Beruang", species: "bear" },
       homes: [],
     }, { headers: { "Cache-Control": "no-store" } });
   }
@@ -46,7 +46,7 @@ export async function GET() {
 
     return NextResponse.json({
       source: "database",
-      mayor: { name: "Mayor Otti", species: "otter" },
+      mayor: { name: "Pak Wali Kota Beruang", species: "bear" },
       homes: result.rows.map((home) => ({
         id: home.id,
         type: home.house_type,
