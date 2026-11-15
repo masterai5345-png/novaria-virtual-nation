@@ -64,6 +64,27 @@ const sharedMaterialCache = new Map<string, THREE.Material>();
 const sharedGeometryCache = new Map<string, THREE.BufferGeometry>();
 const sharedMaterials = new WeakSet<THREE.Material>();
 const sharedGeometries = new WeakSet<THREE.BufferGeometry>();
+let sharedSceneReferences = 0;
+
+function acquireSharedSceneResources() {
+  sharedSceneReferences++;
+}
+
+function releaseSharedSceneResources() {
+  sharedSceneReferences = Math.max(0, sharedSceneReferences - 1);
+  if (sharedSceneReferences > 0) return;
+  for (const material of sharedMaterialCache.values()) {
+    for (const value of Object.values(material)) {
+      if (value instanceof THREE.Texture) value.dispose();
+    }
+    material.dispose();
+  }
+  for (const geometry of sharedGeometryCache.values()) geometry.dispose();
+  sharedMaterialCache.clear();
+  sharedGeometryCache.clear();
+  sharedFurNoiseTexture?.dispose();
+  sharedFurNoiseTexture = null;
+}
 
 function cachedMaterial<T extends THREE.Material>(key: string, create: () => T): T {
   const existing = sharedMaterialCache.get(key);
@@ -2118,6 +2139,7 @@ export default function WorldCanvas() {
     const host = hostRef.current;
     if (!host) return;
 
+    acquireSharedSceneResources();
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#b9c9c7");
     scene.fog = new THREE.Fog("#b9c9c7", 58, 118);
@@ -2453,6 +2475,7 @@ export default function WorldCanvas() {
       });
       renderer.dispose();
       renderer.domElement.remove();
+      releaseSharedSceneResources();
     };
   }, []);
 
