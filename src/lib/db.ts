@@ -1,4 +1,6 @@
+import { randomInt } from "node:crypto";
 import { Pool, type QueryResultRow } from "pg";
+import { CITIZEN_SPECIES, type CitizenSpecies } from "@/lib/animals";
 
 const globalForNovaria = globalThis as typeof globalThis & {
   novariaPool?: Pool;
@@ -33,7 +35,7 @@ export type CitizenRecord = {
   display_name: string;
   account_role: "citizen" | "moderator" | "admin" | "owner";
   account_status: "active" | "suspended" | "deleted";
-  avatar_species: "otter";
+  avatar_species: CitizenSpecies | "otter";
   avatar_style: Record<string, unknown>;
   created_at: string;
 };
@@ -43,12 +45,16 @@ export async function upsertGoogleCitizen(input: {
   email: string;
   displayName: string;
 }) {
+  // Species is selected only for a new account. ON CONFLICT deliberately
+  // leaves avatar_species untouched, so a citizen keeps the same animal.
+  const assignedSpecies: CitizenSpecies = CITIZEN_SPECIES[randomInt(CITIZEN_SPECIES.length)]!;
   const result = await query<CitizenRecord>(
     `INSERT INTO citizens (
-       auth_provider, auth_subject, email, display_name, account_role
+       auth_provider, auth_subject, email, display_name, account_role, avatar_species
      )
      VALUES ('google', $1, $2, $3,
-       CASE WHEN lower($2) = lower($4) THEN 'owner' ELSE 'citizen' END
+       CASE WHEN lower($2) = lower($4) THEN 'owner' ELSE 'citizen' END,
+       $5
      )
      ON CONFLICT (auth_provider, auth_subject)
      DO UPDATE SET
@@ -66,6 +72,7 @@ export async function upsertGoogleCitizen(input: {
       input.email,
       input.displayName,
       process.env.NOVARIA_OWNER_EMAIL ?? "",
+      assignedSpecies,
     ],
   );
   const citizen = result.rows[0];
