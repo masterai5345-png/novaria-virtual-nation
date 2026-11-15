@@ -486,6 +486,12 @@ export default function NovariaWorldExperience() {
             </div>
             <button type="button" onClick={() => setPanel(null)} aria-label="Close panel"><X size={18}/></button>
           </div>
+          <nav className="town-panel-tabs" aria-label="Menu kota">
+            <button type="button" className={panel === "overview" ? "active" : ""} onClick={() => setPanel("overview")}>Ringkasan</button>
+            <button type="button" className={panel === "missions" ? "active" : ""} onClick={() => setPanel("missions")}>Misi</button>
+            <button type="button" className={panel === "districts" ? "active" : ""} onClick={() => setPanel("districts")}>Distrik</button>
+            <button type="button" className={panel === "residents" ? "active" : ""} onClick={() => setPanel("residents")}>Warga</button>
+          </nav>
 
           {panel === "overview" ? (
             <div className="town-overview-content">
