@@ -2420,10 +2420,13 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
 
       if (qualityRef.current !== activeQuality) {
         activeQuality = qualityRef.current;
-        const highQuality = activeQuality === "high" && !lowPowerDevice;
-        renderer.setPixelRatio(highQuality ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 1.0));
-        renderer.shadowMap.enabled = highQuality;
-        sun.castShadow = highQuality;
+        const highQuality = activeQuality === "high";
+        const effectivePixelRatio = lowPowerDevice
+          ? Math.min(window.devicePixelRatio, highQuality ? 1.15 : 0.85)
+          : Math.min(window.devicePixelRatio, highQuality ? 1.5 : 1.0);
+        renderer.setPixelRatio(effectivePixelRatio);
+        renderer.shadowMap.enabled = highQuality && !lowPowerDevice;
+        sun.castShadow = highQuality && !lowPowerDevice;
       }
 
       const requestedResident = focusResidentRef.current;
