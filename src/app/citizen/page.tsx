@@ -37,21 +37,21 @@ export default async function CitizenPage() {
   return (
     <main className="citizen-page-shell">
       <header className="citizen-page-header">
-        <Link href="/" className="brand"><span className="brand-mark">N</span><span><strong>NOVARIA</strong><small>A LIVING VIRTUAL NATION</small></span></Link>
-        <Link href="/" className="citizen-return">Return to city →</Link>
+        <Link href="/" className="brand"><span className="brand-mark">🐾</span><span><strong>KOTA MASKOT</strong><small>NOVARIA · KOTA PARA HEWAN</small></span></Link>
+        <Link href="/" className="citizen-return">Kembali ke kota →</Link>
       </header>
       <section className="citizen-welcome-card">
-        <div className="citizen-big-otter" aria-hidden="true">🦦</div>
-        <span className="eyebrow">OFFICIAL CITIZEN PROFILE</span>
-        <h1>Welcome to NOVARIA, {citizen.display_name}.</h1>
-        <p>Your Google account has been registered as a NOVARIA citizen. Your animal species is assigned permanently and stored in the city database.</p>
+        <div className="citizen-big-mascot" aria-hidden="true">{ANIMAL_EMOJI[species]}</div>
+        <span className="eyebrow">PROFIL WARGA RESMI KOTA MASKOT</span>
+        <h1>Selamat datang di Kota Maskot, {citizen.display_name}.</h1>
+        <p>Akun Google kamu telah terdaftar sebagai warga NOVARIA. Spesies maskotmu dipilih secara acak saat pendaftaran, lalu disimpan permanen di database kota.</p>
         <div className="citizen-profile-grid">
-          <div><small>CITIZEN ID</small><strong>{citizen.id.slice(0, 8).toUpperCase()}</strong></div>
-          <div><small>YOUR ANIMAL MASCOT</small><strong>{ANIMAL_EMOJI[species]} {speciesLabel}</strong></div>
-          <div><small>ACCOUNT ROLE</small><strong>{citizen.account_role}</strong></div>
-          <div><small>REGISTERED EMAIL</small><strong>{citizen.email}</strong></div>
+          <div><small>ID WARGA</small><strong>{citizen.id.slice(0, 8).toUpperCase()}</strong></div>
+          <div><small>MASKOT HEWANMU</small><strong>{ANIMAL_EMOJI[species]} {speciesLabel}</strong></div>
+          <div><small>PERAN AKUN</small><strong>{citizen.account_role}</strong></div>
+          <div><small>EMAIL TERDAFTAR</small><strong>{citizen.email}</strong></div>
         </div>
-        <p className="citizen-next-step">Customize your mascot outfit, coat color and accessories, then claim your first community home.</p>
+        <p className="citizen-next-step">Atur pakaian, warna bulu, dan aksesori maskotmu, lalu klaim rumah komunitas pertamamu.</p>
       </section>
 
       <div className="citizen-tools-grid">
