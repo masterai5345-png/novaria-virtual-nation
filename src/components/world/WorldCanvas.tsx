@@ -1365,6 +1365,25 @@ function createShopKiosk(scene: THREE.Scene, x: number, z: number, label: string
   addBox(shop, 0.055, 1.04, 0.07, trim, -1.05, 0.79, 0.9, false);
   addBox(shop, 0.055, 1.04, 0.07, trim, 0.54, 0.79, 0.9, false);
   addBox(shop, 0.055, 0.98, 0.07, trim, -0.25, 0.79, 0.92, false);
+  // Interior shelving and product displays remain visible behind the storefront glass.
+  const shelf = mat("#775c45", 0.78);
+  const productColors = ["#c98b56", "#6d9e92", "#d4b875", "#9b779d", "#7093ad"];
+  addBox(shop, 1.35, 0.08, 0.28, shelf, -0.18, 0.48, 0.57);
+  addBox(shop, 1.35, 0.08, 0.28, shelf, -0.18, 0.92, 0.57);
+  addBox(shop, 0.08, 0.82, 0.25, trim, -0.88, 0.84, 0.57);
+  addBox(shop, 0.08, 0.82, 0.25, trim, 0.52, 0.84, 0.57);
+  for (let product = 0; product < 10; product++) {
+    const x = -0.78 + (product % 5) * 0.28;
+    const y = product < 5 ? 0.67 : 1.12;
+    const packageBox = addBox(shop, 0.15, 0.23 + (product % 3) * 0.035, 0.12, mat(productColors[product % productColors.length], 0.62), x, y, 0.53);
+    packageBox.castShadow = true;
+    if (product % 2 === 0) addBox(shop, 0.075, 0.04, 0.13, mat("#f3ead8", 0.54), x, y + 0.14, 0.53, false);
+  }
+  addBox(shop, 0.52, 0.48, 0.28, mat("#b9a07a", 0.8), 0.78, 0.48, 0.55);
+  addBox(shop, 0.54, 0.06, 0.3, accentMat, 0.78, 0.74, 0.55);
+  // Warm ceiling lights create a welcoming glow inside the shop.
+  const interiorLight = new THREE.MeshStandardMaterial({ color: "#f3dba9", emissive: "#c99b55", emissiveIntensity: 0.28 });
+  for (const x of [-0.65, 0.0, 0.55]) addSphere(shop, 0.045, interiorLight, x, 1.4, 0.45, 1, 0.5, 1);
   addBox(shop, 1.9, 0.09, 0.58, accentMat, 0, 1.48, 1.13);
   addBox(shop, 2.05, 0.1, 0.12, trim, 0, 1.39, 1.22);
   for (const side of [-1, 1]) {
@@ -1837,11 +1856,18 @@ export default function WorldCanvas() {
 
     const npcGroups: THREE.Group[] = [];
     const npcSpots: [number, number][] = [
+      // Park visitors and people around the fountain.
       [-11, 7], [-8, 10], [-12, 12], [-7, 7], [-10, 5], [-5, 11],
+      [-13.7, 9.2], [-6.4, 8.7], [-12.5, 13.5], [-7.1, 12.7],
+      // Market shoppers and café visitors.
       [8, 6], [10, 9], [12, 11], [7, 12], [13, 7], [9, 14],
+      [6.2, 9.5], [8.6, 12.1], [10.2, 5.8], [13.8, 8.6], [14.2, 12.1],
+      // Civic square, central avenue and neighbourhood footpaths.
       [-2.5, -3.6], [2.8, -3.8], [4.5, 5.4], [-4.6, 6.2], [15, 2], [-16, 2],
       [3.8, 15.7], [-4.5, 15.4], [-13, 8.4], [-11.5, 12.8], [-8.5, 11.5],
       [6.5, 8.8], [11.5, 12], [-15, -8], [16, 14],
+      // Marina walk and transit stop.
+      [7.2, 19.2], [14.4, 19.0], [5.2, -1.1], [8.2, -1.2],
     ];
     const npcSpecies = [...CITIZEN_SPECIES].sort(() => Math.random() - 0.5);
     npcSpots.forEach(([x, z], index) => {
