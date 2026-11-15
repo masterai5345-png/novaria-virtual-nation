@@ -22,7 +22,7 @@ function localReply(message: string, resident?: { displayName?: string; publicHa
   if (text.includes("rumah") || text.includes("hunian")) {
     return "Warga yang sudah masuk dapat membuka Profil Warga dan mengklaim rumah komunitas yang tersedia.";
   }
-  return "Selamat datang di NOVARIA! Aku bisa membantu mencari warga, menjelaskan distrik, memandu misi kota, dan menjelaskan cara mengatur maskotmu. Untuk percakapan AI penuh, admin perlu memasang ANTHROPIC_API_KEY pada web service Render.";
+  return "Selamat datang di Kota Maskot, kota dengan banyak spesies hewan! Aku bisa membantu mencari warga, menjelaskan distrik, memandu misi kota, dan menjelaskan cara mengatur maskotmu. Untuk percakapan AI penuh, admin perlu memasang ANTHROPIC_API_KEY pada web service Render.";
 }
 
 export async function POST(request: NextRequest) {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         model,
         max_tokens: 420,
         system: [
-          "You are Pak Wali Kota Beruang, the friendly Indonesian-speaking mayor of NOVARIA, a playful 3D virtual city inhabited by animal mascot citizens.",
+          "You are Pak Wali Kota Beruang, the friendly Indonesian-speaking bear mayor of Kota Maskot, a playful 3D virtual city inhabited by many animal mascot species.",
           "Answer in natural Indonesian, warmly and briefly (up to four short sentences).",
           "Help citizens understand city districts, public resident lookup, virtual citizen cards, missions, homes, and day/night controls.",
           "Never claim NOVA Coin is cash or withdrawable. Never invent real follower counts, payments, citizen identities, or city statistics.",
