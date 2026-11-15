@@ -102,10 +102,15 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "One or more avatar options are invalid." }, { status: 400 });
   }
 
-  const publicHandleProvided = typeof input.publicHandle === "string";
-  const publicHandle = publicHandleProvided
+  const publicHandleWasProvided = Object.prototype.hasOwnProperty.call(input, "publicHandle");
+  if (publicHandleWasProvided && typeof input.publicHandle !== "string") {
+    return NextResponse.json({ error: "Instagram username must be a text value." }, { status: 400 });
+  }
+
+  const publicHandle = typeof input.publicHandle === "string"
     ? input.publicHandle.trim().replace(/^@/, "").toLowerCase()
     : null;
+  const publicHandleProvided = publicHandle !== null;
   if (
     publicHandleProvided &&
     publicHandle !== "" &&
