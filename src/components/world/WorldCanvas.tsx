@@ -131,8 +131,8 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   clearGroup(group);
   const species = ANIMAL_LOOKS[speciesName] ? speciesName : "fox";
   const look = ANIMAL_LOOKS[species];
-  // Keep each species' signature coat. The legacy fur selector is reserved for Otti.
-  const coatColor = species === "otter" ? COAT_COLORS[style.furTone ?? ""] ?? look.coat : look.coat;
+  // Citizens can personalise coat colour while their species silhouette and markings remain recognisable.
+  const coatColor = COAT_COLORS[style.furTone ?? ""] ?? look.coat;
   const coat = mat(coatColor, 0.94);
   const belly = mat(look.belly, 0.96);
   const muzzle = mat(look.muzzle, 0.88);
