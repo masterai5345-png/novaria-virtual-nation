@@ -691,10 +691,28 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
     }
   }
 
-  // Crown, rooftop plant room, antenna and discreet aviation beacon.
+  // Crown, rooftop plant room, discreet mechanical services and aerial beacon.
   addBox(group, width + 0.42, 0.2, depth + 0.42, frame, 0, roofHeight + 1.32, 0);
   addBox(group, width * 0.38, 0.58, depth * 0.42, darkFrame, width * 0.1, roofHeight + 1.7, -depth * 0.08);
   addBox(group, width * 0.17, 0.24, depth * 0.2, goldTrim, -width * 0.22, roofHeight + 1.66, depth * 0.13);
+  const hvac = mat("#788487", 0.7, 0.24);
+  const fanDark = mat("#34454a", 0.66, 0.22);
+  for (let unit = 0; unit < 3; unit++) {
+    const unitX = -width * 0.34 + unit * width * 0.32;
+    addBox(group, 0.46, 0.3, 0.42, hvac, unitX, roofHeight + 1.5, depth * 0.28);
+    addBox(group, 0.35, 0.045, 0.32, fanDark, unitX, roofHeight + 1.67, depth * 0.28, false);
+    const fan = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 6, 16), goldTrim);
+    fan.position.set(unitX, roofHeight + 1.7, depth * 0.28);
+    group.add(fan);
+  }
+  // A small rooftop communications dish and safety rail distinguish the roof line.
+  const dish = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), mat("#c5c9c3", 0.35, 0.5));
+  dish.position.set(width * 0.34, roofHeight + 1.55, -depth * 0.25);
+  dish.rotation.x = -Math.PI / 2.3;
+  group.add(dish);
+  for (const side of [-1, 1]) {
+    addBox(group, 0.055, 0.3, depth * 0.7, goldTrim, side * width * 0.48, roofHeight + 1.47, 0, false);
+  }
   const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.8, 9), goldTrim);
   antenna.position.set(width * 0.12, roofHeight + 2.18, 0);
   group.add(antenna);
@@ -727,6 +745,17 @@ function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number
   addBox(group, width + 0.32, 0.17, depth + 0.32, roof, 0, 0.22 + height + 0.08, 0);
   addBox(group, width + 0.18, 0.07, depth + 0.18, bronze, 0, 0.22 + height + 0.2, 0);
   addBox(group, width * 0.34, 0.16, depth * 0.36, roof, width * 0.23, 0.22 + height + 0.31, -depth * 0.2);
+  // Roof garden, skylight and solar panels add believable residential utility details.
+  addBox(group, 0.6, 0.06, 0.48, mat("#7ca0a2", 0.18, 0.5), -0.58, 0.22 + height + 0.28, -0.24, false);
+  const solar = new THREE.MeshStandardMaterial({ color: "#294b59", roughness: 0.2, metalness: 0.58 });
+  for (let panel = 0; panel < 2; panel++) {
+    const solarPanel = addBox(group, 0.44, 0.045, 0.54, solar, 0.35 + panel * 0.48, 0.22 + height + 0.32, -0.28, false);
+    solarPanel.rotation.x = -0.12;
+    for (let line = 0; line < 3; line++) {
+      const gridLine = addBox(group, 0.012, 0.012, 0.5, mat("#8cb5ba", 0.3, 0.4), 0.15 + panel * 0.48 + line * 0.15, 0.22 + height + 0.35, -0.28, false);
+      gridLine.rotation.x = -0.12;
+    }
+  }
 
   for (let floor = 0; floor < floors; floor++) {
     const y = 0.34 + floor * floorHeight;
@@ -735,6 +764,11 @@ function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number
       addBox(group, 0.43, 0.42, 0.045, bronze, windowX, y + 0.35, depth / 2 + 0.035, false);
       addBox(group, 0.34, 0.34, 0.035, glass, windowX, y + 0.36, depth / 2 + 0.065, false);
       addBox(group, 0.035, 0.36, 0.035, frame, windowX, y + 0.36, depth / 2 + 0.09, false);
+    }
+    for (const side of [-1, 1]) {
+      addBox(group, 0.045, 0.38, 0.48, bronze, side * (width / 2 + 0.025), y + 0.36, -0.38, false);
+      addBox(group, 0.035, 0.3, 0.37, glass, side * (width / 2 + 0.055), y + 0.37, -0.38, false);
+      addBox(group, 0.035, 0.32, 0.035, frame, side * (width / 2 + 0.08), y + 0.37, -0.38, false);
     }
   }
 
@@ -1180,7 +1214,7 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   createSkyDome(scene);
   const sea = new THREE.Mesh(
     new THREE.PlaneGeometry(150, 150, 48, 48),
-    new THREE.MeshStandardMaterial({ color: "#477f88", roughness: 0.23, metalness: 0.18, envMapIntensity: 0.65 }),
+    new THREE.MeshPhysicalMaterial({ color: "#477f88", roughness: 0.19, metalness: 0.22, clearcoat: 0.82, clearcoatRoughness: 0.12, envMapIntensity: 0.8 }),
   );
   sea.rotation.x = -Math.PI / 2;
   sea.position.y = -0.32;
