@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, AlertTriangle, CheckCircle2, CircleDashed, Database, KeyRound, Server } from "lucide-react";
+import { Activity, Database, KeyRound, Server } from "lucide-react";
 
 type RuntimeStatus = {
   database: string;
@@ -13,13 +13,6 @@ type RuntimeStatus = {
 
 function label(value: string) {
   return value.replaceAll("-", " ").replaceAll("_", " ");
-}
-
-function stateIcon(value: string) {
-  if (["connected", "credentials-configured", "online"].includes(value)) return <CheckCircle2 size={15}/>;
-  if (["error", "stale", "database-unavailable"].includes(value)) return <AlertTriangle size={15}/>;
-  if (["stopped", "not-configured"].includes(value)) return <CircleDashed size={15}/>;
-  return <Activity size={15}/>;
 }
 
 export default function RuntimeHealth() {
