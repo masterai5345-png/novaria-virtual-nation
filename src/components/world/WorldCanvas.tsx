@@ -255,7 +255,14 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   const eyeWhite = mat("#fffaf0", 0.24);
   const iris = mat(species === "frog" ? "#6b8e44" : species === "wolf" || species === "cat" ? "#79a6a1" : "#9a6840", 0.25);
   const outfitColor = outfitOverride ?? OUTFIT_COLORS[style.outfit ?? "citizen-teal"] ?? OUTFIT_COLORS["citizen-teal"];
-  const outfit = new THREE.MeshPhysicalMaterial({ color: outfitColor, roughness: 0.82, metalness: 0.02, sheen: 0.38, sheenColor: new THREE.Color(outfitColor).multiplyScalar(1.1), sheenRoughness: 0.9 });
+  const outfit = cachedMaterial(`outfit:${outfitColor}`, () => new THREE.MeshPhysicalMaterial({
+    color: outfitColor,
+    roughness: 0.82,
+    metalness: 0.02,
+    sheen: 0.38,
+    sheenColor: new THREE.Color(outfitColor).multiplyScalar(1.1),
+    sheenRoughness: 0.9,
+  }));
   const trim = mat("#e9d1a0", 0.48, 0.12);
   const gold = mat("#d6ad68", 0.36, 0.32);
   const sole = mat("#263238", 0.9);
@@ -729,6 +736,7 @@ function makeHedge(scene: THREE.Scene, x: number, z: number, width = 1.4, depth 
 }
 
 function createFacadeMaterial(baseColor: string, seed: number, rounded = false) {
+  return cachedMaterial(`facade:${seed % 5}:${rounded}`, () => {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 512;
@@ -799,9 +807,11 @@ function createFacadeMaterial(baseColor: string, seed: number, rounded = false) 
     emissive: "#172c33",
     emissiveIntensity: 0.16,
   });
+  });
 }
 
 function createAsphaltMaterial() {
+  return cachedMaterial("asphalt:high", () => {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 512;
@@ -829,9 +839,11 @@ function createAsphaltMaterial() {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   return new THREE.MeshStandardMaterial({ color: "#ffffff", map: texture, roughness: 0.98, metalness: 0.01 });
+  });
 }
 
 function createPaverMaterial() {
+  return cachedMaterial("paver:city", () => {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 512;
@@ -858,6 +870,7 @@ function createPaverMaterial() {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   return new THREE.MeshStandardMaterial({ color: "#ffffff", map: texture, roughness: 0.96 });
+  });
 }
 
 function makeTower(scene: THREE.Scene, x: number, z: number, width: number, depth: number, floors: number, hue: string, rounded = false) {
@@ -1026,6 +1039,7 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
   scene.add(group);
 }
 function createStuccoMaterial(color: string, seed: number) {
+  return cachedMaterial(`stucco:${color}:${seed % 4}`, () => {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 256;
@@ -1063,6 +1077,7 @@ function createStuccoMaterial(color: string, seed: number) {
     bumpMap: texture,
     bumpScale: 0.014,
     roughness: 0.94,
+  });
   });
 }
 
