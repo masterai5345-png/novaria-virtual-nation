@@ -638,13 +638,29 @@ function addRoadMarkings(scene: THREE.Scene) {
       scene.add(stripe);
     }
   }
-  const northWalk = new THREE.Mesh(new THREE.PlaneGeometry(52, 0.72), sidewalk);
+  const northWalk = new THREE.Mesh(new THREE.PlaneGeometry(52, 0.82), sidewalk);
   northWalk.rotation.x = -Math.PI / 2;
-  northWalk.position.set(0, 0.407, -0.56);
+  northWalk.position.set(0, 0.407, -0.62);
   scene.add(northWalk);
   const southWalk = northWalk.clone();
-  southWalk.position.z = 4.16;
+  southWalk.position.z = 4.22;
   scene.add(southWalk);
+  const sideWalkLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 52), sidewalk);
+  sideWalkLeft.rotation.x = -Math.PI / 2;
+  sideWalkLeft.position.set(-2.22, 0.407, 0);
+  scene.add(sideWalkLeft);
+  const sideWalkRight = sideWalkLeft.clone();
+  sideWalkRight.position.x = 2.22;
+  scene.add(sideWalkRight);
+  const curb = mat("#ece9df", 0.78);
+  for (const side of [-1, 1]) {
+    const horizontalCurb = new THREE.Mesh(new THREE.BoxGeometry(52, 0.13, 0.11), curb);
+    horizontalCurb.position.set(0, 0.48, side * 2.0);
+    scene.add(horizontalCurb);
+    const verticalCurb = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.13, 52), curb);
+    verticalCurb.position.set(side * 2.0, 0.48, 0);
+    scene.add(verticalCurb);
+  }
 }
 
 function makeTreeCluster(scene: THREE.Scene, centerX: number, centerZ: number, width: number, depth: number, count: number) {
@@ -1157,8 +1173,8 @@ export default function WorldCanvas() {
     if (!host) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#c4c2ae");
-    scene.fog = new THREE.Fog("#c4c2ae", 48, 90);
+    scene.background = new THREE.Color("#b9c9c7");
+    scene.fog = new THREE.Fog("#b9c9c7", 58, 118);
 
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 160);
     camera.position.set(0, 27, 34);
@@ -1170,15 +1186,19 @@ export default function WorldCanvas() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 1.16;
     renderer.domElement.className = "world-canvas";
     host.appendChild(renderer.domElement);
 
-    scene.add(new THREE.HemisphereLight("#fff2df", "#55616a", 2.25));
-    const sun = new THREE.DirectionalLight("#ffe2b7", 3.15);
+    scene.add(new THREE.HemisphereLight("#fff5e8", "#53646a", 2.1));
+    scene.add(new THREE.AmbientLight("#f0e9db", 0.34));
+    const sun = new THREE.DirectionalLight("#ffe3bb", 3.35);
     sun.position.set(-15, 28, 16);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1536, 1536);
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.bias = -0.00016;
+    sun.shadow.normalBias = 0.035;
+    sun.shadow.radius = 4;
     sun.shadow.camera.left = -32;
     sun.shadow.camera.right = 32;
     sun.shadow.camera.top = 32;
@@ -1219,10 +1239,7 @@ export default function WorldCanvas() {
       [8, 6], [10, 9], [12, 11], [7, 12], [13, 7], [9, 14],
       [-2.5, -3.6], [2.8, -3.8], [4.5, 5.4], [-4.6, 6.2], [15, 2], [-16, 2],
       [3.8, 15.7], [-4.5, 15.4], [-13, 8.4], [-11.5, 12.8], [-8.5, 11.5],
-      [-6.2, 8.2], [6.5, 8.8], [9, 6.5], [11.5, 12], [14, 9.5],
-      [-2.3, -2], [2.2, -3], [-4, 2.8], [4.2, 4.2], [-17, -5], [-15, -8],
-      [-12, -6], [-7, -5], [17, 6], [-18, 3], [16, 14], [-3, 17],
-      [2, 16], [-9, 18], [8, 18],
+      [6.5, 8.8], [11.5, 12], [-15, -8], [16, 14],
     ];
     const npcSpecies = [...CITIZEN_SPECIES].sort(() => Math.random() - 0.5);
     npcSpots.forEach(([x, z], index) => {
