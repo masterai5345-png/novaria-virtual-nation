@@ -1431,14 +1431,32 @@ function createSkyDome(scene: THREE.Scene) {
     gradient.addColorStop(1, "#f1d1a8");
     context.fillStyle = gradient;
     context.fillRect(0, 0, 1024, 512);
-    context.globalAlpha = 0.18;
-    for (let index = 0; index < 7; index++) {
-      const x = 100 + index * 150;
-      context.fillStyle = "#fff7e6";
+    // A warm, low sun and layered high-altitude cloud banks give the city a cinematic horizon.
+    const sunGlow = context.createRadialGradient(765, 260, 10, 765, 260, 210);
+    sunGlow.addColorStop(0, "rgba(255,245,216,.96)");
+    sunGlow.addColorStop(0.18, "rgba(255,225,177,.46)");
+    sunGlow.addColorStop(1, "rgba(255,225,177,0)");
+    context.fillStyle = sunGlow;
+    context.fillRect(535, 30, 460, 460);
+    context.globalAlpha = 0.24;
+    for (let index = 0; index < 9; index++) {
+      const x = 55 + index * 118;
+      const y = 145 + (index % 4) * 24;
+      context.fillStyle = index % 2 ? "#fff8e8" : "#e9f1ed";
       context.beginPath();
-      context.ellipse(x, 175 + (index % 3) * 28, 76, 18, 0, 0, Math.PI * 2);
+      context.ellipse(x, y, 68 + (index % 3) * 13, 11 + (index % 2) * 5, -0.06, 0, Math.PI * 2);
+      context.fill();
+      context.beginPath();
+      context.ellipse(x + 25, y + 6, 40, 8, 0.04, 0, Math.PI * 2);
       context.fill();
     }
+    context.globalAlpha = 0.14;
+    const haze = context.createLinearGradient(0, 260, 0, 512);
+    haze.addColorStop(0, "rgba(246,223,186,0)");
+    haze.addColorStop(1, "rgba(249,225,190,.92)");
+    context.fillStyle = haze;
+    context.fillRect(0, 260, 1024, 252);
+    context.globalAlpha = 1;
   }
   if (!context) return;
   const texture = new THREE.CanvasTexture(canvas);
@@ -1545,6 +1563,12 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   crossPath.rotation.x = -Math.PI / 2;
   crossPath.position.set(-10, 0.407, 9);
   scene.add(crossPath);
+  const parkEdge = mat("#7b9a70", 0.95);
+  for (const [x, z, width, depth] of [[-10, 4.0, 11.2, 0.13], [-10, 14.0, 11.2, 0.13], [-15.5, 9, 0.13, 10], [-4.5, 9, 0.13, 10]] as [number, number, number, number][]) {
+    const edging = new THREE.Mesh(new THREE.BoxGeometry(width, 0.12, depth), parkEdge);
+    edging.position.set(x, 0.45, z);
+    scene.add(edging);
+  }
   const fountainBase = new THREE.Mesh(new THREE.CylinderGeometry(1.14, 1.26, 0.28, 40), mat("#d0c7b6", 0.66, 0.08));
   fountainBase.position.set(-10, 0.55, 9);
   scene.add(fountainBase);
@@ -1565,12 +1589,35 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   market.rotation.x = -Math.PI / 2;
   market.position.set(10, 0.392, 9);
   scene.add(market);
+  // Subtle stone bands and a circular centre medallion give the retail square a designed layout.
+  const plazaBorder = mat("#b8ad99", 0.86);
+  for (const [x, z, width, depth] of [[10, 4.75, 10, 0.08], [10, 13.25, 10, 0.08], [5, 9, 0.08, 8.5], [15, 9, 0.08, 8.5]] as [number, number, number, number][]) {
+    const band = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), plazaBorder);
+    band.rotation.x = -Math.PI / 2;
+    band.position.set(x, 0.415, z);
+    scene.add(band);
+  }
+  const medallion = new THREE.Mesh(new THREE.CircleGeometry(1.18, 48), mat("#c7b99f", 0.8));
+  medallion.rotation.x = -Math.PI / 2;
+  medallion.position.set(10, 0.417, 9);
+  scene.add(medallion);
+  const medallionRing = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.035, 8, 48), mat("#e0c38d", 0.4, 0.32));
+  medallionRing.rotation.x = Math.PI / 2;
+  medallionRing.position.set(10, 0.44, 9);
+  scene.add(medallionRing);
+  for (let tile = 0; tile < 8; tile++) {
+    const angle = (tile / 8) * Math.PI * 2;
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), mat("#9c8769", 0.6, 0.18));
+    dot.position.set(10 + Math.cos(angle) * 0.83, 0.45, 9 + Math.sin(angle) * 0.83);
+    scene.add(dot);
+  }
   createShopKiosk(scene, 7.3, 7.0, "Harbor Café", "#b96e54");
   createShopKiosk(scene, 12.3, 10.5, "City Market", "#638d9b");
   createPlanter(scene, 7.0, 12.3, 1.35);
   createPlanter(scene, 13.1, 6.3, 1.35);
   addDistrictLabel(scene, "Green Park", -10, 14);
   addDistrictLabel(scene, "Modern Market", 10, 14);
+  addDistrictLabel(scene, "Marina Promenade", 10.5, 18.2);
 
   // A denser skyline around the civic and commercial center.
   const towers: [number, number, number, number, number, string, boolean][] = [
