@@ -770,3 +770,222 @@ a { color: inherit; text-decoration: none; }
   .town-mayor-card { min-width: 174px; max-width: 188px; }
 }
 .avatar-species-emoji { position: absolute; z-index: 4; left: 35px; top: 5px; font-size: 29px; filter: drop-shadow(0 3px 2px #25352c55); }
+
+
+/* Premium visual finish: material depth, warm metal, and restrained glass UI. */
+.town-experience {
+  background: radial-gradient(ellipse at 50% 8%, #d0d3c6 0%, #8fa8aa 46%, #506b70 100%);
+  font-family: "DM Sans", sans-serif;
+}
+.town-experience .world-canvas {
+  filter: saturate(1.08) contrast(1.025);
+}
+.town-world-shade {
+  background:
+    linear-gradient(180deg, rgba(10,22,28,.61) 0%, rgba(10,22,28,.12) 19%, transparent 39%),
+    linear-gradient(0deg, rgba(8,19,24,.36) 0%, transparent 28%),
+    radial-gradient(ellipse at center, transparent 54%, rgba(8,19,24,.14) 100%);
+}
+.town-topbar {
+  height: 86px;
+  padding-inline: 31px;
+  border-bottom-color: #e8d7b42c;
+  background: linear-gradient(180deg, rgba(8,22,28,.88), rgba(11,28,32,.55));
+  box-shadow: 0 10px 38px rgba(5,15,18,.16);
+}
+.town-brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px 15px 15px 5px;
+  background: linear-gradient(145deg, #f0d39a 0%, #c49b60 46%, #8e6844 100%);
+  box-shadow: 0 5px 0 #594630, 0 11px 26px #07171c88, inset 0 1px 0 #fff8df;
+}
+.town-brand strong { font-size: 16px; letter-spacing: .2em; }
+.town-brand small { color: #d9c9a8; font-size: 8px; letter-spacing: .22em; }
+.town-topbar-center {
+  padding: 9px 15px;
+  border: 1px solid #ffffff24;
+  border-radius: 99px;
+  background: #0e292e88;
+  box-shadow: inset 0 1px 0 #ffffff0b;
+}
+.town-status-dot { background: #9dd9a6; box-shadow: 0 0 0 4px #9dd9a622, 0 0 14px #9dd9a6aa; }
+.town-topbar .citizen-button {
+  border-color: #f6dfb0;
+  background: linear-gradient(145deg, #f7e6c0, #d8b47b);
+  box-shadow: 0 5px 0 #98764d, 0 10px 24px #0717194f, inset 0 1px 0 #fff8e7;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.town-topbar .citizen-button:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 6px 0 #98764d, 0 15px 28px #07171955; }
+.town-profile-link {
+  border-color: #d6bb835c;
+  background: linear-gradient(145deg, #1c3c3eec, #0b2229ee);
+  box-shadow: 0 8px 20px #06141748, inset 0 1px 0 #ffffff18;
+  transition: transform .18s ease, border-color .18s ease;
+}
+.town-profile-link:hover { transform: translateY(-1px); border-color: #f1d69c; }
+.town-rail {
+  left: 22px;
+  gap: 10px;
+  padding: 10px;
+  border-color: #e2c38c55;
+  border-radius: 20px;
+  background: linear-gradient(155deg, rgba(17,43,47,.9), rgba(8,24,29,.88));
+  box-shadow: 0 18px 46px #07171966, inset 0 1px 0 #ffffff16;
+}
+.town-rail button {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  color: #c3d0c9;
+}
+.town-rail button.active {
+  border-color: #f3d59b8c;
+  background: linear-gradient(145deg, #dfbb7a35, #a77a4333);
+  color: #f4dca9;
+  box-shadow: inset 0 1px 0 #fff5d532, 0 5px 15px #080f1230;
+}
+.town-location-tag {
+  top: 108px;
+  padding: 11px 17px 11px 13px;
+  border-color: #e4c38b6b;
+  border-radius: 15px;
+  background: linear-gradient(145deg, rgba(21,47,49,.88), rgba(10,29,33,.82));
+  box-shadow: 0 12px 30px #0716194d, inset 0 1px 0 #ffffff19;
+}
+.town-location-pin {
+  background: linear-gradient(145deg, #f4dcaa, #c69c61);
+  box-shadow: 0 3px 0 #896944, inset 0 1px 0 #fff8e3;
+}
+.town-location-tag b { font-size: 11px; letter-spacing: .16em; }
+.town-location-tag small { color: #c4c9b9; letter-spacing: .18em; }
+.town-mayor-card {
+  right: 28px;
+  bottom: 29px;
+  min-width: 270px;
+  padding: 14px 16px;
+  border-color: #e7ca946c;
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 9% 0%, #d6b57622, transparent 54%),
+    linear-gradient(145deg, rgba(24,54,53,.94), rgba(8,26,31,.94));
+  box-shadow: 0 18px 50px #06151970, inset 0 1px 0 #ffffff18;
+}
+.town-mayor-avatar {
+  width: 48px;
+  height: 48px;
+  border: 1px solid #f0d59a;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #f0e4c9, #c7b38e);
+  box-shadow: 0 4px 12px #07141655, inset 0 1px 0 #fff;
+}
+.town-mayor-copy small { letter-spacing: .17em; }
+.town-mayor-copy b { font-size: 13px; letter-spacing: .015em; }
+.town-mayor-card > button {
+  background: linear-gradient(145deg, #f1d59c, #c59a5d);
+  box-shadow: 0 3px 0 #8c6840, inset 0 1px 0 #fff7df;
+  transition: transform .18s ease;
+}
+.town-mayor-card > button:hover { transform: translateX(2px); }
+.town-bottom-hint {
+  bottom: 28px;
+  padding: 11px 18px;
+  border-color: #e9d4ac3d;
+  background: linear-gradient(145deg, rgba(17,41,45,.84), rgba(8,24,29,.8));
+  box-shadow: 0 10px 28px #0717194c, inset 0 1px 0 #ffffff16;
+}
+.town-drawer {
+  top: 105px;
+  right: 27px;
+  bottom: 28px;
+  width: min(430px, calc(100vw - 132px));
+  border-color: #e0c18b6b;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 94% 0%, #d7b16d16, transparent 32%),
+    linear-gradient(155deg, rgba(15,37,40,.97), rgba(7,22,28,.97));
+  box-shadow: 0 28px 90px #0615199c, inset 0 1px 0 #ffffff18;
+  animation: town-panel-enter .24s ease-out both;
+}
+.town-drawer-heading {
+  padding-bottom: 19px;
+  border-bottom-color: #d6b57d32;
+}
+.town-drawer-heading small { color: #dfc18a; letter-spacing: .2em; }
+.town-drawer-heading h2 { font-size: 25px; letter-spacing: -.045em; }
+.town-drawer-heading > button {
+  border-color: #e5c99142;
+  background: linear-gradient(145deg, #ffffff15, #ffffff08);
+  transition: background .18s ease, transform .18s ease;
+}
+.town-drawer-heading > button:hover { background: #ffffff22; transform: rotate(4deg); }
+.town-overview-content, .town-mission-content, .town-district-list, .town-residents-content { gap: 13px; }
+.town-wallet {
+  border-color: #e6c68a56;
+  background:
+    radial-gradient(circle at 0% 0%, #e7c48618, transparent 50%),
+    linear-gradient(125deg, #294947, #142f34);
+  box-shadow: inset 0 1px 0 #ffffff16;
+}
+.town-wallet b { font-size: 21px; }
+.town-primary-action {
+  padding: 14px 16px;
+  border: 1px solid #ffe7b0a6;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f0d69e, #c79b60);
+  box-shadow: 0 4px 0 #8c6843, 0 10px 25px #050f1238, inset 0 1px 0 #fff8e6;
+  transition: transform .18s ease, filter .18s ease;
+}
+.town-primary-action:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.town-mission-card, .town-district-card {
+  border-color: #ffffff22;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #1e3b3d, #112b30);
+  box-shadow: inset 0 1px 0 #ffffff0d;
+  transition: border-color .18s ease, transform .18s ease;
+}
+.town-mission-card:hover, .town-district-card:hover { border-color: #d9b67576; transform: translateY(-1px); }
+.town-mission-icon { background: linear-gradient(145deg, #e5c17c32, #b88e5620); }
+.town-mission-copy b, .town-district-card b { letter-spacing: .01em; }
+.town-mission-card > button {
+  background: linear-gradient(145deg, #efd49c, #c99f65);
+  box-shadow: inset 0 1px 0 #fff6dd;
+}
+.town-district-card > span {
+  border: 1px solid #e0bd7944;
+  background: linear-gradient(145deg, #e1bd7828, #bb94541a);
+}
+.town-mayor-profile {
+  border-color: #dabb7b58;
+  background: linear-gradient(135deg, #314c45, #1b3838);
+  box-shadow: inset 0 1px 0 #ffffff16;
+}
+.town-mayor-profile > span {
+  border: 1px solid #efdaa9;
+  background: linear-gradient(145deg, #f0e2c0, #b9a47d);
+  box-shadow: 0 5px 15px #06171955;
+}
+.town-species-grid > div {
+  border-color: #ffffff1c;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #1e3b3d, #122d31);
+  transition: border-color .18s ease, transform .18s ease;
+}
+.town-species-grid > div:hover { border-color: #e5c17d83; transform: translateY(-2px); }
+.town-species-grid span { font-size: 19px; filter: drop-shadow(0 2px 2px #0005); }
+@keyframes town-panel-enter {
+  from { opacity: 0; transform: translateY(8px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (max-width: 760px) {
+  .town-topbar { height: 72px; }
+  .town-rail { left: 9px; }
+  .town-location-tag { top: 86px; }
+  .town-drawer { top: 84px; right: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .town-drawer { animation: none; }
+  .town-rail button, .town-profile-link, .town-mayor-card > button,
+  .town-primary-action, .town-mission-card, .town-district-card,
+  .town-species-grid > div { transition: none; }
+}
