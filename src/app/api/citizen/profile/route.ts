@@ -17,6 +17,7 @@ type ProfileRow = QueryResultRow & {
   account_role: string;
   avatar_species: string;
   avatar_style: Record<string, unknown>;
+  social_handle: string | null;
   created_at: string;
 };
 
@@ -27,7 +28,7 @@ export async function GET() {
 
   try {
     const result = await query<ProfileRow>(
-      `SELECT id, display_name, email, account_role, avatar_species, avatar_style, created_at
+      `SELECT id, display_name, email, account_role, avatar_species, avatar_style, social_handle, created_at
        FROM citizens
        WHERE id = $1 AND account_status = 'active'
        LIMIT 1`,
@@ -43,6 +44,7 @@ export async function GET() {
         role: profile.account_role,
         species: profile.avatar_species,
         avatarStyle: profile.avatar_style ?? {},
+        publicHandle: profile.social_handle,
         createdAt: profile.created_at,
       },
     }, { headers: { "Cache-Control": "no-store" } });
@@ -81,6 +83,7 @@ export async function PATCH(request: NextRequest) {
   const input = body as {
     displayName?: unknown;
     avatarStyle?: { furTone?: unknown; outfit?: unknown; accessory?: unknown };
+    publicHandle?: unknown;
   };
   const displayName = typeof input.displayName === "string" ? input.displayName.trim() : "";
   if (displayName.length < 2 || displayName.length > 28) {
@@ -99,15 +102,28 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "One or more avatar options are invalid." }, { status: 400 });
   }
 
+  const publicHandleProvided = typeof input.publicHandle === "string";
+  const publicHandle = publicHandleProvided
+    ? input.publicHandle.trim().replace(/^@/, "").toLowerCase()
+    : null;
+  if (
+    publicHandleProvided &&
+    publicHandle !== "" &&
+    (publicHandle.length > 30 || !/^[a-z0-9._]+$/.test(publicHandle))
+  ) {
+    return NextResponse.json({ error: "Instagram username must use 1–30 letters, numbers, dots or underscores." }, { status: 400 });
+  }
+
   try {
     const updated = await query<ProfileRow>(
       `UPDATE citizens
        SET display_name = $2,
            avatar_style = $3::jsonb,
+           social_handle = CASE WHEN $4::boolean THEN NULLIF($5, '') ELSE social_handle END,
            updated_at = NOW()
        WHERE id = $1 AND account_status = 'active'
-       RETURNING id, display_name, email, account_role, avatar_species, avatar_style, created_at`,
-      [citizenId, displayName, JSON.stringify({ furTone, outfit, accessory })],
+       RETURNING id, display_name, email, account_role, avatar_species, avatar_style, social_handle, created_at`,
+      [citizenId, displayName, JSON.stringify({ furTone, outfit, accessory }), publicHandleProvided, publicHandle ?? ""],
     );
     const profile = updated.rows[0];
     if (!profile) return NextResponse.json({ error: "Active citizen profile not found." }, { status: 404 });
@@ -115,7 +131,7 @@ export async function PATCH(request: NextRequest) {
     await query(
       `INSERT INTO audit_events (actor_type, actor_id, action, resource_type, resource_id, outcome, detail)
        VALUES ('citizen', $1, 'customize_animal_mascot', 'citizen', $1, 'success', $2::jsonb)`,
-      [citizenId, JSON.stringify({ furTone, outfit, accessory })],
+      [citizenId, JSON.stringify({ furTone, outfit, accessory, ...(publicHandleProvided ? { publicHandle: publicHandle || null } : {}) })],
     );
 
     return NextResponse.json({
@@ -125,9 +141,13 @@ export async function PATCH(request: NextRequest) {
         displayName: profile.display_name,
         species: profile.avatar_species,
         avatarStyle: profile.avatar_style,
+        publicHandle: profile.social_handle,
       },
     });
-  } catch {
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+      return NextResponse.json({ error: "That Instagram username is already linked to another NOVARIA citizen." }, { status: 409 });
+    }
     return NextResponse.json({ error: "Could not save your avatar. Please try again." }, { status: 503 });
   }
 }
