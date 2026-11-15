@@ -13,7 +13,7 @@ export async function GET() {
       population: null,
       homes: null,
       activeCitizens: null,
-      mayor: { name: "Mayor Otti", species: "otter" },
+      mayor: { name: "Pak Wali Kota Beruang", species: "bear" },
       note: "Configure PostgreSQL and apply db/schema.sql + db/seed.sql to show live city data.",
     }, { headers: { "Cache-Control": "no-store" } });
   }
@@ -37,7 +37,7 @@ export async function GET() {
       activeCitizens: Number(row.active_citizens),
       homes: Number(row.homes),
       districts: Number(row.districts),
-      mayor: { name: row.mayor_name ?? "Mayor Otti", species: "otter" },
+      mayor: { name: row.mayor_name ?? "Pak Wali Kota Beruang", species: "bear" },
     }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Could not read city overview." }, { status: 503 });
