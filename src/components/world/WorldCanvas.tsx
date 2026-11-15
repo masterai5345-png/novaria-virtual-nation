@@ -2312,7 +2312,6 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
     selectedResidentMarker.rotation.x = Math.PI / 2;
     selectedResidentModel.add(selectedResidentMarker);
     let activeResidentId: string | null = null;
-    let focusPoint = new THREE.Vector3();
     let activeNight = nightRef.current;
     let activeQuality = qualityRef.current;
 
@@ -2445,7 +2444,6 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
           const [residentX, residentZ] = residentSpots[district];
           selectedResidentModel.position.set(residentX, 0.42, residentZ);
           selectedResidentModel.rotation.y = (seed % 628) / 100;
-          focusPoint.set(residentX, 0.45, residentZ);
         }
       }
       // One-time fallback for devices that still struggle: lower fill-rate, remove dynamic shadows,
