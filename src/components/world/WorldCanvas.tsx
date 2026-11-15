@@ -109,7 +109,7 @@ function addBox(
   x: number,
   y: number,
   z: number,
-  castShadow = true,
+  castShadow = false,
 ) {
   const mesh = new THREE.Mesh(unitBoxGeometry(), material);
   mesh.position.set(x, y, z);
@@ -452,25 +452,48 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   group.userData.animatedLegs = animatedLegs;
 }
 function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
-  const group = new THREE.Group();
-  const bark = mat("#6b4c35", 0.98);
-  const barkLight = mat("#886547", 0.96);
-  const leafMaterials = [
-    mat("#477f56", 0.98), mat("#588f60", 0.98),
-    mat("#39734e", 0.98), mat("#69976a", 0.98),
-  ];
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.095 * size, 0.19 * size, 1.0 * size, 10), bark);
-  trunk.position.y = 0.5 * size;
-  trunk.castShadow = true;
-  group.add(trunk);
-  for (const side of [-1, 1]) {
-    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.035 * size, 0.075 * size, 0.68 * size, 8), barkLight);
-    branch.position.set(side * 0.22 * size, 0.84 * size, 0);
-    branch.rotation.z = side * -0.7;
-    group.add(branch);
-  }
-  // Layered, irregular low-poly foliage instead of a single perfect sphere.
-  const seed = Math.abs(Math.round(x * 13 + z * 19));
+  const placements = (scene.userData.treePlacements ??= []) as { x: number; z: number; size: number }[];
+  placements.push({ x, z, size });
+}
+
+function createTreeForest(scene: THREE.Scene) {
+  const placements = (scene.userData.treePlacements ?? []) as { x: number; z: number; size: number }[];
+  if (!placements.length) return;
+  const dummy = new THREE.Object3D();
+
+  const trunkMaterial = mat("#6b4c35", 0.98);
+  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.19, 1, 10), trunkMaterial, placements.length);
+  placements.forEach((tree, index) => {
+    dummy.position.set(tree.x, 0.4 + tree.size * 0.5, tree.z);
+    dummy.scale.set(tree.size, tree.size, tree.size);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    trunk.setMatrixAt(index, dummy.matrix);
+  });
+  trunk.instanceMatrix.needsUpdate = true;
+  trunk.castShadow = false;
+  trunk.receiveShadow = true;
+  scene.add(trunk);
+
+  const branchGeometry = new THREE.CylinderGeometry(0.055, 0.075, 0.68, 7);
+  const branch = new THREE.InstancedMesh(branchGeometry, mat("#886547", 0.96), placements.length * 2);
+  let branchIndex = 0;
+  placements.forEach((tree) => {
+    for (const side of [-1, 1]) {
+      dummy.position.set(tree.x + side * 0.22 * tree.size, 0.4 + 0.84 * tree.size, tree.z);
+      dummy.scale.set(tree.size, tree.size, tree.size);
+      dummy.rotation.set(0, 0, side * -0.7);
+      dummy.updateMatrix();
+      branch.setMatrixAt(branchIndex++, dummy.matrix);
+    }
+  });
+  branch.instanceMatrix.needsUpdate = true;
+  branch.castShadow = false;
+  scene.add(branch);
+
+  const foliageMaterial = cachedMaterial("instanced-tree-foliage", () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.99 }));
+  const foliage = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), foliageMaterial, placements.length * 8);
+  const colorOptions = ["#477f56", "#588f60", "#39734e", "#69976a"].map((color) => new THREE.Color(color));
   const clusters: [number, number, number, number, number, number][] = [
     [-0.38, 1.24, 0.02, 0.52, 0.48, 0.47],
     [0.36, 1.28, -0.06, 0.54, 0.46, 0.52],
@@ -481,69 +504,78 @@ function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
     [0.0, 1.94, 0.02, 0.42, 0.42, 0.4],
     [0.02, 1.28, -0.32, 0.4, 0.45, 0.42],
   ];
-  clusters.forEach(([cx, cy, cz, sx, sy, sz], index) => {
-    const geometry = new THREE.IcosahedronGeometry((0.45 + ((seed + index * 7) % 9) * 0.012) * size, 1);
-    const crown = new THREE.Mesh(geometry, leafMaterials[(seed + index) % leafMaterials.length]);
-    crown.position.set(cx * size, cy * size, cz * size);
-    crown.scale.set(sx * 2.05, sy * 2.05, sz * 2.05);
-    crown.rotation.set(index * 0.23, index * 0.41, index * 0.17);
-    crown.castShadow = true;
-    group.add(crown);
+  let leafIndex = 0;
+  placements.forEach((tree, treeIndex) => {
+    clusters.forEach(([cx, cy, cz, sx, sy, sz], index) => {
+      dummy.position.set(tree.x + cx * tree.size, 0.4 + cy * tree.size, tree.z + cz * tree.size);
+      dummy.scale.set(sx * 0.9 * tree.size, sy * 0.9 * tree.size, sz * 0.9 * tree.size);
+      dummy.rotation.set(index * 0.23, index * 0.41 + treeIndex * 0.17, index * 0.17);
+      dummy.updateMatrix();
+      foliage.setMatrixAt(leafIndex, dummy.matrix);
+      foliage.setColorAt(leafIndex, colorOptions[(treeIndex + index) % colorOptions.length]);
+      leafIndex++;
+    });
   });
-  const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.48 * size, 0.54 * size, 0.07, 20), mat("#75684f", 1));
-  soil.position.y = 0.045;
-  group.add(soil);
-  group.position.set(x, 0.4, z);
-  scene.add(group);
+  foliage.instanceMatrix.needsUpdate = true;
+  if (foliage.instanceColor) foliage.instanceColor.needsUpdate = true;
+  foliage.castShadow = false;
+  foliage.receiveShadow = true;
+  scene.add(foliage);
+  placements.length = 0;
 }
-
 function makePalmTree(scene: THREE.Scene, x: number, z: number, size = 1) {
-  const palm = new THREE.Group();
-  const trunkMaterial = mat("#8a6748", 0.94);
-  const leafMaterials = [mat("#397956", 0.98), mat("#4b9065", 0.98), mat("#2f694b", 0.98)];
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * size, 0.17 * size, 2.2 * size, 12), trunkMaterial);
-  trunk.position.y = 1.1 * size;
-  trunk.rotation.z = -0.06;
-  trunk.castShadow = true;
-  palm.add(trunk);
-  for (let ring = 0; ring < 7; ring++) {
-    const band = new THREE.Mesh(new THREE.TorusGeometry(0.12 * size, 0.018 * size, 5, 14), mat("#b28a5b", 0.9));
-    band.position.y = (0.35 + ring * 0.25) * size;
-    band.rotation.x = Math.PI / 2;
-    palm.add(band);
-  }
-  for (let index = 0; index < 8; index++) {
-    const angle = (index / 8) * Math.PI * 2;
-    const direction = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
-    const points = [
-      new THREE.Vector3(0, 2.2 * size, 0),
-      new THREE.Vector3(direction.x * 0.48 * size, 2.65 * size, direction.z * 0.48 * size),
-      new THREE.Vector3(direction.x * 1.05 * size, 2.45 * size, direction.z * 1.05 * size),
-      new THREE.Vector3(direction.x * 1.48 * size, 1.95 * size, direction.z * 1.48 * size),
-    ];
-    const vein = new THREE.CatmullRomCurve3(points);
-    palm.add(new THREE.Mesh(new THREE.TubeGeometry(vein, 12, 0.025 * size, 6, false), mat("#a5b77b", 0.95)));
-    for (let leaf = 0; leaf < 9; leaf++) {
-      const t = (leaf + 1) / 10;
-      const center = vein.getPoint(t);
-      const taper = (1 - t) * 0.26 * size;
-      for (const side of [-1, 1]) {
-        const leaflet = new THREE.Mesh(
-          new THREE.ConeGeometry(Math.max(0.025 * size, taper * 0.24), Math.max(0.16 * size, taper * 1.8), 5),
-          leafMaterials[(index + leaf) % leafMaterials.length],
-        );
-        leaflet.position.set(center.x - side * taper * 0.45, center.y - 0.015 * size, center.z + side * taper * 0.45);
-        leaflet.rotation.z = side * -0.9;
-        leaflet.rotation.y = angle;
-        palm.add(leaflet);
-      }
-    }
-  }
-  palm.position.set(x, 0.4, z);
-  palm.scale.setScalar(size);
-  scene.add(palm);
+  const placements = (scene.userData.palmPlacements ??= []) as { x: number; z: number; size: number }[];
+  placements.push({ x, z, size });
 }
 
+function createPalmForest(scene: THREE.Scene) {
+  const placements = (scene.userData.palmPlacements ?? []) as { x: number; z: number; size: number }[];
+  if (!placements.length) return;
+  const dummy = new THREE.Object3D();
+  const trunks = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.1, 0.17, 2.2, 12),
+    mat("#8a6748", 0.94),
+    placements.length,
+  );
+  placements.forEach((tree, index) => {
+    dummy.position.set(tree.x, 1.5 * tree.size, tree.z);
+    dummy.scale.set(tree.size, tree.size, tree.size);
+    dummy.rotation.set(0, 0, -0.06);
+    dummy.updateMatrix();
+    trunks.setMatrixAt(index, dummy.matrix);
+  });
+  trunks.instanceMatrix.needsUpdate = true;
+  trunks.castShadow = false;
+  scene.add(trunks);
+
+  const frondMaterial = cachedMaterial("palm-frond", () => new THREE.MeshStandardMaterial({ color: "#4b8b60", roughness: 0.98, side: THREE.DoubleSide }));
+  const frondGeometry = new THREE.ConeGeometry(0.2, 1.7, 7, 2);
+  const fronds = new THREE.InstancedMesh(frondGeometry, frondMaterial, placements.length * 8);
+  let index = 0;
+  placements.forEach((tree, treeIndex) => {
+    for (let leaf = 0; leaf < 8; leaf++) {
+      const angle = (leaf / 8) * Math.PI * 2;
+      const direction = new THREE.Vector3(Math.cos(angle), -0.42, Math.sin(angle)).normalize();
+      dummy.position.set(
+        tree.x + direction.x * 0.72 * tree.size,
+        0.4 + (2.15 - 0.25) * tree.size,
+        tree.z + direction.z * 0.72 * tree.size,
+      );
+      dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+      dummy.rotateY(treeIndex * 0.17);
+      dummy.scale.set(tree.size * (0.9 + (leaf % 3) * 0.06), tree.size, tree.size * 0.7);
+      dummy.updateMatrix();
+      fronds.setMatrixAt(index, dummy.matrix);
+      fronds.setColorAt(index, new THREE.Color(["#397956", "#4b9065", "#2f694b", "#65966b"][(treeIndex + leaf) % 4]));
+      index++;
+    }
+  });
+  fronds.instanceMatrix.needsUpdate = true;
+  if (fronds.instanceColor) fronds.instanceColor.needsUpdate = true;
+  fronds.castShadow = false;
+  scene.add(fronds);
+  placements.length = 0;
+}
 function makeHedge(scene: THREE.Scene, x: number, z: number, width = 1.4, depth = 0.55) {
   const hedge = new THREE.Group();
   addBox(hedge, width + 0.18, 0.14, depth + 0.18, mat("#685540", 1), 0, 0.07, 0);
@@ -1757,6 +1789,8 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group) {
   for (const [x, z] of [[-13, 5], [-7, 5], [-13, 13], [-7, 13], [7, 5], [13, 5], [7, 13], [13, 13]] as [number, number][]) {
     makeTree(scene, x, z, 0.58);
   }
+  createTreeForest(scene);
+  createPalmForest(scene);
 
   // Monumental civic hall with a glass entry, colonnade, steps and a gold city crest.
   const hall = new THREE.Group();
