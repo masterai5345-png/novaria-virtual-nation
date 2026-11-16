@@ -11,7 +11,7 @@
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint",
     "db:migrate": "node scripts/db-migrate.mjs",
-    "worker": "node workers/agent-worker.mjs",
+    "worker": "node workers/code-agent-worker.mjs",
     "enqueue:daily-content": "node scripts/produce-daily-video.mjs",
     "video:produce": "node scripts/produce-daily-video.mjs",
     "video:test": "node scripts/test-code-video.mjs"
