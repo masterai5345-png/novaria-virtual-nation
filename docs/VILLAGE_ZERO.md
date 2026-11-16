@@ -1,29 +1,53 @@
-# NOVARIA Village Zero — safe prototype
+# NOVARIA Desa Nol — Mode B / Indonesia
 
-Branch: `feature/village-zero-instagram-commands`.
+Semua fitur baru berada di branch `feature/village-zero-instagram-commands`.
+Tidak ada perubahan pada `foundation/mvp`, Render production, layanan berbayar, maupun database utama.
 
-## Goal
-An **actually empty** town on Day 0, growing only after follower commands are accepted. The existing production home page and database remain unchanged.
+## Desain game
+- **Hari 0:** tanah kosong dengan pemandangan alam, tidak ada bangunan, rumah atau jalan yang sudah jadi.
+- **Pengunjung:** tanpa login, bebas memutar/zoom kamera dan melihat dunia.
+- **Warga:** masuk dengan Google (identitas yang juga dapat digunakan untuk YouTube). Identitas warga diverifikasi server, bukan nama yang diketik. Fitur klaim rumah hanya memakai database Desa Nol, bukan rumah lama NOVARIA.
+- **Pembangunan:** Mode B, 1 akun Instagram / 1 vote setiap hari WIB dari komentar pada post Instagram yang dipilih.
+- **Opsi:** RUMAH, JALAN, POHON, TAMAN, TOKO.
+- **Hasil:** satu jenis pembangunan per hari yang ada suara; tidak ada suara = tidak membangun. Seri: prioritas tetap sesuai urutan opsi.
+- **Kepemilikan rumah:** setelah voting memilih RUMAH dan hasil disahkan, objek rumah tersedia untuk satu warga aktif yang login (klaim satu rumah per orang). Dalam fitur ini tidak ada klaim otomatis karena follower count.
 
-## Implemented
-- `/village-zero`: isolated Three.js scene containing just bare terrain at Day 0. The browser can simulate comments and watch houses, roads, trees, shops and parks appear.
-- `src/lib/village-zero.ts`: allowlisted, no-cost, deterministic comment parser. Each source comment ID is accepted once. Buildings are placed on available tiles. No arbitrary text execution.
-- Browser-local demo persistence and reset. The demo is **not** Instagram integration, database persistence or live follower-driven building.
-- Village is empty by default (no buildings, initial citizens or infrastructure).
+## Kepatuhan YouTube
+Tidak menerapkan syarat subscribe untuk mendapatkan rumah, karena hadiah sebagai imbalan berlangganan melanggar Kebijakan Developer YouTube API, bagian Playback Integrity. Tombol subscribe sukarela boleh ditampilkan terpisah, tanpa menjadi kondisi game.
+Rujukan: https://developers.google.com/youtube/terms/developer-policies
+Untuk login Google biasa tidak diperlukan scope YouTube yang sensitif; jangan mengumpulkan kredensial YouTube.
 
-## Next milestones — not implemented
-1. Admin approval of visual style and rules.
-2. Server-side database migration for world epochs, commands, proposals and plots. Retain the existing populated city separately for archival/history; NEVER drop or reset existing tables.
-3. Verified Instagram Business/Creator account connection with official Meta Instagram API, correct permissions, valid webhook signature and configured comment subscriptions. API availability and App Review may limit use.
-4. Ingest comments only on a designated NOVARIA account and selected posts. Deduplicate by (account_id, media_id, comment_id), validate author/source, rate-limit votes, and moderate. Never blindly trust usernames or text.
-5. Two operating modes: (a) vote-based building command once per user per episode and (b) owner-approved direct commands. Keep a publicly visible ledger of accepted and rejected proposals.
-6. Transactional world updates, placement collision and zoning checks, idempotent rebuild event log, WebSocket/SSE updates, signed render snapshots, rollback, audit and moderation.
-7. Produce daily vertical videos from event snapshots with reusable 3D camera tracks; try local FFmpeg/Remotion or zero-cost scheduled rendering where allowed.
-8. Publish only through the officially approved platform API and authorized permissions, initially behind owner approval.
+## File implementasi
+- `src/app/village-zero/page.tsx`: demo interaktif 3D bahasa Indonesia dan pemilih simulasi, mode jalan-jalan bebas login, mode warga login.
+- `src/lib/village-voting.ts`: fungsi bebas biaya untuk parsing komentar, deduplikasi dan finalisasi voting (demo lokal).
+- `src/lib/village-zero.ts`: penempatan objek deterministik dan mencegah duplikasi.
+- `db/village-zero-schema.sql`: skema SQL baru yang **BELUM** diterapkan.
+- `src/app/api/integrations/village-vote/route.ts`: endpoint internal HMAC untuk menerima komentar terverifikasi dari connector Meta yang sah; dinonaktifkan jika environment belum diatur.
+- `scripts/settle-village-vote.mjs`: finalisasi suara harian dengan mode default dry-run/ROLLBACK. `--apply` hanya setelah izin pemilik.
+- `src/app/api/village-zero/claim/route.ts`: API klaim satu rumah untuk warga login, dengan transaksi, penguncian row dan pemeriksaan stok.
 
-## Cost and safety
-- Village commands don't require Claude or any LLM.
-- Running Ollama locally can remove inference API costs but still uses local hardware/electricity.
-- Render's existing web/worker/cron/DB are on paid plans. Prototype branch does NOT alter service plans, production or billing.
-- Avoid automatic redeploy of `foundation/mvp`, never modify paid resources without the owner's explicit authorization.
-- Never expose Meta access tokens or application secrets to browsers or logs.
+## Yang belum jadi
+- Integrasi akun Instagram Business/Creator melalui Meta Login/OAuth, izin API komentar, validasi langsung `X-Hub-Signature-256`, ID media yang diawasi, dan APP Review bila diperlukan.
+- Migrasi SQL ke database, inisialisasi epoch desa secara eksplisit, serta sinkronisasi tampilan 3D ke tabel `village_objects` di server. DEMO saat ini memakai localStorage browser, bukan world bersama.
+- Video render + editing otomatis, posting media sosial, pemungutan statistik follower, admin moderation dan approval.
+- End-to-end test, build/lint di CI, audit keamanan, optimasi performa browser mobile.
+
+## Keamanan & privasi
+- Jangan letakkan Meta/Google token di browser atau GitHub. Gunakan Render secret/env saat deployment yang disetujui.
+- Endpoint internal mengharuskan `VILLAGE_VOTE_INGEST_SECRET` (minimal 32 karakter), `VILLAGE_INSTAGRAM_ACCOUNT_ID`, dan `VILLAGE_INSTAGRAM_MEDIA_IDS` (CSV).
+- Payload connector: `{sourceAccountId,mediaId,commentId,authorId,text,receivedAt}`; header `x-novaria-timestamp` (Unix seconds) dan `x-novaria-signature` (HMAC SHA256 heksadesimal atas `timestamp.raw_body`).
+- API HMAC hanya membuktikan asal connector internal. Connector wajib memverifikasi payload Meta sebelum meneruskannya.
+- Simpan user_id Instagram internal seperlunya; jangan mempublikasikan identitas pemilih; sediakan kebijakan privasi dan mekanisme penghapusan data.
+- Jangan menyatakan vote lokal/demo sebagai suara asli.
+- OAuth dan kelayakan akun harus diperiksa secara terpisah; API/kuota dapat berubah.
+
+## Instalasi berikutnya, masih membutuhkan persetujuan
+1. Tinjau build dan tes feature branch di lingkungan lokal/pratinjau terisolasi.
+2. Jalankan migrasi Desa Nol hanya di database pengembangan, bukan production.
+3. Buat OAuth Meta dan konektor resmi dengan akun milik sendiri.
+4. Verifikasi data suara dan jalankan finalisasi dry-run, baru izinkan settlement server berkala.
+5. Hubungkan database snapshot ke tampilan Three.js. Kamera dan visual tetap responsif 9:16 serta layar biasa.
+6. Hubungkan sistem render video dan publikasi dengan approval.
+
+## Biaya
+Tidak memanggil API Claude untuk voting, membangun plot, atau validasi perintah. Three.js serta logika voting dapat berjalan tanpa biaya AI. Hosting Render yang sudah ada memakai paket berbayar dan tidak diubah di branch ini.
