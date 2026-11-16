@@ -95,9 +95,12 @@ export default function VillagePlayHUD(){
   return <div style={{position:"fixed",inset:0,pointerEvents:"none",fontFamily:"system-ui,sans-serif",zIndex:10}}>
     <style>{`@media(max-width:640px){.nv-chat-panel{bottom:${me.authenticated?"195":"79"}px!important}.nv-chat-panel section{height:min(360px,45dvh)!important}.nv-walk-controls{bottom:12px!important}}`}</style>
     <div style={{position:"absolute",top:86,left:12,pointerEvents:"auto",maxWidth:"calc(100vw - 24px)"}}>
-      <div style={{...cover,borderRadius:13,padding:"8px 12px",fontSize:12}}>
-        {me.authenticated?<><UserRound size={14} style={{display:"inline",verticalAlign:"middle",marginRight:7}}/>Warga: <b>{me.name}</b></>:
-          <>🚶 Mode Jalan-Jalan · Bebas lihat desa tanpa login</>}
+      <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:7}}>
+        <div style={{...cover,borderRadius:13,padding:"8px 12px",fontSize:12}}>
+          {me.authenticated?<><UserRound size={14} style={{display:"inline",verticalAlign:"middle",marginRight:7}}/>Warga: <b>{me.name}</b></>:
+            <>🚶 Mode Jalan-Jalan · Bebas lihat desa tanpa login</>}
+        </div>
+        {me.authenticated?<Link href="/citizen" style={{...smallButton,textDecoration:"none",padding:"8px 11px",fontSize:12}}>🪪 KTP Saya</Link>:null}
       </div>
     </div>
 
