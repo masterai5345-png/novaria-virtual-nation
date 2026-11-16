@@ -319,13 +319,13 @@ document.getElementById("count").textContent=A.length+" warga";
 
 
 // ---- Karakter pemain dengan kontrol pergerakan dan aksi ----
-var NOVARIA_PLAYER=null,NOVARIA_WALK={forward:false,backward:false,left:false,right:false},NOVARIA_WAVE_UNTIL=0,NOVARIA_SITTING=false;
+var NOVARIA_PLAYER=null,NOVARIA_PLAYER_BASE_SCALE=1,NOVARIA_WALK={forward:false,backward:false,left:false,right:false},NOVARIA_WAVE_UNTIL=0,NOVARIA_SITTING=false;
 var NOVARIA_ANIMALS={fox:"Rubah",cat:"Kucing",panda:"Panda",rabbit:"Kelinci",bear:"Beruang",penguin:"Penguin",koala:"Koala",frog:"Katak",dog:"Anjing",lion:"Singa"};
 function novariaSpawn(animal,name){
  if(NOVARIA_PLAYER){S.remove(NOVARIA_PLAYER);NOVARIA_PLAYER=null}
  var species=SP.find(function(sp){return sp.n===NOVARIA_ANIMALS[animal]})||SP[2];
  NOVARIA_PLAYER=build(species,rng(hash(String(animal)+String(name))));
- NOVARIA_PLAYER.position.set(0,.4,0);NOVARIA_PLAYER.rotation.y=0;S.add(NOVARIA_PLAYER);
+ NOVARIA_PLAYER.position.set(0,.4,0);NOVARIA_PLAYER.rotation.y=0;NOVARIA_PLAYER_BASE_SCALE=NOVARIA_PLAYER.scale.y;S.add(NOVARIA_PLAYER);
  auto=false;sel=null;tR=17;ph=1.05;tT.set(0,0,0);
  document.getElementById("count").textContent="Warga aktif: "+String(name).slice(0,24);
 }
@@ -338,6 +338,63 @@ window.addEventListener("message",function(event){
  if(p.action==="sit")NOVARIA_SITTING=!NOVARIA_SITTING;
  if(p.action==="move"&&Object.prototype.hasOwnProperty.call(NOVARIA_WALK,p.direction))NOVARIA_WALK[p.direction]=p.pressed===true;
 });
+
+var NOVARIA_GHOSTS={},NOVARIA_PRESENCE_ID=null;
+function novariaPushPresence(){
+ if(!NOVARIA_PLAYER)return;
+ var activity=NOVARIA_SITTING?"sit":performance.now()<NOVARIA_WAVE_UNTIL?"wave":Object.keys(NOVARIA_WALK).some(function(k){return NOVARIA_WALK[k]})?"walk":"idle";
+ fetch("/api/village-zero/presence",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({x:NOVARIA_PLAYER.position.x,z:NOVARIA_PLAYER.position.z,activity:activity})})
+ .then(function(r){return r.ok?r.json():null})
+ .then(function(v){if(v&&v.myPresenceId)NOVARIA_PRESENCE_ID=v.myPresenceId})
+ .catch(function(){});
+}
+function novariaRefreshPresence(){
+ fetch("/api/village-zero/presence",{cache:"no-store"})
+ .then(function(r){return r.ok?r.json():null})
+ .then(function(v){
+  if(!v||!Array.isArray(v.players))return;
+  var seen={};
+  v.players.slice(0,25).forEach(function(p){
+   if(!p||typeof p.id!=="string"||p.id===NOVARIA_PRESENCE_ID)return;
+   var x=Number(p.x),z=Number(p.z);
+   if(!Number.isFinite(x)||!Number.isFinite(z)||Math.abs(x)>48||Math.abs(z)>48)return;
+   seen[p.id]=true;
+   var ghost=NOVARIA_GHOSTS[p.id];
+   if(!ghost){
+    var species=SP.find(function(sp){return sp.n===NOVARIA_ANIMALS[p.animal]})||SP[2];
+    ghost=build(species,rng(hash(p.id)));
+    ghost.position.set(x,.4,z);S.add(ghost);
+    NOVARIA_GHOSTS[p.id]=ghost;
+   }
+   ghost.userData.targetX=x;ghost.userData.targetZ=z;
+   ghost.userData.activity=p.activity;
+  });
+  Object.keys(NOVARIA_GHOSTS).forEach(function(id){
+   if(!seen[id]){S.remove(NOVARIA_GHOSTS[id]);delete NOVARIA_GHOSTS[id]}
+  });
+ }).catch(function(){});
+}
+novariaRefreshPresence();
+setInterval(function(){novariaPushPresence();novariaRefreshPresence()},4500);
+function novariaTickGhosts(dt,t){
+ Object.keys(NOVARIA_GHOSTS).forEach(function(id){
+  var g=NOVARIA_GHOSTS[id],d=g.userData;
+  var dx=d.targetX-g.position.x,dz=d.targetZ-g.position.z;
+  var k=Math.min(1,dt*4);
+  g.position.x+=dx*k;g.position.z+=dz*k;
+  if(Math.abs(dx)+Math.abs(dz)>.05)g.rotation.y=Math.atan2(dx,dz);
+  var action=d.activity||"idle",swing=action==="walk"?Math.sin(t*9)*.5:0;
+  if(d.lg&&d.ar){
+   d.lg[0].rotation.x=swing;d.lg[1].rotation.x=-swing;
+   d.ar[0].rotation.x=-swing;d.ar[1].rotation.x=swing;
+   if(action==="wave")d.ar[1].rotation.x=-1.4+Math.sin(t*12)*.35;
+  }
+  g.position.y=action==="sit"?.17:.4;
+  g.scale.y=(d.originalScale||(d.originalScale=g.scale.x))*(action==="sit"?.73:1);
+ });
+}
+
 function novariaPlayerTick(dt,t){
  if(!NOVARIA_PLAYER)return;
  var v=NOVARIA_PLAYER.position;
@@ -351,7 +408,7 @@ function novariaPlayerTick(dt,t){
    NOVARIA_PLAYER.rotation.y=Math.atan2(dx,dz);
  }
  v.y=NOVARIA_SITTING?.17:.4+(walking?Math.abs(Math.sin(t*12))*.11:0);
- NOVARIA_PLAYER.scale.y=NOVARIA_SITTING?.73:1;
+ NOVARIA_PLAYER.scale.y=NOVARIA_PLAYER_BASE_SCALE*(NOVARIA_SITTING?.73:1);
  var ud=NOVARIA_PLAYER.userData;
  if(ud.lg&&ud.ar){
    var swing=walking?Math.sin(t*12)*.65:0;
@@ -443,6 +500,7 @@ else{p.y=.32;a.g.userData.lg[0].rotation.x=a.g.userData.lg[1].rotation.x=0;a.g.u
 a.g.rotation.y=turn(a.g.rotation.y,a.ang,.12)});
 traffic(dt,t);
 novariaPlayerTick(dt,t);
+novariaTickGhosts(dt,t);
 CL.forEach(function(c){c.position.x+=dt*1.5;if(c.position.x>95)c.position.x=-95});
 if(auto)th+=dt*.08;
 if(sel){tT.copy(sel.g.position);mark.position.set(sel.g.position.x,4.4+Math.sin(t*4)*.25,sel.g.position.z);if(tag)tag.position.set(sel.g.position.x,5.4,sel.g.position.z)}
