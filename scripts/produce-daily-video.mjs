@@ -6,11 +6,22 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {renderNovariaVideo} from "./novaria-video-engine.mjs";
+import {spawnSync} from "node:child_process";
 if(!process.env.DATABASE_URL)throw Error("DATABASE_URL is required.");
 const pool=new pg.Pool({connectionString:process.env.DATABASE_URL,max:1,application_name:"novaria-code-video"});
 const client=await pool.connect();
 let tmp=null;
 try{
+  // The cron runs 08:00 WIB. Settle ONLY yesterday's verified Instagram votes.
+  // No votes => no building. Replays are idempotent; no random construction.
+  const yesterday=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"})
+    .format(new Date(Date.now()-86_400_000));
+  const settled=spawnSync(process.execPath,["scripts/settle-village-vote.mjs",yesterday,"--apply","--skip-empty"],
+    {encoding:"utf8",timeout:60_000,maxBuffer:1_000_000});
+  if(settled.status!==0){
+    throw Error("Voting settlement failed: "+String(settled.stderr||settled.error||"unknown").slice(-350));
+  }
+  console.log("Voting settlement checked:",yesterday);
   const report=await client.query(`SELECT r.vote_day::text AS day,r.winning_option,r.winning_votes,r.total_votes
     FROM village_vote_results r JOIN village_epochs e ON e.id=r.epoch_id
     WHERE e.slug='desa-nol' ORDER BY r.vote_day DESC LIMIT 1`);
