@@ -93,6 +93,7 @@ export default function VillagePlayHUD(){
   }
 
   return <div style={{position:"fixed",inset:0,pointerEvents:"none",fontFamily:"system-ui,sans-serif",zIndex:10}}>
+    <style>{`@media(max-width:640px){.nv-chat-panel{bottom:${me.authenticated?"195":"79"}px!important}.nv-chat-panel section{height:min(360px,45dvh)!important}.nv-walk-controls{bottom:12px!important}}`}</style>
     <div style={{position:"absolute",top:86,left:12,pointerEvents:"auto",maxWidth:"calc(100vw - 24px)"}}>
       <div style={{...cover,borderRadius:13,padding:"8px 12px",fontSize:12}}>
         {me.authenticated?<><UserRound size={14} style={{display:"inline",verticalAlign:"middle",marginRight:7}}/>Warga: <b>{me.name}</b></>:
@@ -100,7 +101,7 @@ export default function VillagePlayHUD(){
       </div>
     </div>
 
-    <div style={{position:"absolute",left:12,bottom:20,pointerEvents:"auto",display:"flex",flexDirection:"column",gap:8,alignItems:"start"}}>
+    <div className="nv-walk-controls" style={{position:"absolute",left:12,bottom:20,pointerEvents:"auto",display:"flex",flexDirection:"column",gap:8,alignItems:"start"}}>
       {me.authenticated?<>
         <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
           <button onClick={()=>broadcast("wave")} style={smallButton}><Hand size={16}/> Melambaikan tangan</button>
@@ -122,7 +123,7 @@ export default function VillagePlayHUD(){
       </>:<Link href="/masuk" style={{...smallButton,textDecoration:"none"}}><LogIn size={17}/> Masuk untuk memainkan maskot</Link>}
     </div>
 
-    <div style={{position:"absolute",bottom:20,right:12,width:"min(360px,calc(100vw - 24px))",pointerEvents:"auto"}}>
+    <div className="nv-chat-panel" style={{position:"absolute",bottom:20,right:12,width:"min(360px,calc(100vw - 24px))",pointerEvents:"auto"}}>
       {chatOpen?<section style={{...cover,borderRadius:20,overflow:"hidden",display:"flex",flexDirection:"column",height:"min(455px,65dvh)"}}>
         <header style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",borderBottom:"1px solid #ffffff2b"}}>
           <div><b style={{fontSize:15}}>💬 Obrolan Desa</b><div style={{fontSize:11,color:"#ceddd2",marginTop:4}}>Terbuka dibaca semua pengunjung · Moderasi aktif</div></div>
