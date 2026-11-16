@@ -31,3 +31,13 @@
 ## Catatan
 - Halaman ini **belum live**, karena branch terpisah dan belum diuji build atau deploy.
 - Naskah AI yang gagal akibat saldo API tidak memblokir penghitungan voting berbasis kode.
+
+## Pembaruan tahap kedua
+- `DashboardRefresh.tsx`: tombol "Segarkan Data" dan pembaruan otomatis 60 detik saat tab aktif. Pembacaan saja.
+- `ApprovalInbox` tersedia langsung dalam dashboard untuk tinjauan rencana dan draft lama. Keputusan approval pada sistem saat ini hanya pencatatan review; bukan perintah publikasi.
+- `GET /api/village-zero/world`: API publik baca-saja untuk dunia bersama. Tanpa tabel/epoch mengembalikan status belum aktif dan objek kosong; jika DB bermasalah membalas 503, tidak mengarang data.
+- `docs/QA_DESA_NOL.md`: daftar pengujian dan hal-hal yang memblokir peluncuran.
+- Tidak ada build/test yang dijalankan oleh alat ini karena runtime pengembangan penuh belum tersedia. Wajib `npm ci && npx tsc --noEmit && npm run lint && npm run build` di komputer clone atau runner CI yang disetujui.
+
+## Perbedaan 'koneksi terkonfigurasi' dengan 'benar-benar aktif'
+Ada/tidaknya variabel lingkungan hanya berarti pengaturan tersedia. Jangan menganggap integrasi Instagram berhasil sebelum ada hasil valid dari API resmi dan data suara masuk secara benar.
