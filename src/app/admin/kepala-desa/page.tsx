@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/authz";
 import { query } from "@/lib/db";
 import s from "./dashboard.module.css";
+import DashboardRefresh from "@/components/admin/DashboardRefresh";
+import ApprovalInbox from "@/components/admin/ApprovalInbox";
 import type { QueryResultRow } from "pg";
 
 export const runtime = "nodejs";
@@ -109,6 +111,7 @@ export default async function DashboardKepalaDesa(){
     </aside></div>
     {!data.schemaReady?<div className={s.notice}><b>Belum ada database Desa Nol yang aktif.</b> Data di pratinjau masih demo lokal. Dashboard tidak akan menampilkan angka suara atau pembangunan rekaan sebelum konektor Instagram resmi terhubung.</div>:null}
     {data.databaseError?<div className={s.notice}>Sebagian data belum dapat dibaca. Periksa skema database dan log server sebelum menyimpulkan angka nol berarti belum ada kegiatan.</div>:null}
+    <div style={{marginBottom:18}}><DashboardRefresh /></div>
     <section className={s.metrics}>
       {[
         ["Suara Instagram hari ini",data.schemaReady?todayCount:"—",data.schemaReady?"Suara sah hari ini":"Belum tersedia"],
@@ -164,6 +167,7 @@ export default async function DashboardKepalaDesa(){
         <p className={s.muted}>Belum tersedia data follower asli sampai API masing-masing platform terhubung.</p>
       </section>
     </div>
+    <section className={s.card}><div className={s.head}><div><h2>✅ Persetujuan Penting Kepala Desa</h2><p>Tinjau naskah, rencana AI dan balasan komentar sebelum ada tindakan publik. Persetujuan saat ini hanya mencatat keputusan, belum mempublikasikan konten.</p></div><span className={s.pill}>{data.approvals} menunggu</span></div><ApprovalInbox /></section>
     <footer className={s.footer}>NOVARIA · Khusus pemilik · Dashboard pembacaan data saja · Tidak ada tombol untuk posting, mengubah biaya, atau mereset dunia.</footer>
   </div></main>;
 }
