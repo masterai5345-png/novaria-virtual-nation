@@ -452,6 +452,7 @@ tgt.lerp(tT,.08);rad+=(tR-rad)*.08;
 CAM.position.set(tgt.x+rad*Math.sin(ph)*Math.sin(th),tgt.y+rad*Math.cos(ph),tgt.z+rad*Math.sin(ph)*Math.cos(th));CAM.lookAt(tgt.x,tgt.y+((sel||NOVARIA_PLAYER)?1.2:0),tgt.z);
 R.render(S,CAM)}
 loop();
+window.parent.postMessage({type:"NOVARIA_WORLD_READY"},location.origin);
 </script>
 </body>
 </html>
