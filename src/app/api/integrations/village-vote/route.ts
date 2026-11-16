@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   const client=await db.connect();
   try{
     await client.query("BEGIN");
-    const epoch=await client.query("SELECT id FROM village_epochs WHERE slug='desa-nol' AND status='berjalan' LIMIT 1");
+    const epoch=await client.query("SELECT id FROM village_epochs WHERE slug='desa-nol' AND status='berjalan' LIMIT 1 FOR SHARE");
     if(!epoch.rowCount){await client.query("ROLLBACK");return NextResponse.json({error:"Voting desa belum dibuka."},{status:409});}
     const epochId=epoch.rows[0].id;
     if(await client.query("SELECT 1 FROM village_vote_results WHERE epoch_id=$1 AND vote_day=$2 LIMIT 1",[epochId,day]).then(r=>r.rowCount)){
