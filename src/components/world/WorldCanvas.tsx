@@ -1039,159 +1039,241 @@ function createPaverMaterial() {
   });
 }
 
+function roundedPrismGeometry(width: number, depth: number, height: number, radius: number) {
+  const key = "rounded-prism:" + [width, depth, height, radius].map((value) => value.toFixed(2)).join(":");
+  return cachedGeometry(key, () => {
+    const r = Math.min(radius, width * 0.22, depth * 0.22);
+    const halfW = width / 2;
+    const halfD = depth / 2;
+    const shape = new THREE.Shape();
+    shape.moveTo(-halfW + r, -halfD);
+    shape.lineTo(halfW - r, -halfD);
+    shape.quadraticCurveTo(halfW, -halfD, halfW, -halfD + r);
+    shape.lineTo(halfW, halfD - r);
+    shape.quadraticCurveTo(halfW, halfD, halfW - r, halfD);
+    shape.lineTo(-halfW + r, halfD);
+    shape.quadraticCurveTo(-halfW, halfD, -halfW, halfD - r);
+    shape.lineTo(-halfW, -halfD + r);
+    shape.quadraticCurveTo(-halfW, -halfD, -halfW + r, -halfD);
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: height,
+      steps: 1,
+      bevelEnabled: true,
+      bevelSegments: 3,
+      bevelSize: Math.min(0.075, r * 0.18),
+      bevelThickness: 0.07,
+      curveSegments: 8,
+    });
+    geometry.rotateX(-Math.PI / 2);
+    geometry.computeVertexNormals();
+    return geometry;
+  });
+}
+
 function makeTower(scene: THREE.Scene, x: number, z: number, width: number, depth: number, floors: number, hue: string, rounded = false) {
   const group = new THREE.Group();
   const floorHeight = 0.72;
   const height = floors * floorHeight;
   const seed = Math.round(Math.abs(x * 7 + z * 11)) % 19;
-  const frame = mat("#384c55", 0.58, 0.2);
-  const darkFrame = mat("#293d47", 0.52, 0.24);
-  const glass = cachedMaterial("reference-tower-glass", () => new THREE.MeshPhysicalMaterial({
-    color: "#789aaa",
-    roughness: 0.16,
-    metalness: 0.34,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    envMapIntensity: 1.15,
-    ior: 1.48,
-    specularIntensity: 0.9,
+  const style = seed % 4;
+  const baseY = 1.35;
+  const darkFrame = mat("#2d4149", 0.42, 0.38);
+  const bronze = cachedMaterial("architectural-warm-bronze", () => new THREE.MeshPhysicalMaterial({
+    color: "#c5a16b", roughness: 0.28, metalness: 0.72, clearcoat: 0.4,
   }));
-  const bronze = mat("#c7a06a", 0.42, 0.32);
-  const concrete = createStuccoMaterial("#d9c49e", seed + 2);
-  const paleTrim = mat("#eee0c5", 0.66, 0.04);
-  const podium = mat("#627276", 0.72, 0.1);
-  const darkPodium = mat("#3d5056", 0.7, 0.12);
-  const roofTop = 1.35 + height;
+  const paleStone = createStuccoMaterial("#d8c9ad", seed + 4);
+  const podium = createStuccoMaterial("#66787a", seed + 8);
+  const glass = cachedMaterial("architectural-film-glass", () => new THREE.MeshPhysicalMaterial({
+    color: "#85aebe",
+    roughness: 0.14,
+    metalness: 0.28,
+    clearcoat: 1,
+    clearcoatRoughness: 0.06,
+    envMapIntensity: 1.22,
+    ior: 1.48,
+    specularIntensity: 0.95,
+  }));
+  const shadedGlass = cachedMaterial("architectural-film-glass-shaded", () => new THREE.MeshPhysicalMaterial({
+    color: "#385967",
+    roughness: 0.18,
+    metalness: 0.32,
+    clearcoat: 0.9,
+    clearcoatRoughness: 0.08,
+    envMapIntensity: 1.08,
+  }));
 
-  addBox(group, width + 1.25, 0.62, depth + 1.25, darkPodium, 0, 0.31, 0);
-  addBox(group, width + 0.62, 0.55, depth + 0.62, podium, 0, 0.88, 0);
-  addBox(group, width + 0.34, 0.13, depth + 0.34, bronze, 0, 1.22, 0, false);
+  // Wide, layered podiums and a rounded plinth remove the hard "box on a box" look.
+  const lowerPodium = new THREE.Mesh(roundedPrismGeometry(width + 1.1, depth + 1.1, 0.52, 0.28), podium);
+  lowerPodium.position.y = 0.14;
+  lowerPodium.castShadow = true;
+  lowerPodium.receiveShadow = true;
+  group.add(lowerPodium);
+  const upperPodium = new THREE.Mesh(roundedPrismGeometry(width + 0.52, depth + 0.52, 0.46, 0.22), paleStone);
+  upperPodium.position.y = 0.62;
+  upperPodium.castShadow = true;
+  upperPodium.receiveShadow = true;
+  group.add(upperPodium);
+  addBox(group, width + 0.34, 0.12, depth + 0.34, bronze, 0, 1.14, 0, false);
 
   if (rounded) {
-    const radius = Math.max(width, depth) * 0.56;
+    // Cylindrical signature towers use curved glass, slim vertical fins and champagne floor rings.
+    const radius = Math.max(width, depth) * 0.51;
     const body = new THREE.Mesh(
-      cachedGeometry("reference-round-tower-" + radius.toFixed(2) + "-" + height.toFixed(2), () => new THREE.CylinderGeometry(radius, radius * 1.02, height, 40, 1)),
-      concrete,
+      cachedGeometry("sculpted-round-tower:" + radius.toFixed(2) + ":" + height.toFixed(2), () => new THREE.CylinderGeometry(radius, radius * 1.02, height, 56, 1, false)),
+      style % 2 === 0 ? shadedGlass : glass,
     );
-    body.position.y = 1.35 + height / 2;
+    body.position.y = baseY + height / 2;
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
 
-    const ringGeometry = cachedGeometry("reference-round-ring-" + radius.toFixed(2), () => new THREE.TorusGeometry(radius + 0.018, 0.075, 7, 44));
-    const rings = new THREE.InstancedMesh(ringGeometry, bronze, floors + 1);
+    const ringGeometry = cachedGeometry("tower-champagne-ring:" + radius.toFixed(2), () => new THREE.TorusGeometry(radius + 0.015, 0.065, 9, 56));
+    const ringCount = Math.ceil(floors / 2) + 1;
+    const rings = new THREE.InstancedMesh(ringGeometry, bronze, ringCount);
     const dummy = new THREE.Object3D();
-    for (let floor = 0; floor <= floors; floor++) {
-      dummy.position.set(0, 1.38 + floor * floorHeight, 0);
+    for (let index = 0; index < ringCount; index++) {
+      dummy.position.set(0, baseY + Math.min(floors, index * 2) * floorHeight, 0);
       dummy.rotation.set(Math.PI / 2, 0, 0);
       dummy.updateMatrix();
-      rings.setMatrixAt(floor, dummy.matrix);
+      rings.setMatrixAt(index, dummy.matrix);
     }
     rings.instanceMatrix.needsUpdate = true;
     group.add(rings);
 
-    const reveals = new THREE.InstancedMesh(unitBoxGeometry(), paleTrim, 10);
-    for (let panel = 0; panel < 10; panel++) {
-      const angle = (panel / 10) * Math.PI * 2;
-      dummy.position.set(Math.sin(angle) * (radius + 0.018), 1.35 + height / 2, Math.cos(angle) * (radius + 0.018));
-      dummy.rotation.set(0, angle, 0);
-      dummy.scale.set(0.045, height, 0.04);
-      dummy.updateMatrix();
-      reveals.setMatrixAt(panel, dummy.matrix);
-    }
-    reveals.instanceMatrix.needsUpdate = true;
-    group.add(reveals);
-
-    const glassPanels: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
+    const windows: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
+    const fins: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
+    const panels = 18;
     for (let floor = 0; floor < floors; floor++) {
-      for (let panel = 0; panel < 10; panel++) {
-        const angle = (panel / 10) * Math.PI * 2;
-        glassPanels.push({
-          position: [Math.sin(angle) * (radius + 0.024), 1.38 + floor * floorHeight + floorHeight * 0.52, Math.cos(angle) * (radius + 0.024)],
-          scale: [0.29, floorHeight * 0.38, 0.035],
+      const y = baseY + floor * floorHeight + floorHeight * 0.53;
+      for (let panel = 0; panel < panels; panel++) {
+        const angle = (panel / panels) * Math.PI * 2;
+        const panelWidth = (Math.PI * 2 * radius / panels) * 0.68;
+        windows.push({
+          position: [Math.sin(angle) * (radius + 0.028), y, Math.cos(angle) * (radius + 0.028)],
+          scale: [panelWidth, floorHeight * 0.58, 0.045],
           rotation: [0, angle, 0],
         });
       }
     }
-    addInstancedBoxes(group, glass, glassPanels);
-    addBox(group, width * 0.52, 0.18, depth * 0.52, paleTrim, 0, roofTop + 0.1, 0);
-    addBox(group, width * 0.38, 0.46, depth * 0.4, concrete, 0, roofTop + 0.4, 0);
+    for (let fin = 0; fin < panels; fin++) {
+      const angle = (fin / panels) * Math.PI * 2;
+      fins.push({
+        position: [Math.sin(angle) * (radius + 0.04), baseY + height / 2, Math.cos(angle) * (radius + 0.04)],
+        scale: [0.045, height, 0.055],
+        rotation: [0, angle, 0],
+      });
+    }
+    addInstancedBoxes(group, glass, windows);
+    addInstancedBoxes(group, bronze, fins);
+
+    // A curved upper crown and a small planted terrace complete the cylindrical silhouette.
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.96, radius * 1.04, 0.22, 48), bronze);
+    crown.position.y = baseY + height + 0.1;
+    group.add(crown);
+    const roofGarden = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.76, radius * 0.78, 0.16, 40), paleStone);
+    roofGarden.position.y = baseY + height + 0.28;
+    group.add(roofGarden);
+    for (let plant = 0; plant < 8; plant++) {
+      const angle = (plant / 8) * Math.PI * 2;
+      addSphere(group, 0.18, mat(plant % 2 ? "#6f9d69" : "#83ad75", 0.96), Math.sin(angle) * radius * 0.64, baseY + height + 0.46, Math.cos(angle) * radius * 0.64, 1, 0.72, 1);
+    }
   } else {
-    const stepped = seed % 4 === 0 && floors >= 11;
-    const baseY = 1.35;
-    const lowerHeight = stepped ? height * 0.72 : height;
+    // Rounded rectangular towers have soft corners and more distinctive architectural profiles.
+    const stepped = style === 0 && floors >= 11;
+    const lowerFloors = stepped ? Math.ceil(floors * 0.72) : floors;
+    const lowerHeight = lowerFloors * floorHeight;
     const upperHeight = height - lowerHeight;
-    const upperWidth = width * 0.76;
-    const upperDepth = depth * 0.78;
-    const core = new THREE.Mesh(
-      new THREE.BoxGeometry(width, lowerHeight, depth),
-      createFacadeMaterial(hue, seed, false),
-    );
-    core.position.set(0, baseY + lowerHeight / 2, 0);
+    const upperWidth = width * 0.78;
+    const upperDepth = depth * 0.8;
+    const bodyMaterial = style === 2 ? createFacadeMaterial(hue, seed + 5, false) : createFacadeMaterial(hue, seed, false);
+    const core = new THREE.Mesh(roundedPrismGeometry(width, depth, lowerHeight, Math.min(width, depth) * 0.12), bodyMaterial);
+    core.position.y = baseY;
     core.castShadow = true;
     core.receiveShadow = true;
     group.add(core);
 
-    if (stepped) {
-      const top = new THREE.Mesh(
-        new THREE.BoxGeometry(upperWidth, upperHeight, upperDepth),
-        createFacadeMaterial(hue, seed + 3, false),
-      );
-      top.position.set(width * 0.08, baseY + lowerHeight + upperHeight / 2, -depth * 0.04);
-      top.castShadow = true;
-      top.receiveShadow = true;
-      group.add(top);
+    if (stepped && upperHeight > 0.1) {
+      const crownBody = new THREE.Mesh(roundedPrismGeometry(upperWidth, upperDepth, upperHeight, 0.3), createFacadeMaterial(hue, seed + 9, false));
+      crownBody.position.set(width * 0.075, baseY + lowerHeight, -depth * 0.035);
+      crownBody.castShadow = true;
+      crownBody.receiveShadow = true;
+      group.add(crownBody);
     }
 
     const windowPanels: { position: [number, number, number]; scale: [number, number, number]; rotation?: [number, number, number] }[] = [];
-    const horizontalBands: { position: [number, number, number]; scale: [number, number, number] }[] = [];
-    const verticalFrames: { position: [number, number, number]; scale: [number, number, number]; rotation?: [number, number, number] }[] = [];
-    const columns = Math.max(4, Math.min(7, Math.floor(width / 0.58)));
+    const floorBands: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+    const mullions: { position: [number, number, number]; scale: [number, number, number]; rotation?: [number, number, number] }[] = [];
+    const balconies: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+    const columns = Math.max(4, Math.min(8, Math.floor(width / 0.52)));
+
     for (let floor = 0; floor < floors; floor++) {
-      const y = baseY + floor * floorHeight + floorHeight * 0.53;
-      const topFloor = stepped && floor >= Math.floor(floors * 0.72);
-      const activeWidth = topFloor ? upperWidth : width;
-      const activeDepth = topFloor ? upperDepth : depth;
-      const offsetX = topFloor ? width * 0.08 : 0;
-      const offsetZ = topFloor ? -depth * 0.04 : 0;
+      const upper = stepped && floor >= lowerFloors;
+      const activeWidth = upper ? upperWidth : width;
+      const activeDepth = upper ? upperDepth : depth;
+      const offsetX = upper ? width * 0.075 : 0;
+      const offsetZ = upper ? -depth * 0.035 : 0;
+      const y = baseY + floor * floorHeight + floorHeight * 0.54;
       const frontZ = offsetZ + activeDepth / 2 + 0.035;
+      const backZ = offsetZ - activeDepth / 2 - 0.035;
       const sideX = offsetX + activeWidth / 2 + 0.035;
       const paneWidth = activeWidth / columns;
       for (let column = 0; column < columns; column++) {
         const px = offsetX - activeWidth / 2 + paneWidth * (column + 0.5);
-        windowPanels.push({ position: [px, y, frontZ], scale: [paneWidth * 0.72, floorHeight * 0.64, 0.045] });
-        windowPanels.push({ position: [px, y, -frontZ], scale: [paneWidth * 0.72, floorHeight * 0.64, 0.045] });
+        const windowMaterial = (column + floor + seed) % 5 === 0 ? shadedGlass : glass;
+        windowPanels.push({ position: [px, y, frontZ], scale: [paneWidth * 0.72, floorHeight * 0.62, 0.048] });
+        windowPanels.push({ position: [px, y, backZ], scale: [paneWidth * 0.72, floorHeight * 0.62, 0.048] });
         const pz = offsetZ - activeDepth / 2 + activeDepth * (column + 0.5) / columns;
-        windowPanels.push({ position: [sideX, y, pz], scale: [paneWidth * 0.72, floorHeight * 0.64, 0.045], rotation: [0, Math.PI / 2, 0] });
-        windowPanels.push({ position: [-sideX + offsetX * 2, y, pz], scale: [paneWidth * 0.72, floorHeight * 0.64, 0.045], rotation: [0, Math.PI / 2, 0] });
+        windowPanels.push({ position: [sideX, y, pz], scale: [paneWidth * 0.7, floorHeight * 0.62, 0.048], rotation: [0, Math.PI / 2, 0] });
+        windowPanels.push({ position: [-sideX + offsetX * 2, y, pz], scale: [paneWidth * 0.7, floorHeight * 0.62, 0.048], rotation: [0, Math.PI / 2, 0] });
       }
       const bandY = baseY + (floor + 1) * floorHeight;
-      horizontalBands.push({ position: [0, bandY, frontZ - 0.015], scale: [activeWidth + 0.1, 0.055, 0.09] });
-      horizontalBands.push({ position: [0, bandY, -frontZ + 0.015], scale: [activeWidth + 0.1, 0.055, 0.09] });
-      horizontalBands.push({ position: [sideX - 0.02, bandY, offsetZ], scale: [0.09, 0.055, activeDepth + 0.1] });
-      horizontalBands.push({ position: [-sideX + offsetX * 2 + 0.02, bandY, offsetZ], scale: [0.09, 0.055, activeDepth + 0.1] });
+      floorBands.push({ position: [0, bandY, frontZ - 0.018], scale: [activeWidth + 0.09, 0.06, 0.1] });
+      floorBands.push({ position: [0, bandY, backZ + 0.018], scale: [activeWidth + 0.09, 0.06, 0.1] });
+      floorBands.push({ position: [sideX - 0.02, bandY, offsetZ], scale: [0.1, 0.06, activeDepth + 0.08] });
+      floorBands.push({ position: [-sideX + offsetX * 2 + 0.02, bandY, offsetZ], scale: [0.1, 0.06, activeDepth + 0.08] });
+
+      if ((style === 1 || style === 3) && floor > 1 && floor < floors - 1 && floor % 4 === 1) {
+        balconies.push({ position: [0, baseY + floor * floorHeight + 0.1, frontZ + 0.18], scale: [activeWidth * 0.82, 0.085, 0.48] });
+        balconies.push({ position: [0, baseY + floor * floorHeight + 0.29, frontZ + 0.4], scale: [activeWidth * 0.82, 0.32, 0.035] });
+      }
     }
+
     for (let column = 0; column <= columns; column++) {
       const px = -width / 2 + (column / columns) * width;
-      verticalFrames.push({ position: [px, baseY + height / 2, depth / 2 + 0.06], scale: [0.055, height, 0.09] });
-      verticalFrames.push({ position: [px, baseY + height / 2, -depth / 2 - 0.06], scale: [0.055, height, 0.09] });
+      mullions.push({ position: [px, baseY + lowerHeight / 2, depth / 2 + 0.065], scale: [0.045, lowerHeight, 0.07] });
+      mullions.push({ position: [px, baseY + lowerHeight / 2, -depth / 2 - 0.065], scale: [0.045, lowerHeight, 0.07] });
       const pz = -depth / 2 + (column / columns) * depth;
-      verticalFrames.push({ position: [width / 2 + 0.06, baseY + height / 2, pz], scale: [0.09, height, 0.055] });
-      verticalFrames.push({ position: [-width / 2 - 0.06, baseY + height / 2, pz], scale: [0.09, height, 0.055] });
+      mullions.push({ position: [width / 2 + 0.065, baseY + lowerHeight / 2, pz], scale: [0.07, lowerHeight, 0.045], rotation: [0, Math.PI / 2, 0] });
+      mullions.push({ position: [-width / 2 - 0.065, baseY + lowerHeight / 2, pz], scale: [0.07, lowerHeight, 0.045], rotation: [0, Math.PI / 2, 0] });
     }
     addInstancedBoxes(group, glass, windowPanels);
-    addInstancedBoxes(group, bronze, horizontalBands);
-    addInstancedBoxes(group, darkFrame, verticalFrames);
+    addInstancedBoxes(group, bronze, floorBands);
+    addInstancedBoxes(group, darkFrame, mullions);
+    if (balconies.length) addInstancedBoxes(group, style === 1 ? bronze : mat("#536b68", 0.58, 0.2), balconies);
 
-    addBox(group, width + 0.36, 0.2, depth + 0.36, paleTrim, 0, roofTop + 0.08, 0);
-    addBox(group, width * 0.38, 0.54, depth * 0.42, darkFrame, width * 0.08, roofTop + 0.43, -depth * 0.08);
-    addBox(group, width * 0.18, 0.24, depth * 0.2, bronze, -width * 0.22, roofTop + 0.37, depth * 0.13);
-    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.04, 0.8, 8), bronze);
-    antenna.position.set(width * 0.12, roofTop + 0.92, 0);
+    // Soft corner pilasters, a sculpted cornice and a rooftop garden break up the flat grid.
+    const cornerRadius = 0.09;
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const pillar = new THREE.Mesh(
+          new THREE.CylinderGeometry(cornerRadius, cornerRadius * 1.12, lowerHeight, 12),
+          style === 2 ? bronze : darkFrame,
+        );
+        pillar.position.set(sx * (width / 2 - cornerRadius * 0.5), baseY + lowerHeight / 2, sz * (depth / 2 - cornerRadius * 0.5));
+        group.add(pillar);
+      }
+    }
+    const crownY = baseY + height;
+    addBox(group, width + 0.32, 0.2, depth + 0.32, bronze, 0, crownY + 0.08, 0);
+    addBox(group, width * 0.5, 0.34, depth * 0.48, style === 2 ? paleStone : darkFrame, width * 0.08, crownY + 0.34, -depth * 0.08);
+    addBox(group, width * 0.22, 0.08, depth * 0.22, mat("#72917c", 0.95), -width * 0.22, crownY + 0.25, depth * 0.18, false);
+    for (const plantX of [-width * 0.27, width * 0.27]) {
+      addSphere(group, 0.15, mat("#719d72", 0.98), plantX, crownY + 0.4, depth * 0.19, 1, 0.76, 1);
+    }
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.035, 0.78, 10), bronze);
+    antenna.position.set(width * 0.13, crownY + 0.85, 0);
     group.add(antenna);
-    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), bronze);
-    beacon.position.set(width * 0.12, roofTop + 1.35, 0);
-    group.add(beacon);
+    addSphere(group, 0.07, mat("#e4b969", 0.34, 0.36), width * 0.13, crownY + 1.26, 0, 1, 1, 1);
   }
 
   group.position.set(x, 0.35, z);
@@ -1242,93 +1324,144 @@ function createStuccoMaterial(color: string, seed: number) {
 
 function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number, detail: "full" | "simple" = "full") {
   const group = new THREE.Group();
-  const walls = ["#f4eee2", "#e5efec", "#efe3d2", "#e4eceb"];
-  const roofs = ["#f3a982", "#acd2d4", "#d9c49e", "#e8b8a0"];
-  const wall = createStuccoMaterial(walls[variant % walls.length], variant + 5);
-  const roof = cachedMaterial("reference-home-roof:" + variant % 4, () => new THREE.MeshPhysicalMaterial({
-    color: roofs[variant % roofs.length],
-    roughness: 0.68,
-    metalness: 0.02,
-    clearcoat: 0.12,
-    clearcoatRoughness: 0.7,
+  const wallColors = ["#f3e9d9", "#e4efea", "#eadac4", "#eee7dc"];
+  const roofColors = ["#a95f48", "#4f7777", "#796b5a", "#bc8055"];
+  const wall = createStuccoMaterial(wallColors[variant % wallColors.length], variant + 17);
+  const roof = cachedMaterial("neighbourhood-roof:" + variant % 4, () => new THREE.MeshPhysicalMaterial({
+    color: roofColors[variant % roofColors.length],
+    roughness: 0.72,
+    metalness: 0.015,
+    clearcoat: 0.18,
+    clearcoatRoughness: 0.62,
   }));
-  const darkTrim = mat("#465d5a", 0.62, 0.12);
-  const glass = cachedMaterial("reference-home-glass", () => new THREE.MeshPhysicalMaterial({
-    color: "#91bbc2",
-    roughness: 0.16,
-    metalness: 0.18,
+  const darkTrim = mat("#405657", 0.5, 0.18);
+  const warmWood = mat("#8a6145", 0.78, 0);
+  const stone = mat("#c8c4b6", 0.84, 0);
+  const brass = mat("#bd925a", 0.32, 0.62);
+  const glass = cachedMaterial("neighbourhood-window-glass", () => new THREE.MeshPhysicalMaterial({
+    color: "#8bb9c4",
+    roughness: 0.14,
+    metalness: 0.2,
     clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    envMapIntensity: 1.0,
+    clearcoatRoughness: 0.075,
+    envMapIntensity: 1.08,
   }));
-  const wood = mat("#8a6349", 0.74, 0);
-  const brass = mat("#c69c61", 0.32, 0.62);
-  const width = 2.45 + (variant % 2) * 0.25;
-  const depth = 1.95;
-  const height = detail === "full" && variant === 2 ? 1.8 : 1.35;
+  const width = 2.55 + (variant % 2) * 0.22;
+  const depth = 2.05;
+  const twoStorey = variant === 2;
+  const height = twoStorey ? 1.82 : 1.38;
   const floorTop = 0.18 + height;
+  const gabledRoof = variant !== 1;
+  const roofRise = gabledRoof ? 0.62 : 0.22;
 
-  addBox(group, width + 0.42, 0.18, depth + 0.42, mat("#7f8983", 0.88), 0, 0.09, 0);
-  addBox(group, width + 0.12, 0.09, depth + 0.12, brass, 0, 0.2, 0, false);
+  // Stone footing, damp-proof course and softly textured walls.
+  const footing = new THREE.Mesh(roundedPrismGeometry(width + 0.42, depth + 0.42, 0.2, 0.18), stone);
+  footing.position.y = 0.04;
+  footing.castShadow = true;
+  group.add(footing);
+  const plinth = new THREE.Mesh(roundedPrismGeometry(width + 0.16, depth + 0.16, 0.16, 0.12), darkTrim);
+  plinth.position.y = 0.18;
+  group.add(plinth);
   addBox(group, width, height, depth, wall, 0, 0.18 + height / 2, 0, true);
 
-  // Flat pastel roof with fascia, parapet and a slightly inset service section.
-  addBox(group, width + 0.36, 0.19, depth + 0.36, roof, 0, floorTop + 0.08, 0, true);
-  addBox(group, width + 0.16, 0.055, depth + 0.16, darkTrim, 0, floorTop + 0.2, 0, false);
-  addBox(group, width * 0.42, 0.17, depth * 0.34, darkTrim, 0.2, floorTop + 0.31, -0.18, false);
-  addBox(group, width * 0.34, 0.08, depth * 0.25, mat("#78979a", 0.28, 0.32), 0.2, floorTop + 0.43, -0.18, false);
-  for (const side of [-1, 1]) {
-    addBox(group, 0.055, 0.13, depth + 0.16, darkTrim, side * (width / 2 + 0.035), floorTop + 0.19, 0, false);
-    addBox(group, width + 0.16, 0.13, 0.055, darkTrim, 0, floorTop + 0.19, side * (depth / 2 + 0.035), false);
+  // A gable front gives the small homes a real roofline; modern homes use a deep floating parapet.
+  if (gabledRoof) {
+    const gableShape = new THREE.Shape();
+    gableShape.moveTo(-width / 2, 0);
+    gableShape.lineTo(width / 2, 0);
+    gableShape.lineTo(0, roofRise);
+    gableShape.closePath();
+    const gableGeometry = cachedGeometry("home-gable:" + variant + ":" + width.toFixed(2), () => new THREE.ShapeGeometry(gableShape));
+    const frontGable = new THREE.Mesh(gableGeometry, wall);
+    frontGable.position.set(0, floorTop - 0.03, depth / 2 + 0.025);
+    frontGable.castShadow = true;
+    group.add(frontGable);
+    const backGable = frontGable.clone();
+    backGable.position.z = -depth / 2 - 0.025;
+    backGable.rotation.y = Math.PI;
+    group.add(backGable);
+
+    const panelDepth = depth * 0.72;
+    const frontRoof = addBox(group, width + 0.36, 0.15, panelDepth, roof, 0, floorTop + roofRise * 0.58, depth * 0.22, true);
+    frontRoof.rotation.x = 0.48;
+    const backRoof = addBox(group, width + 0.36, 0.15, panelDepth, roof, 0, floorTop + roofRise * 0.58, -depth * 0.22, true);
+    backRoof.rotation.x = -0.48;
+    const ridge = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, width + 0.42, 12), darkTrim);
+    ridge.rotation.z = Math.PI / 2;
+    ridge.position.set(0, floorTop + roofRise + 0.03, 0);
+    group.add(ridge);
+    if (detail === "full") {
+      for (let tileLine = 0; tileLine < 3; tileLine++) {
+        const zFront = depth * 0.08 + tileLine * 0.22;
+        const frontTile = addBox(group, width + 0.22, 0.025, 0.028, brass, 0, floorTop + roofRise * 0.9 - tileLine * 0.16, zFront, false);
+        frontTile.rotation.x = 0.48;
+        const backTile = addBox(group, width + 0.22, 0.025, 0.028, brass, 0, floorTop + roofRise * 0.9 - tileLine * 0.16, -zFront, false);
+        backTile.rotation.x = -0.48;
+      }
+    }
+  } else {
+    addBox(group, width + 0.42, 0.2, depth + 0.42, roof, 0, floorTop + 0.12, 0, true);
+    addBox(group, width + 0.2, 0.08, depth + 0.2, brass, 0, floorTop + 0.25, 0, false);
+    addBox(group, width * 0.42, 0.18, depth * 0.38, darkTrim, 0.25, floorTop + 0.33, -0.12, false);
+    addBox(group, width * 0.32, 0.08, depth * 0.27, glass, 0.25, floorTop + 0.45, -0.12, false);
+    addBox(group, width * 0.2, 0.12, depth * 0.25, mat("#78957d", 0.96), -0.7, floorTop + 0.25, 0.3, false);
   }
 
-  // Main windows: recessed frames, reflective panes, mullions and projecting stone sills.
-  const windowY = 0.18 + Math.min(height - 0.48, 0.75);
-  for (const px of [-0.68, 0.58]) {
-    addBox(group, 0.64, 0.54, 0.075, darkTrim, px, windowY, depth / 2 + 0.02, false);
-    addBox(group, 0.54, 0.44, 0.035, glass, px, windowY + 0.015, depth / 2 + 0.068, false);
-    addBox(group, 0.025, 0.44, 0.022, brass, px, windowY + 0.015, depth / 2 + 0.092, false);
-    addBox(group, 0.58, 0.045, 0.18, roof, px, windowY - 0.29, depth / 2 + 0.08, false);
-    addBox(group, 0.58, 0.035, 0.06, brass, px, windowY + 0.285, depth / 2 + 0.06, false);
+  // Front windows are deep-set with metal frames, warm timber sills and vertical mullions.
+  const windowY = 0.18 + Math.min(height - 0.45, 0.76);
+  for (const px of [-0.68, 0.62]) {
+    addBox(group, 0.68, 0.58, 0.085, darkTrim, px, windowY, depth / 2 + 0.02, false);
+    addBox(group, 0.56, 0.46, 0.045, glass, px, windowY + 0.015, depth / 2 + 0.075, false);
+    addBox(group, 0.027, 0.46, 0.028, brass, px, windowY + 0.015, depth / 2 + 0.105, false);
+    addBox(group, 0.65, 0.05, 0.17, warmWood, px, windowY - 0.31, depth / 2 + 0.09, false);
+    addBox(group, 0.64, 0.035, 0.055, brass, px, windowY + 0.315, depth / 2 + 0.085, false);
   }
-  // Side windows give the volume readable depth from the isometric camera.
+  // Side glazing adds real depth when seen from the isometric camera.
   for (const side of [-1, 1]) {
-    addBox(group, 0.055, 0.42, 0.62, darkTrim, side * (width / 2 + 0.025), windowY, -0.28, false);
-    addBox(group, 0.035, 0.34, 0.52, glass, side * (width / 2 + 0.065), windowY, -0.28, false);
-    addBox(group, 0.045, 0.36, 0.035, brass, side * (width / 2 + 0.09), windowY, -0.28, false);
+    addBox(group, 0.075, 0.47, 0.7, darkTrim, side * (width / 2 + 0.025), windowY, -0.26, false);
+    addBox(group, 0.045, 0.37, 0.58, glass, side * (width / 2 + 0.075), windowY, -0.26, false);
+    addBox(group, 0.025, 0.37, 0.58, brass, side * (width / 2 + 0.105), windowY, -0.26, false);
   }
 
-  // Timber front door, inset glass, hardware and a two-step stoop.
-  addBox(group, 0.46, 0.86, 0.09, wood, -0.88, 0.62, depth / 2 + 0.055, true);
-  addBox(group, 0.3, 0.68, 0.035, glass, -0.88, 0.65, depth / 2 + 0.11, false);
-  addBox(group, 0.035, 0.69, 0.035, brass, -0.88, 0.65, depth / 2 + 0.135, false);
-  const doorHandle = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), brass);
-  doorHandle.position.set(-0.72, 0.64, depth / 2 + 0.16);
-  group.add(doorHandle);
-  addBox(group, 0.68, 0.12, 0.46, roof, -0.88, 0.25, depth / 2 + 0.22);
-  addBox(group, 0.82, 0.12, 0.54, mat("#9da49d", 0.8), -0.88, 0.12, depth / 2 + 0.27);
+  // A timber front door has a glazed inset, a brass handle and a two-step stone porch.
+  addBox(group, 0.48, 0.91, 0.1, warmWood, -0.92, 0.64, depth / 2 + 0.06, true);
+  addBox(group, 0.32, 0.69, 0.04, glass, -0.92, 0.68, depth / 2 + 0.12, false);
+  addBox(group, 0.035, 0.7, 0.045, brass, -0.92, 0.68, depth / 2 + 0.15, false);
+  const handle = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 10), brass);
+  handle.position.set(-0.75, 0.66, depth / 2 + 0.17);
+  group.add(handle);
+  addBox(group, 0.72, 0.12, 0.46, stone, -0.92, 0.22, depth / 2 + 0.22);
+  addBox(group, 0.86, 0.12, 0.54, warmWood, -0.92, 0.1, depth / 2 + 0.28);
 
-  // A small canopy with two metal brackets and a warm porch sconce.
-  addBox(group, 0.92, 0.09, 0.7, roof, -0.88, 1.14, depth / 2 + 0.28, true);
+  // A small porch canopy, slim columns and a warm wall sconce create a lived-in entrance.
+  const porchRoof = addBox(group, 1.02, 0.1, 0.72, roof, -0.92, 1.16, depth / 2 + 0.27, true);
+  porchRoof.rotation.x = -0.035;
   for (const side of [-1, 1]) {
-    const bracket = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.35, 8), brass);
-    bracket.position.set(-0.88 + side * 0.38, 0.99, depth / 2 + 0.42);
-    bracket.rotation.z = side * 0.28;
-    group.add(bracket);
+    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.82, 10), stone);
+    column.position.set(-0.92 + side * 0.42, 0.71, depth / 2 + 0.52);
+    group.add(column);
+    addSphere(group, 0.065, brass, -0.92 + side * 0.42, 1.14, depth / 2 + 0.52, 1, 0.5, 1);
   }
-  const sconce = cachedMaterial("home-sconce", () => new THREE.MeshStandardMaterial({
-    color: "#fff0c9", emissive: "#d9a45b", emissiveIntensity: 0.52, roughness: 0.35,
+  const sconce = cachedMaterial("home-porch-light", () => new THREE.MeshStandardMaterial({
+    color: "#fff0ca", emissive: "#e1a958", emissiveIntensity: 0.62, roughness: 0.28,
   }));
-  addBox(group, 0.1, 0.18, 0.07, darkTrim, -1.19, 1.12, depth / 2 + 0.07, false);
-  addBox(group, 0.06, 0.12, 0.045, sconce, -1.19, 1.12, depth / 2 + 0.12, false);
+  addBox(group, 0.105, 0.2, 0.07, darkTrim, -1.2, 1.16, depth / 2 + 0.08, false);
+  addBox(group, 0.065, 0.13, 0.045, sconce, -1.2, 1.16, depth / 2 + 0.13, false);
 
-  // Low planter box, a few rounded leaves and one roof ventilator finish the home.
-  addBox(group, 0.52, 0.24, 0.36, mat("#8eaa79", 0.98), width / 2 + 0.2, 0.3, depth / 2 + 0.16, false);
-  for (let leaf = 0; leaf < 3; leaf++) {
-    addSphere(group, 0.13, mat(["#629268", "#79a975", "#4e8358"][leaf], 0.96), width / 2 + 0.2 + (leaf - 1) * 0.11, 0.49 + (leaf % 2) * 0.045, depth / 2 + 0.16, 1, 1.1, 0.9);
+  if (twoStorey && detail === "full") {
+    // A shallow upper balcony with a glass balustrade makes the premium home visibly different.
+    addBox(group, 1.22, 0.1, 0.68, stone, 0.9, 1.65, depth / 2 + 0.28, true);
+    addBox(group, 1.18, 0.34, 0.045, glass, 0.9, 1.87, depth / 2 + 0.59, false);
+    for (const side of [-1, 1]) addBox(group, 0.055, 0.34, 0.055, brass, 0.9 + side * 0.57, 1.87, depth / 2 + 0.59, false);
   }
-  addBox(group, 0.5, 0.07, 0.42, mat("#6b7776", 0.78, 0.12), 0.65, floorTop + 0.27, -0.2, false);
-  addBox(group, 0.32, 0.09, 0.25, mat("#879b9b", 0.48, 0.2), 0.65, floorTop + 0.35, -0.2, false);
+
+  // Compact landscaping gives every home a personal front garden without crowding the walkways.
+  addBox(group, 0.58, 0.22, 0.38, mat("#8eaa79", 0.98), width / 2 + 0.19, 0.29, depth / 2 + 0.18, false);
+  for (let leaf = 0; leaf < 4; leaf++) {
+    addSphere(group, 0.14, mat(["#5f8e63", "#79a975", "#4e8358", "#8caf75"][leaf], 0.96), width / 2 + 0.19 + (leaf - 1.5) * 0.1, 0.49 + (leaf % 2) * 0.035, depth / 2 + 0.18, 1, 1.08, 0.92);
+  }
+  addBox(group, 0.7, 0.08, 0.42, stone, 0.88, floorTop + 0.25, -0.2, false);
+  addBox(group, 0.42, 0.09, 0.32, mat("#809b7d", 0.98), 0.88, floorTop + 0.33, -0.2, false);
 
   group.position.set(x, 0.42, z);
   parent.add(group);
