@@ -51,7 +51,7 @@ function buildObject(action: VillageAction) {
   return group;
 }
 
-function VillageCanvas({world}:{world:VillageWorld}) {
+function VillageCanvas({world,fullScreen=false}:{world:VillageWorld;fullScreen?:boolean}) {
   const host=useRef<HTMLDivElement>(null);
   const groupRef=useRef<THREE.Group | null>(null);
   useEffect(()=>{
@@ -125,10 +125,10 @@ function VillageCanvas({world}:{world:VillageWorld}) {
     }
     world.plots.forEach(p=>{const obj=buildObject(p.action);obj.position.set(p.x*2.95,0,p.z*2.95);group.add(obj)});
   },[world]);
-  return <div ref={host} style={{width:"100%",height:"min(65vh,630px)",minHeight:350,borderRadius:18,overflow:"hidden"}} aria-label="Pratinjau desa tiga dimensi interaktif; geser untuk mengubah sudut kamera" />;
+  return <div ref={host} style={{width:"100%",height:fullScreen?"100dvh":"min(65vh,630px)",minHeight:fullScreen?0:350,borderRadius:fullScreen?0:18,overflow:"hidden"}} aria-label="Pratinjau desa tiga dimensi interaktif; geser untuk mengubah sudut kamera" />;
 }
 
-export default function VillageZeroPage(){
+export default function VillageZeroPage({publicMode=false}:{publicMode?:boolean}){
   const {data:session,status:loginStatus}=useSession();
   const [desa,setDesa]=useState<DesaVoting>(DESA_AWAL);
   const [pilihan,setPilihan]=useState<VillageAction>("BUILD HOUSE");
@@ -137,15 +137,36 @@ export default function VillageZeroPage(){
   const [siap,setSiap]=useState(false);
   const [statusRumah,setStatusRumah]=useState<{ready?:boolean;home?:{id:string}|null;available?:number}|null>(null);
   const [sibukKlaim,setSibukKlaim]=useState(false);
+  const [duniaResmi,setDuniaResmi]=useState<VillageWorld>({version:1,plots:[],processedCommentIds:[]});
+  const [statusDunia,setStatusDunia]=useState("Memeriksa perkembangan desa...");
   const hitungan=useRef(0);
   const hari=hariJakarta(new Date());
   useEffect(()=>{
+    if(publicMode){setSiap(true);return;}
     try{const saved=localStorage.getItem(STORAGE_KEY);if(saved){const parsed=JSON.parse(saved) as DesaVoting;
       if(parsed?.versi===1&&Array.isArray(parsed.dunia?.plots)&&Array.isArray(parsed.suara)&&Array.isArray(parsed.hasil)) setDesa(parsed);}}
     catch{/* data demo rusak diabaikan */}
     setSiap(true);
-  },[]);
-  useEffect(()=>{if(siap)localStorage.setItem(STORAGE_KEY,JSON.stringify(desa));},[desa,siap]);
+  },[publicMode]);
+  useEffect(()=>{if(siap && !publicMode)localStorage.setItem(STORAGE_KEY,JSON.stringify(desa));},[desa,siap,publicMode]);
+  useEffect(()=>{
+    if(!publicMode)return;
+    let mounted=true;
+    const fetchDunia=async()=>{
+      try {
+        const response=await fetch("/api/village-zero/world",{cache:"no-store"});
+        const result=await response.json() as {status:string;note?:string;plots?:Array<{id:string;action:VillageAction;x:number;z:number}>};
+        if(!mounted)return;
+        if(response.ok && Array.isArray(result.plots)){
+          setDuniaResmi({version:1,plots:result.plots.map(p=>({id:p.id,action:p.action,x:p.x,z:p.z,source:"voting-instagram"})),processedCommentIds:[]});
+          setStatusDunia(result.status==="berjalan"?"Desa berkembang dari keputusan warga Instagram":"Desa dimulai dari nol · Voting Instagram belum dibuka");
+        }else setStatusDunia("Koneksi desa sementara terganggu");
+      }catch{if(mounted)setStatusDunia("Tidak dapat membaca pembaruan desa");}
+    };
+    void fetchDunia();
+    const timer=window.setInterval(()=>{if(document.visibilityState==="visible")void fetchDunia();},60_000);
+    return ()=>{mounted=false;window.clearInterval(timer);};
+  },[publicMode]);
   const perbaruiRumah=useCallback(async()=>{
     if(loginStatus!=="authenticated")return;
     try{const r=await fetch("/api/village-zero/claim",{cache:"no-store"});const data=await r.json();setStatusRumah(data);}catch{setStatusRumah({ready:false});}
@@ -178,6 +199,22 @@ export default function VillageZeroPage(){
     const hasil=tutupVoting(tiruan,tanggal,hari);
     setDesa(hasil.desa);setPesan(hasil.pesan);
   },[desa,hari]);
+  if(publicMode)return <main style={{position:"fixed",inset:0,width:"100vw",height:"100dvh",overflow:"hidden",background:"#cce7eb",fontFamily:"Arial,sans-serif"}}>
+    <VillageCanvas world={duniaResmi} fullScreen />
+    <div style={{position:"absolute",left:16,top:16,right:16,pointerEvents:"none",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,flexWrap:"wrap"}}>
+      <div style={{pointerEvents:"auto",background:"rgba(20,56,43,.9)",color:"#fff",backdropFilter:"blur(12px)",padding:"14px 18px",borderRadius:15,boxShadow:"0 10px 28px #132b2540",maxWidth:380}}>
+        <div style={{fontSize:11,letterSpacing:2,fontWeight:800,color:"#c9e4c9"}}>NOVARIA · DESA NOL</div>
+        <div style={{fontSize:23,fontWeight:900,margin:"6px 0"}}>Selamat Datang di Desa Kita</div>
+        <div style={{fontSize:12,lineHeight:1.6,color:"#d2e7d5"}}>{statusDunia}. Geser untuk menjelajah, cubit untuk memperbesar.</div>
+      </div>
+      <a href="/citizen" style={{pointerEvents:"auto",textDecoration:"none",borderRadius:12,background:"#fff",padding:"12px 16px",color:"#295843",fontWeight:800,fontSize:13,boxShadow:"0 7px 20px #193a2a30"}}>🏠 Jadi Warga</a>
+    </div>
+    <div style={{position:"absolute",bottom:16,left:16,right:16,pointerEvents:"none",display:"flex",justifyContent:"center"}}>
+      <div style={{background:"rgba(19,55,42,.85)",color:"#f6f9f2",padding:"12px 16px",borderRadius:14,backdropFilter:"blur(8px)",fontSize:12,lineHeight:1.5,textAlign:"center",maxWidth:520}}>
+        🗳️ Semua pembangunan diputuskan lewat komentar Instagram resmi NOVARIA · Mode Jalan-Jalan bebas login
+      </div>
+    </div>
+  </main>;
   return (
     <main style={{minHeight:"100dvh",background:"linear-gradient(140deg,#f6f4e9,#e2eee1)",color:"#25432f",padding:"24px 14px",fontFamily:"Arial,sans-serif"}}>
       <div style={{maxWidth:1100,margin:"0 auto"}}>
