@@ -14,11 +14,12 @@ type Vote = QueryResultRow & { option_key:string; total:number };
 type History = QueryResultRow & { vote_day:string; winning_option:string; winning_votes:number; total_votes:number };
 type Job = QueryResultRow & { job_type:string; job_status:string; last_error:string|null; created_at:string };
 type Comment = QueryResultRow & { platform:string; comment_text:string; moderation_status:string; received_at:string };
+type FollowerSnapshot = QueryResultRow & { platform: string; follower_count: string; snapshot_date: string; net_change: string };
 type DashboardData = {
   schemaReady:boolean; votes:Vote[]; projects:number; housesAvailable:number; housesClaimed:number;
   history:History[]; comments:Comment[]; pendingComments:number; commentCount:number;
   jobs:Job[]; approvals:number; drafts:number; workerLastSeen:string|null; socialConfigured:boolean;
-  databaseError:boolean;
+  databaseError:boolean; followers:FollowerSnapshot[];
 };
 const choices = [
   {key:"BUILD HOUSE",title:"Bangun Rumah"},
@@ -29,7 +30,7 @@ const choices = [
 ];
 function empty():DashboardData {
   return {schemaReady:false,votes:[],projects:0,housesAvailable:0,housesClaimed:0,history:[],comments:[],
-    pendingComments:0,commentCount:0,jobs:[],approvals:0,drafts:0,workerLastSeen:null,socialConfigured:false,databaseError:false};
+    pendingComments:0,commentCount:0,jobs:[],approvals:0,drafts:0,workerLastSeen:null,socialConfigured:false,databaseError:false,followers:[]};
 }
 function todayWIB():string {
   return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -63,13 +64,14 @@ async function load():Promise<DashboardData> {
     }
   }catch{data.databaseError=true;}
   try{
-    const [cm,jobs,approvals,drafts,worker,recent]=await Promise.all([
+    const [cm,jobs,approvals,drafts,worker,recent,followers]=await Promise.all([
       query<{total:string;pending:string} & QueryResultRow>("SELECT COUNT(*)::text AS total, COUNT(*) FILTER (WHERE moderation_status='pending')::text AS pending FROM social_comment_inbox"),
       query<Job>("SELECT job_type,job_status,LEFT(last_error,200) AS last_error,created_at::text FROM agent_jobs ORDER BY created_at DESC LIMIT 8"),
       query<{total:string} & QueryResultRow>("SELECT COUNT(*)::text AS total FROM approval_requests WHERE approval_status='pending'"),
       query<{total:string} & QueryResultRow>("SELECT COUNT(*)::text AS total FROM media_drafts"),
       query<{last_seen_at:string} & QueryResultRow>("SELECT last_seen_at::text FROM worker_heartbeats WHERE worker_key='novaria-agent-worker'"),
-      query<Comment>("SELECT platform,LEFT(comment_text,180) AS comment_text,moderation_status,received_at::text FROM social_comment_inbox ORDER BY received_at DESC LIMIT 6")
+      query<Comment>("SELECT platform,LEFT(comment_text,180) AS comment_text,moderation_status,received_at::text FROM social_comment_inbox ORDER BY received_at DESC LIMIT 6"),
+      query<FollowerSnapshot>("SELECT DISTINCT ON (platform) platform, follower_count::text, snapshot_date::text, net_change::text FROM follower_snapshots ORDER BY platform, snapshot_date DESC, created_at DESC")
     ]);
     data.commentCount=Number(cm.rows[0]?.total??0);
     data.pendingComments=Number(cm.rows[0]?.pending??0);
@@ -78,6 +80,7 @@ async function load():Promise<DashboardData> {
     data.drafts=Number(drafts.rows[0]?.total??0);
     data.workerLastSeen=worker.rows[0]?.last_seen_at??null;
     data.comments=recent.rows;
+    data.followers=followers.rows;
   }catch{data.databaseError=true;}
   return data;
 }
@@ -164,7 +167,17 @@ export default async function DashboardKepalaDesa(){
         <div className={s.metric} style={{boxShadow:"none",background:"#f6f8f4",marginBottom:12}}><span style={{fontSize:12,color:"#71877b",fontWeight:700}}>Draft konten</span><strong>{data.drafts}</strong><small>Draft tidak sama dengan video MP4 selesai</small></div>
         <div className={s.metric} style={{boxShadow:"none",background:"#f6f8f4"}}><span style={{fontSize:12,color:"#71877b",fontWeight:700}}>Menunggu persetujuan</span><strong>{data.approvals}</strong><small>Periksa rincian di Pusat AI</small></div>
         <ul className={s.list}><li>Instagram: voting resmi dan konten</li><li>YouTube: Shorts dan mengajak penonton berkunjung</li><li>TikTok: promosi video perjalanan desa</li><li>Facebook: Reels dan pertumbuhan komunitas</li></ul>
-        <p className={s.muted}>Belum tersedia data follower asli sampai API masing-masing platform terhubung.</p>
+        <div style={{marginTop:18,display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:9}}>
+          {["instagram","youtube","tiktok","facebook"].map(platform=>{
+            const row=data.followers.find(v=>v.platform===platform);
+            return <div key={platform} style={{border:"1px solid #dce6dd",background:"#f7f9f6",padding:12,borderRadius:13}}>
+              <strong style={{fontSize:12,textTransform:"capitalize"}}>{platform}</strong>
+              <div style={{fontSize:24,fontWeight:800,margin:"8px 0 3px"}}>{row?Number(row.follower_count).toLocaleString("id-ID"):"—"}</div>
+              <small className={s.muted}>{row?"Perubahan bersih: "+row.net_change+" · "+row.snapshot_date:"Belum ada data dari API"}</small>
+            </div>;
+          })}
+        </div>
+        <p className={s.muted}>Angka adalah snapshot terakhir yang disimpan sistem, bukan statistik real-time jika konektor belum aktif.</p>
       </section>
     </div>
     <section className={s.card}><div className={s.head}><div><h2>✅ Persetujuan Penting Kepala Desa</h2><p>Tinjau naskah, rencana AI dan balasan komentar sebelum ada tindakan publik. Persetujuan saat ini hanya mencatat keputusan, belum mempublikasikan konten.</p></div><span className={s.pill}>{data.approvals} menunggu</span></div><ApprovalInbox /></section>
