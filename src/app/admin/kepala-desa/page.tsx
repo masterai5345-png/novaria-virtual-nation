@@ -109,7 +109,7 @@ export default async function DashboardKepalaDesa(){
   const todayCount=data.votes.reduce((sum,v)=>sum+Number(v.total),0);
   const max=Math.max(1,...data.votes.map(v=>Number(v.total)));
   const workerOnline=Boolean(data.workerLastSeen&&Date.now()-new Date(data.workerLastSeen).getTime()<45000);
-  const creditsBlocked=data.jobs.some(j=>j.job_status==="failed"&&j.last_error?.toLowerCase().includes("credit balance"));
+
   const countStatus=(s:string)=>data.jobs.filter(j=>j.job_status===s).length;
   return <main className={s.shell}><div className={s.frame}>
     <header className={s.top}>
@@ -158,7 +158,7 @@ export default async function DashboardKepalaDesa(){
           ["Instagram Agent",data.socialConfigured?"Konfigurasi terpasang":"Belum terhubung","Mengambil komentar resmi dan memvalidasi sumber"],
           ["Voting Agent",data.schemaReady?"Skema tersedia":"Belum live","Menghitung suara dan menentukan pemenang harian"],
           ["Construction Agent",data.schemaReady?"Skema tersedia":"Belum live","Membuat objek sesuai hasil voting warga"],
-          ["AI Naskah",creditsBlocked?"Terhambat kredit API":"Perlu uji","Menulis naskah berdasarkan kejadian asli di desa"],
+          ["Koordinator Kode",workerOnline?"Worker aktif":"Perlu pengecekan","Menangani antrean permintaan dan menyiapkan tindakan untuk persetujuan tanpa kredit AI"],
           ["Video Kode & Editing",data.nativeVideos.length?"MP4 tersedia":"Menunggu jadwal","Membuat MP4 30 detik dengan FFmpeg dan data desa, tanpa AI generatif"],
           ["Publisher & Growth Agent","Belum terhubung","Upload video dan analisis follower empat platform"],
         ].map(([title,status,detail])=><div className={s.agent} key={title}><div><strong>{title}</strong><p>{detail}</p></div>
