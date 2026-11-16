@@ -6,6 +6,7 @@ import pg from "pg";
 
 const day=process.argv[2];
 const apply=process.argv.includes("--apply");
+const skipEmpty=process.argv.includes("--skip-empty");
 const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 if(!/^\d{4}-\d{2}-\d{2}$/.test(day||"") || day>=today){
   console.error("Gunakan tanggal WIB yang sudah berlalu: YYYY-MM-DD.");
@@ -59,5 +60,10 @@ try{
 }catch(error){
   await client.query("ROLLBACK").catch(()=>{});
   console.error("Voting belum difinalisasi:",error instanceof Error?error.message:String(error));
-  process.exitCode=1;
+  // Automatic daily settlement may legitimately find no votes or an already finalized day.
+  // All other errors remain failures, preventing video creation from falsely claiming success.
+  const msg=error instanceof Error?error.message:String(error);
+  if(skipEmpty && (msg==="Tidak ada suara untuk tanggal ini." || msg==="Tanggal ini telah difinalisasi sebelumnya.")){
+    console.log("Tidak ada perubahan pembangunan:",msg);
+  }else process.exitCode=1;
 }finally{client.release();await pool.end();}

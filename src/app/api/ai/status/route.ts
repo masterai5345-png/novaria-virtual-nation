@@ -50,14 +50,10 @@ export async function GET() {
   const googleConfigured = Boolean(
     process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET && process.env.AUTH_SECRET,
   );
-  const claudeConfigured = Boolean(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_MODEL);
-  const orchestratorStatus = !claudeConfigured
-    ? "not-configured"
-    : databaseStatus !== "connected"
-      ? "database-unavailable"
-      : workerStatus === "online"
-        ? "online"
-        : "configured-worker-not-running";
+  const orchestratorStatus = databaseStatus !== "connected"
+    ? "database-unavailable"
+    : workerStatus === "online" ? "code-worker-online" : "code-worker-not-running";
+
 
   return NextResponse.json({
     application: "NOVARIA",
@@ -72,14 +68,16 @@ export async function GET() {
     },
     seededAgentRoles: agentRoleCount,
     agents: [
-      { id: "ceo-orchestrator", name: "CEO Orchestrator", status: orchestratorStatus },
+      { id: "ceo-orchestrator", name: "Rule-based Task Coordinator", status: orchestratorStatus },
       { id: "growth-monitor", name: "Growth Monitor", status: "awaiting-official-social-api-connector" },
       { id: "population-registrar", name: "Population Registrar", status: databaseStatus === "connected" ? "database-ready-connector-pending" : "not-configured" },
       { id: "house-construction", name: "House Construction", status: databaseStatus === "connected" ? "construction-service-ready-connector-pending" : "not-configured" },
-      { id: "content-producer", name: "Content Producer", status: "native-ffmpeg-renderer-configured-awaiting-scheduled-run" },
-      { id: "community-reply", name: "Community Reply", status: "signed-ingestion-and-draft-workflow-platform-connector-pending" },
+      { id: "content-producer", name: "Code Video Producer", status: "scheduled-native-ffmpeg-and-owner-approval" },
+      { id: "community-reply", name: "Code Community Reply", status: "rule-based-drafts-awaiting-approval" },
     ],
     proposalOnlyWorker: true,
+    routineAgentMode: "code-only",
+    externalGenerativeAIRequired: false,
     realMoneyPayoutsEnabled: false,
     timestamp: new Date().toISOString(),
   }, {
