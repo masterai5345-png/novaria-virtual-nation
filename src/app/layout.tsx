@@ -3,10 +3,10 @@ import AuthProviders from "@/components/auth/AuthProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Kota Maskot — NOVARIA",
+  title: "NOVARIA — Desa Virtual 3D",
   description:
-    "Masuki kota 3D penuh warga maskot dari berbagai spesies hewan, jelajahi distrik, dan bantu NOVARIA berkembang.",
-  applicationName: "Kota Maskot",
+    "Jelajahi Desa Nol NOVARIA, gunakan maskot hewan acak dan KTP warga, berinteraksi melalui chat global, dan ikuti pembangunan desa berdasarkan aspirasi komunitas.",
+  applicationName: "NOVARIA",
   manifest: "/manifest.webmanifest",
 };
 
