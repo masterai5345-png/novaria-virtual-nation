@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
+import { auth } from "../../../../auth";
 import { requireOwner } from "@/lib/authz";
 import { query } from "@/lib/db";
 import s from "./dashboard.module.css";
@@ -86,7 +87,16 @@ async function load():Promise<DashboardData> {
 }
 export default async function DashboardKepalaDesa(){
   const owner=await requireOwner();
-  if(!owner.ok)notFound();
+  if(!owner.ok){
+    const session=await auth();
+    if(!session?.user?.id) redirect("/admin/kepala-desa/login");
+    return <main style={{minHeight:"100dvh",background:"#eef4ed",padding:"15vh 20px",textAlign:"center",fontFamily:"Arial, sans-serif",color:"#294a3a"}}>
+      <h1>Akses khusus Kepala Desa</h1>
+      <p>Akun Google yang sedang masuk belum memiliki izin sebagai pemilik NOVARIA.</p>
+      <p>Pastikan akun sesuai pengaturan pemilik dan sudah terdaftar sebagai warga aktif.</p>
+      <a href="/admin/kepala-desa/login" style={{color:"#267850"}}>Gunakan akun Google pemilik</a>
+    </main>;
+  }
   const data=await load();
   const todayCount=data.votes.reduce((sum,v)=>sum+Number(v.total),0);
   const max=Math.max(1,...data.votes.map(v=>Number(v.total)));
