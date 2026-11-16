@@ -60,7 +60,7 @@ export default async function AICommandCenterPage() {
     <main className="admin-shell">
       <header className="admin-header">
         <Link className="admin-brand" href="/"><span className="admin-brand-mark">N</span><span><b>NOVARIA</b><small>AI COMMAND CENTER</small></span></Link>
-        <div className="admin-header-right"><span className="dev-pill"><i /> OWNER CONTROL ROOM</span><Link href="/">Back to town ↗</Link></div>
+        <div className="admin-header-right"><span className="dev-pill"><i /> OWNER CONTROL ROOM</span><Link href="/admin/kepala-desa">Dashboard Kepala Desa ↗</Link><Link href="/">Back to town ↗</Link></div>
       </header>
 
       <section className="admin-welcome">
