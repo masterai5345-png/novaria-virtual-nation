@@ -12,7 +12,9 @@
     "lint": "eslint",
     "db:migrate": "node scripts/db-migrate.mjs",
     "worker": "node workers/agent-worker.mjs",
-    "enqueue:daily-content": "node scripts/enqueue-daily-content.mjs"
+    "enqueue:daily-content": "node scripts/produce-daily-video.mjs",
+    "video:produce": "node scripts/produce-daily-video.mjs",
+    "video:test": "node scripts/test-code-video.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.577.0",

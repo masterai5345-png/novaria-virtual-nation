@@ -17,11 +17,12 @@ type History = QueryResultRow & { vote_day:string; winning_option:string; winnin
 type Job = QueryResultRow & { job_type:string; job_status:string; last_error:string|null; created_at:string };
 type Comment = QueryResultRow & { platform:string; comment_text:string; moderation_status:string; received_at:string };
 type FollowerSnapshot = QueryResultRow & { platform: string; follower_count: string; snapshot_date: string; net_change: string };
+type NativeVideo = QueryResultRow & { title:string; media_asset_url:string; created_at:string; draft_status:string };
 type DashboardData = {
   schemaReady:boolean; votes:Vote[]; projects:number; housesAvailable:number; housesClaimed:number;
   history:History[]; comments:Comment[]; pendingComments:number; commentCount:number;
   jobs:Job[]; approvals:number; drafts:number; workerLastSeen:string|null; socialConfigured:boolean;
-  databaseError:boolean; followers:FollowerSnapshot[];
+  databaseError:boolean; followers:FollowerSnapshot[]; nativeVideos:NativeVideo[];
 };
 const choices = [
   {key:"BUILD HOUSE",title:"Bangun Rumah"},
@@ -32,7 +33,7 @@ const choices = [
 ];
 function empty():DashboardData {
   return {schemaReady:false,votes:[],projects:0,housesAvailable:0,housesClaimed:0,history:[],comments:[],
-    pendingComments:0,commentCount:0,jobs:[],approvals:0,drafts:0,workerLastSeen:null,socialConfigured:false,databaseError:false,followers:[]};
+    pendingComments:0,commentCount:0,jobs:[],approvals:0,drafts:0,workerLastSeen:null,socialConfigured:false,databaseError:false,followers:[],nativeVideos:[]};
 }
 function todayWIB():string {
   return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -83,6 +84,12 @@ async function load():Promise<DashboardData> {
     data.workerLastSeen=worker.rows[0]?.last_seen_at??null;
     data.comments=recent.rows;
     data.followers=followers.rows;
+  }catch{data.databaseError=true;}
+  try{
+    const videos=await query<NativeVideo>(
+      "SELECT title,media_asset_url,created_at::text,draft_status FROM media_drafts WHERE content_key LIKE 'novaria:code-video:%' AND media_asset_url IS NOT NULL ORDER BY created_at DESC LIMIT 7"
+    );
+    data.nativeVideos=videos.rows;
   }catch{data.databaseError=true;}
   return data;
 }
@@ -152,7 +159,7 @@ export default async function DashboardKepalaDesa(){
           ["Voting Agent",data.schemaReady?"Skema tersedia":"Belum live","Menghitung suara dan menentukan pemenang harian"],
           ["Construction Agent",data.schemaReady?"Skema tersedia":"Belum live","Membuat objek sesuai hasil voting warga"],
           ["AI Naskah",creditsBlocked?"Terhambat kredit API":"Perlu uji","Menulis naskah berdasarkan kejadian asli di desa"],
-          ["Video & Editing Agent","Belum terhubung","Merender MP4 dan menambahkan efek suara"],
+          ["Video Kode & Editing",data.nativeVideos.length?"MP4 tersedia":"Menunggu jadwal","Membuat MP4 30 detik dengan FFmpeg dan data desa, tanpa AI generatif"],
           ["Publisher & Growth Agent","Belum terhubung","Upload video dan analisis follower empat platform"],
         ].map(([title,status,detail])=><div className={s.agent} key={title}><div><strong>{title}</strong><p>{detail}</p></div>
           <span className={status.includes("kredit")?s.pill+" "+s.red:s.pill+" "+s.amber}>{status}</span></div>)}
@@ -191,6 +198,15 @@ export default async function DashboardKepalaDesa(){
         <p className={s.muted}>Angka adalah snapshot terakhir yang disimpan sistem, bukan statistik real-time jika konektor belum aktif.</p>
       </section>
     </div>
+    <section className={s.card} style={{margin:"20px 0"}}>
+      <div className={s.head}><div><h2>🎬 Mesin Video Otomatis (Tanpa AI Generatif)</h2>
+        <p>FFmpeg membuat video vertikal dari data voting yang sudah disahkan. File disimpan sementara maksimal 14 hari. Tidak ada publikasi otomatis tanpa izin dan konektor resmi.</p>
+      </div><span className={s.pill+" "+s.green}>Menggunakan kode</span></div>
+      {data.nativeVideos.length?data.nativeVideos.map((v,i)=><div className={s.line} key={i}><div>
+        <strong>{v.title}</strong><p>{readableDate(v.created_at)} · {v.draft_status} · 30 detik · 9:16</p>
+      </div><a href={v.media_asset_url} target="_blank" rel="noopener noreferrer" style={{color:"#207650",fontWeight:700,fontSize:13}}>Putar MP4 ↗</a></div>):
+        <div className={s.empty}>Belum ada video yang dihasilkan oleh jadwal berbasis kode. Jadwal pertama akan menyiapkan video dan meminta persetujuan; tidak akan berpura-pura sudah menerbitkan konten.</div>}
+    </section>
     <div style={{margin:"20px 0"}}><GlobalChatReport/></div>
     <section className={s.card}><div className={s.head}><div><h2>✅ Persetujuan Penting Kepala Desa</h2><p>Tinjau naskah, rencana AI dan balasan komentar sebelum ada tindakan publik. Persetujuan saat ini hanya mencatat keputusan, belum mempublikasikan konten.</p></div><span className={s.pill}>{data.approvals} menunggu</span></div><ApprovalInbox /></section>
     <footer className={s.footer}>NOVARIA · Khusus pemilik · Dashboard pembacaan data saja · Tidak ada tombol untuk posting, mengubah biaya, atau mereset dunia.</footer>

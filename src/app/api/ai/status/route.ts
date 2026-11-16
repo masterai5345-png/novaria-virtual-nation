@@ -76,7 +76,7 @@ export async function GET() {
       { id: "growth-monitor", name: "Growth Monitor", status: "awaiting-official-social-api-connector" },
       { id: "population-registrar", name: "Population Registrar", status: databaseStatus === "connected" ? "database-ready-connector-pending" : "not-configured" },
       { id: "house-construction", name: "House Construction", status: databaseStatus === "connected" ? "construction-service-ready-connector-pending" : "not-configured" },
-      { id: "content-producer", name: "Content Producer", status: "script-drafts-only-video-renderer-not-connected" },
+      { id: "content-producer", name: "Content Producer", status: "native-ffmpeg-renderer-configured-awaiting-scheduled-run" },
       { id: "community-reply", name: "Community Reply", status: "signed-ingestion-and-draft-workflow-platform-connector-pending" },
     ],
     proposalOnlyWorker: true,
