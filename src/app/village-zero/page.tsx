@@ -68,13 +68,38 @@ function VillageCanvas({world}:{world:VillageWorld}) {
     const controls=new OrbitControls(camera,renderer.domElement);
     controls.enableDamping=true;controls.dampingFactor=0.075;controls.minDistance=12;controls.maxDistance=55;
     controls.maxPolarAngle=Math.PI*0.49;controls.enablePan=false;controls.target.set(0,0,0);
-    scene.add(new THREE.HemisphereLight("#ffffff","#8c9c76",2.2));
+    scene.add(new THREE.HemisphereLight("#fff4e9","#719b8e",2.35));
+    scene.add(new THREE.AmbientLight("#f3e8d4",0.48));
     const sun=new THREE.DirectionalLight("#ffdfb8",3);
     sun.position.set(-8,18,8);sun.castShadow=true;
     sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-25;sun.shadow.camera.right=25;
     sun.shadow.camera.top=25;sun.shadow.camera.bottom=-25;scene.add(sun);
     const ground=block(30,0.6,30,"#81b77b",0,-0.33,0);scene.add(ground);
     const turf=block(27.8,0.07,27.8,"#99c88b",0,0,0);scene.add(turf);
+    // Lanskap alami tanpa konstruksi pada hari pertama.
+    const lake = new THREE.Mesh(new THREE.CircleGeometry(12,48), new THREE.MeshStandardMaterial({color:"#69c5bd",metalness:0.18,roughness:0.24}));
+    lake.rotation.x=-Math.PI/2;lake.position.set(0,-0.08,-18);scene.add(lake);
+    for(let i=0;i<8;i++){
+      const a=(i/8)*Math.PI*2;
+      const hill=new THREE.Mesh(new THREE.ConeGeometry(5+(i%3),7+(i%4),6),material(i%2?"#709d84":"#8eae9e"));
+      hill.position.set(Math.sin(a)*28,2.3,Math.cos(a)*28);
+      hill.rotation.y=a;hill.castShadow=true;scene.add(hill);
+    }
+    const grassMaterial=material("#559b61");
+    const grassGeometry=new THREE.ConeGeometry(0.11,0.28,3);
+    const tuft=new THREE.InstancedMesh(grassGeometry,grassMaterial,240);
+    const dummy=new THREE.Object3D();
+    for(let i=0;i<240;i++){
+      const a=i*2.39996, r=10.5+Math.sqrt((i%119)/119)*9.5;
+      dummy.position.set(Math.cos(a)*r,0.17,Math.sin(a)*r);
+      dummy.rotation.y=a;dummy.scale.setScalar(0.7+(i%5)*0.12);dummy.updateMatrix();tuft.setMatrixAt(i,dummy.matrix);
+    }
+    tuft.instanceMatrix.needsUpdate=true;scene.add(tuft);
+    for(let i=0;i<20;i++){
+      const a=i*2.3,r=15+(i%5)*0.6;
+      const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(0.4+(i%3)*0.13,0),material(i%2?"#a9b5a4":"#999d91"));
+      rock.position.set(Math.cos(a)*r,0.25,Math.sin(a)*r);rock.rotation.set(i,i*0.5,0);scene.add(rock);
+    }
     const cityObjects=new THREE.Group();scene.add(cityObjects);groupRef.current=cityObjects;
     const resize=()=>{
       if(!el.isConnected)return;
@@ -110,6 +135,8 @@ export default function VillageZeroPage(){
   const [akunDemo,setAkunDemo]=useState("warga_demo_1");
   const [pesan,setPesan]=useState("Desa dimulai dari tanah kosong. Setiap hari komunitas memilih satu pembangunan.");
   const [siap,setSiap]=useState(false);
+  const [statusRumah,setStatusRumah]=useState<{ready?:boolean;home?:{id:string}|null;available?:number}|null>(null);
+  const [sibukKlaim,setSibukKlaim]=useState(false);
   const hitungan=useRef(0);
   const hari=hariJakarta(new Date());
   useEffect(()=>{
@@ -119,6 +146,18 @@ export default function VillageZeroPage(){
     setSiap(true);
   },[]);
   useEffect(()=>{if(siap)localStorage.setItem(STORAGE_KEY,JSON.stringify(desa));},[desa,siap]);
+  const perbaruiRumah=useCallback(async()=>{
+    if(loginStatus!=="authenticated")return;
+    try{const r=await fetch("/api/village-zero/claim",{cache:"no-store"});const data=await r.json();setStatusRumah(data);}catch{setStatusRumah({ready:false});}
+  },[loginStatus]);
+  useEffect(()=>{void perbaruiRumah();},[perbaruiRumah]);
+  const klaimRumah=useCallback(async()=>{
+    if(sibukKlaim)return;
+    setSibukKlaim(true);
+    try{const r=await fetch("/api/village-zero/claim",{method:"POST"});const data=await r.json();setPesan(r.ok?"Selamat! Rumah Desa Nol berhasil diklaim.":data.error||"Gagal mengklaim rumah.");await perbaruiRumah();}
+    catch{setPesan("Koneksi terputus. Silakan coba lagi.");}
+    finally{setSibukKlaim(false);}
+  },[sibukKlaim,perbaruiRumah]);
   const voting=useCallback(()=>{
     hitungan.current++;
     const hasil=terimaSuara(desa,{
@@ -156,7 +195,10 @@ export default function VillageZeroPage(){
             <h2 style={{fontSize:19,margin:"0 0 9px"}}>🏠 Mode Warga & Rumah</h2>
             <p style={{fontSize:14,lineHeight:1.55}}>Login dengan Google untuk identitas warga. Rumah dapat diklaim saat sistem kepemilikan Desa Nol siap dan rumah hasil voting tersedia.</p>
             {loginStatus==="authenticated"?
-              <p style={{color:"#287452",fontWeight:700}}>Masuk sebagai {session?.user?.name??"Warga"} · Klaim rumah Desa Nol belum dibuka</p>
+              <div><p style={{color:"#287452",fontWeight:700}}>Masuk sebagai {session?.user?.name??"Warga"}</p>
+                {statusRumah?.home ? <p>🏠 Kamu sudah memiliki rumah Desa Nol.</p> : statusRumah?.ready ? <div><p>Rumah tersedia: {statusRumah.available??0}</p><button onClick={()=>void klaimRumah()} disabled={sibukKlaim||!statusRumah.available}
+                  style={{padding:"11px 15px",background:"#226e56",color:"white",border:0,borderRadius:10,cursor:"pointer",opacity:statusRumah.available?1:0.5}}>Klaim Rumah Desa Nol</button></div>
+                  : <p>Fitur kepemilikan Desa Nol belum diaktifkan. Kamu tetap bisa menjelajah.</p>}</div>
               :<button onClick={()=>void signIn("google")} style={{padding:"11px 15px",background:"#226e56",color:"white",border:0,borderRadius:10,cursor:"pointer",fontWeight:700}}>Masuk dengan Google</button>}
             <p style={{fontSize:12,color:"#718377"}}>Subscribe YouTube bersifat sukarela, bukan syarat mendapatkan rumah.</p>
           </div>
