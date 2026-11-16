@@ -159,7 +159,7 @@ export default async function DashboardKepalaDesa(){
           ["Voting Agent",data.schemaReady?"Skema tersedia":"Belum live","Menghitung suara dan menentukan pemenang harian"],
           ["Construction Agent",data.schemaReady?"Skema tersedia":"Belum live","Membuat objek sesuai hasil voting warga"],
           ["AI Naskah",creditsBlocked?"Terhambat kredit API":"Perlu uji","Menulis naskah berdasarkan kejadian asli di desa"],
-          ["Video & Editing Agent","Belum terhubung","Merender MP4 dan menambahkan efek suara"],
+          ["Video Kode & Editing",data.nativeVideos.length?"MP4 tersedia":"Menunggu jadwal","Membuat MP4 30 detik dengan FFmpeg dan data desa, tanpa AI generatif"],
           ["Publisher & Growth Agent","Belum terhubung","Upload video dan analisis follower empat platform"],
         ].map(([title,status,detail])=><div className={s.agent} key={title}><div><strong>{title}</strong><p>{detail}</p></div>
           <span className={status.includes("kredit")?s.pill+" "+s.red:s.pill+" "+s.amber}>{status}</span></div>)}
