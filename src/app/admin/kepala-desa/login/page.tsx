@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 export default function MasukKepalaDesa(){
   const {data:session,status}=useSession();
   const [busy,setBusy]=useState(false);
+  useEffect(()=>{const error=new URLSearchParams(window.location.search).get("error");if(error)setMessage("Google OAuth gagal: "+error+". Periksa Client ID, Client Secret, redirect URI dan status izin akun di Google Cloud.");},[]);
   const [message,setMessage]=useState("");
   const [readiness,setReadiness]=useState<{googleOAuthReady:boolean;ownerConfigured:boolean;googleIdConfigured:boolean;googleSecretConfigured:boolean;authSecretConfigured:boolean;callbackUrl:string}|null>(null);
   useEffect(()=>{void fetch("/api/auth/readiness",{cache:"no-store"}).then(r=>r.json()).then(setReadiness).catch(()=>setMessage("Status OAuth tidak dapat diperiksa."))},[]);

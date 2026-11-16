@@ -6,6 +6,7 @@ import { ANIMAL_EMOJI, ANIMAL_LABELS, isCitizenSpecies } from "@/lib/animals";
 import type { QueryResultRow } from "pg";
 import AvatarStudio from "@/components/citizen/AvatarStudio";
 import HouseClaimCard from "@/components/citizen/HouseClaimCard";
+import CitizenKTP from "@/components/citizen/CitizenKTP";
 
 type CitizenRow = QueryResultRow & {
   id: string;
@@ -20,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CitizenPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/");
+  if (!session?.user?.id) redirect("/masuk");
 
   const result = await query<CitizenRow>(
     `SELECT id, display_name, email, account_role, avatar_species, created_at
@@ -30,20 +31,20 @@ export default async function CitizenPage() {
     [session.user.id],
   );
   const citizen = result.rows[0];
-  if (!citizen) redirect("/");
+  if (!citizen) redirect("/masuk");
   const species = isCitizenSpecies(citizen.avatar_species) ? citizen.avatar_species : "fox";
   const speciesLabel = ANIMAL_LABELS[species];
 
   return (
     <main className="citizen-page-shell">
       <header className="citizen-page-header">
-        <Link href="/" className="brand"><span className="brand-mark">🐾</span><span><strong>KOTA MASKOT</strong><small>NOVARIA · KOTA PARA HEWAN</small></span></Link>
-        <Link href="/" className="citizen-return">Kembali ke kota →</Link>
+        <Link href="/" className="brand"><span className="brand-mark">🐾</span><span><strong>NOVARIA</strong><small>NOVARIA · DESA NOL</small></span></Link>
+        <Link href="/" className="citizen-return">Kembali ke desa →</Link>
       </header>
       <section className="citizen-welcome-card">
         <div className="citizen-big-mascot" aria-hidden="true">{ANIMAL_EMOJI[species]}</div>
-        <span className="eyebrow">PROFIL WARGA RESMI KOTA MASKOT</span>
-        <h1>Selamat datang di Kota Maskot, {citizen.display_name}.</h1>
+        <span className="eyebrow">PROFIL WARGA DESA NOL</span>
+        <h1>Selamat datang di NOVARIA, {citizen.display_name}.</h1>
         <p>Akun Google kamu telah terdaftar sebagai warga NOVARIA. Spesies maskotmu dipilih secara acak saat pendaftaran, lalu disimpan permanen di database kota.</p>
         <div className="citizen-profile-grid">
           <div><small>ID WARGA</small><strong>{citizen.id.slice(0, 8).toUpperCase()}</strong></div>
@@ -54,6 +55,7 @@ export default async function CitizenPage() {
         <p className="citizen-next-step">Atur pakaian, warna bulu, dan aksesori maskotmu, lalu klaim rumah komunitas pertamamu.</p>
       </section>
 
+      <div style={{maxWidth:850,margin:"16px auto"}}><CitizenKTP citizenId={citizen.id} displayName={citizen.display_name} species={species} joinedAt={citizen.created_at} role={citizen.account_role}/></div>
       <div className="citizen-tools-grid">
         <AvatarStudio />
         <HouseClaimCard />
