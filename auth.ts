@@ -15,8 +15,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 60 * 60 * 24 * 14,
   },
   pages: {
-    signIn: "/",
-    error: "/",
+    signIn: "/masuk",
+    error: "/masuk",
   },
   callbacks: {
     async signIn({ user, account, profile }) {
