@@ -2,12 +2,14 @@
 
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function MasukKepalaDesa(){
   const {data:session,status}=useSession();
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
+  const [readiness,setReadiness]=useState<{googleOAuthReady:boolean;ownerConfigured:boolean;googleIdConfigured:boolean;googleSecretConfigured:boolean;authSecretConfigured:boolean;callbackUrl:string}|null>(null);
+  useEffect(()=>{void fetch("/api/auth/readiness",{cache:"no-store"}).then(r=>r.json()).then(setReadiness).catch(()=>setMessage("Status OAuth tidak dapat diperiksa."))},[]);
   return <main style={{minHeight:"100dvh",display:"grid",placeItems:"center",background:"linear-gradient(145deg,#edf3e9,#dbe9dc)",padding:20,fontFamily:"Arial,Helvetica,sans-serif",color:"#274738"}}>
     <section style={{width:"100%",maxWidth:440,background:"#fff",boxShadow:"0 18px 60px #23452c16",padding:"clamp(25px,5vw,42px)",borderRadius:24,border:"1px solid #d9e8da"}}>
       <div style={{fontSize:34,marginBottom:12}}>🏡</div>
@@ -19,7 +21,9 @@ export default function MasukKepalaDesa(){
           <b>Sudah masuk:</b> {session.user.email}
           <p style={{margin:"7px 0"}}>Jika akun ini bukan akun pemilik, keluar dan gunakan akun Google Kepala Desa yang benar.</p>
         </div>:null}
-      <button type="button" disabled={busy} onClick={async()=>{
+      {readiness && !readiness.googleOAuthReady ? <div role="alert" style={{padding:14,background:"#fff0d9",borderRadius:12,color:"#734f23",fontSize:13,lineHeight:1.6}}><b>Login Google belum siap di server.</b><p>Konfigurasi yang belum lengkap: {!readiness.googleIdConfigured?"AUTH_GOOGLE_ID; ":""}{!readiness.googleSecretConfigured?"AUTH_GOOGLE_SECRET; ":""}{!readiness.authSecretConfigured?"AUTH_SECRET; ":""}. Kredensial harus dibuat di Google Cloud dan disimpan secara privat pada Render.</p><p>Redirect URI: <code style={{overflowWrap:"anywhere"}}>{readiness.callbackUrl}</code></p></div>:null}
+      {readiness && !readiness.ownerConfigured ? <div style={{padding:12,background:"#fff0d9",borderRadius:10,fontSize:13,color:"#734f23"}}>NOVARIA_OWNER_EMAIL belum diatur. Dashboard hanya dapat dibuka oleh email pemilik.</div>:null}
+      <button type="button" disabled={busy || (readiness !== null && !readiness.googleOAuthReady)} onClick={async()=>{
         setBusy(true);setMessage("");
         try{await signIn("google",{redirectTo:"/admin/kepala-desa"});}
         catch{setMessage("Tidak dapat menghubungkan Google. Periksa konfigurasi OAuth.");setBusy(false);}

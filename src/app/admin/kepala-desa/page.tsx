@@ -6,6 +6,7 @@ import { query } from "@/lib/db";
 import s from "./dashboard.module.css";
 import DashboardRefresh from "@/components/admin/DashboardRefresh";
 import ApprovalInbox from "@/components/admin/ApprovalInbox";
+import GlobalChatReport from "@/components/admin/GlobalChatReport";
 import type { QueryResultRow } from "pg";
 
 export const runtime = "nodejs";
@@ -190,6 +191,7 @@ export default async function DashboardKepalaDesa(){
         <p className={s.muted}>Angka adalah snapshot terakhir yang disimpan sistem, bukan statistik real-time jika konektor belum aktif.</p>
       </section>
     </div>
+    <div style={{margin:"20px 0"}}><GlobalChatReport/></div>
     <section className={s.card}><div className={s.head}><div><h2>✅ Persetujuan Penting Kepala Desa</h2><p>Tinjau naskah, rencana AI dan balasan komentar sebelum ada tindakan publik. Persetujuan saat ini hanya mencatat keputusan, belum mempublikasikan konten.</p></div><span className={s.pill}>{data.approvals} menunggu</span></div><ApprovalInbox /></section>
     <footer className={s.footer}>NOVARIA · Khusus pemilik · Dashboard pembacaan data saja · Tidak ada tombol untuk posting, mengubah biaya, atau mereset dunia.</footer>
   </div></main>;
