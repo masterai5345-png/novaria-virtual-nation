@@ -56,7 +56,7 @@ export default function VillagePlayHUD(){
   },[]);
   useEffect(()=>{
     void refresh();
-    const timer=window.setInterval(()=>{if(document.visibilityState==="visible")void refresh()},5000);
+    const timer=window.setInterval(()=>{if(document.visibilityState==="visible")void refresh()},8000);
     return()=>window.clearInterval(timer);
   },[refresh]);
   useEffect(()=>{if(chatOpen)bottom.current?.scrollIntoView({block:"nearest"});},[messages.length,chatOpen]);
