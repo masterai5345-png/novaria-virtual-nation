@@ -1219,7 +1219,6 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
       const paneWidth = activeWidth / columns;
       for (let column = 0; column < columns; column++) {
         const px = offsetX - activeWidth / 2 + paneWidth * (column + 0.5);
-        const windowMaterial = (column + floor + seed) % 5 === 0 ? shadedGlass : glass;
         windowPanels.push({ position: [px, y, frontZ], scale: [paneWidth * 0.72, floorHeight * 0.62, 0.048] });
         windowPanels.push({ position: [px, y, backZ], scale: [paneWidth * 0.72, floorHeight * 0.62, 0.048] });
         const pz = offsetZ - activeDepth / 2 + activeDepth * (column + 0.5) / columns;
@@ -1990,26 +1989,41 @@ function createShopKiosk(scene: THREE.Scene, x: number, z: number, label: string
 
 function addDistrictLabel(scene: THREE.Scene, label: string, x: number, z: number, tint = "#183a3a") {
   const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 112;
+  canvas.width = 768;
+  canvas.height = 192;
   const context = canvas.getContext("2d");
   if (!context) return;
-  context.fillStyle = "rgba(15, 35, 37, .86)";
-  context.beginPath();
-  context.roundRect(8, 8, 496, 96, 34);
-  context.fill();
-  context.fillStyle = "#f5f3e9";
-  context.font = "700 42px Arial";
+
+  // Floating sign typography follows the city reference: clean, readable and integrated into the world.
+  context.clearRect(0, 0, canvas.width, canvas.height);
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(label.toUpperCase(), 256, 58);
+  context.font = "900 76px Arial";
+  context.lineJoin = "round";
+  context.strokeStyle = "rgba(39, 48, 48, .72)";
+  context.lineWidth = 16;
+  context.shadowColor = "rgba(23, 32, 35, .38)";
+  context.shadowBlur = 16;
+  context.shadowOffsetY = 8;
+  context.strokeText(label, 384, 92);
+  context.shadowColor = "transparent";
+  context.fillStyle = "#fff8e9";
+  context.fillText(label, 384, 92);
+
   const texture = new THREE.CanvasTexture(canvas);
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, color: tint }));
-  sprite.position.set(x, 2.8, z);
-  sprite.scale.set(4.3, 0.95, 1);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    color: tint,
+    toneMapped: false,
+  }));
+  sprite.position.set(x, 3.35, z);
+  sprite.scale.set(5.8, 1.45, 1);
   scene.add(sprite);
 }
-
 function createSkyDome(scene: THREE.Scene) {
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
@@ -2515,11 +2529,33 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
     });
 
     const animateMascot = (mascot: THREE.Group, phase: number, intensity: number) => {
-      const swing = Math.sin(phase) * intensity;
       const arms = mascot.userData.animatedArms as THREE.Object3D[] | undefined;
       const legs = mascot.userData.animatedLegs as THREE.Object3D[] | undefined;
-      arms?.forEach((arm, index) => { arm.rotation.z = (index === 0 ? 1 : -1) * (0.16 + swing); });
-      legs?.forEach((leg, index) => { leg.rotation.x = (index === 0 ? -1 : 1) * swing * 0.72; });
+      const ears = mascot.userData.animatedEars as THREE.Object3D[] | undefined;
+      const head = mascot.userData.headRig as THREE.Group | undefined;
+      const body = mascot.userData.bodyRig as THREE.Group | undefined;
+      const tail = mascot.userData.tailRig as THREE.Group | undefined;
+      arms?.forEach((arm, index) => {
+        const side = index === 0 ? 1 : -1;
+        arm.rotation.z = side * (0.08 + Math.sin(phase + index * 0.45) * intensity * 0.62);
+        arm.rotation.x = 0.08 + Math.cos(phase * 0.82 + index * Math.PI) * intensity * 0.28;
+      });
+      legs?.forEach((leg, index) => {
+        leg.rotation.x = Math.sin(phase + index * Math.PI) * intensity * 0.58;
+        leg.rotation.z = Math.cos(phase + index * Math.PI) * intensity * 0.04;
+      });
+      if (head) {
+        head.rotation.z = Math.sin(phase * 0.46) * (0.025 + intensity * 0.12);
+        head.rotation.y = Math.cos(phase * 0.3) * (0.012 + intensity * 0.035);
+      }
+      if (body) body.scale.y = 1 + Math.sin(phase * 1.7) * (0.012 + intensity * 0.018);
+      if (tail) {
+        tail.rotation.x = Math.sin(phase * 1.3) * (0.08 + intensity * 0.22);
+        tail.rotation.y = Math.cos(phase * 0.9) * (0.035 + intensity * 0.12);
+      }
+      ears?.forEach((ear, index) => {
+        ear.rotation.z = Math.sin(phase * 0.82 + index * 1.2) * (0.018 + intensity * 0.08);
+      });
     };
 
     const player = new THREE.Group();
