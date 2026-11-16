@@ -358,223 +358,337 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   const coat = createFurMaterial(coatColor);
   const belly = createFurMaterial(look.belly);
   const muzzle = createFurMaterial(look.muzzle);
-  const dark = mat("#252a32", 0.34, 0.02);
-  const eyeWhite = cachedMaterial("mascot-eye-white", () => new THREE.MeshPhysicalMaterial({
-    color: "#fffaf1", roughness: 0.16, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.08,
+  const dark = mat("#26242b", 0.3, 0.02);
+  const noseMaterial = cachedMaterial("mascot-nose", () => new THREE.MeshPhysicalMaterial({
+    color: "#30252a", roughness: 0.2, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.08,
   }));
-  const iris = cachedMaterial(`mascot-iris:${species}`, () => new THREE.MeshPhysicalMaterial({
-    color: species === "frog" ? "#75a84c" : species === "wolf" || species === "cat" ? "#76a8b2" : "#65452f",
-    roughness: 0.2, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.06,
+  const eyeWhite = cachedMaterial("mascot-eye-white-film", () => new THREE.MeshPhysicalMaterial({
+    color: "#fffaf2", roughness: 0.13, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.035,
   }));
-  const pupil = cachedMaterial("mascot-pupil", () => new THREE.MeshPhysicalMaterial({
-    color: "#171c22", roughness: 0.12, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04,
+  const iris = cachedMaterial("mascot-iris-film:" + species, () => new THREE.MeshPhysicalMaterial({
+    color: species === "frog" ? "#78a94e" : species === "wolf" || species === "cat" ? "#6ea5b4" : "#69452d",
+    roughness: 0.18, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04,
   }));
+  const pupil = cachedMaterial("mascot-pupil-film", () => new THREE.MeshPhysicalMaterial({
+    color: "#151820", roughness: 0.09, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.025,
+  }));
+  const mouth = mat("#3d2024", 0.58, 0);
+  const tongue = mat("#dc777d", 0.48, 0);
+  const teeth = mat("#fff7e8", 0.24, 0);
+  const shoe = cachedMaterial("mascot-shoe-leather", () => new THREE.MeshPhysicalMaterial({
+    color: "#343944", roughness: 0.46, metalness: 0.04, clearcoat: 0.38, clearcoatRoughness: 0.3,
+  }));
+  const sole = mat("#e4dfd2", 0.82, 0);
+  const accent = mat("#e9c27f", 0.36, 0.22);
   const outfitColor = outfitOverride ?? OUTFIT_COLORS[style.outfit ?? "citizen-teal"] ?? OUTFIT_COLORS["citizen-teal"];
-  const outfit = cachedMaterial(`mascot-fabric:${outfitColor}`, () => {
+  const outfit = cachedMaterial("mascot-tailored-fabric:" + outfitColor, () => {
     const fabric = getFabricWeaveTexture();
     return new THREE.MeshPhysicalMaterial({
       color: outfitColor,
       map: fabric ?? null,
       bumpMap: fabric ?? null,
-      bumpScale: fabric ? 0.014 : 0,
-      roughness: 0.84,
+      bumpScale: fabric ? 0.018 : 0,
+      roughness: 0.82,
       metalness: 0,
-      sheen: 0.2,
-      sheenColor: new THREE.Color(outfitColor).multiplyScalar(1.06),
+      sheen: 0.28,
+      sheenColor: new THREE.Color(outfitColor).multiplyScalar(1.08),
       sheenRoughness: 0.92,
-      clearcoat: 0.08,
+      clearcoat: 0.1,
     });
   });
-  const shoe = mat("#343944", 0.8, 0);
-  const accent = mat("#f0c878", 0.44, 0.22);
-  const smoothSphere = cachedGeometry("mascot-reference-sphere", () => new THREE.SphereGeometry(1, 22, 16));
+
+  const smoothSphere = cachedGeometry("mascot-film-sphere-28", () => new THREE.SphereGeometry(1, 28, 20));
   const animatedArms: THREE.Object3D[] = [];
   const animatedLegs: THREE.Object3D[] = [];
-  const sphere = (radius: number, material: THREE.Material, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1) => {
+  const animatedEars: THREE.Object3D[] = [];
+  const sphere = (parent: THREE.Object3D, radius: number, material: THREE.Material, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1) => {
     const mesh = new THREE.Mesh(smoothSphere, material);
     mesh.position.set(x, y, z);
     mesh.scale.set(radius * sx, radius * sy, radius * sz);
-    group.add(mesh);
+    mesh.castShadow = detail === "full";
+    mesh.receiveShadow = detail === "full";
+    parent.add(mesh);
     return mesh;
   };
-  const capsule = (key: string, radius: number, length: number, material: THREE.Material, x: number, y: number, z: number) => {
-    const geometry = cachedGeometry(key, () => new THREE.CapsuleGeometry(radius, length, 4, 9));
+  const capsule = (parent: THREE.Object3D, key: string, radius: number, length: number, material: THREE.Material, x: number, y: number, z: number) => {
+    const geometry = cachedGeometry(key + ":" + radius + ":" + length, () => new THREE.CapsuleGeometry(radius, length, 5, 12));
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
-    group.add(mesh);
+    mesh.castShadow = detail === "full";
+    mesh.receiveShadow = detail === "full";
+    parent.add(mesh);
     return mesh;
   };
+  const bodyRig = new THREE.Group();
+  bodyRig.position.set(0, 0.32, 0);
+  group.add(bodyRig);
+  const headRig = new THREE.Group();
+  headRig.position.set(0, 1.47, 0.035);
+  group.add(headRig);
 
-  if (look.tail === "bushy") {
-    sphere(0.25, coat, 0.02, 0.45, -0.39, 0.94, 0.92, 1.42);
-    sphere(0.14, belly, 0.02, 0.47, -0.65, 0.9, 0.9, 0.82);
-  } else if (look.tail === "long") {
-    const tail = capsule("mascot-tail-capsule", 0.075, 0.5, coat, 0, 0.44, -0.52);
-    tail.rotation.x = Math.PI / 2.55;
-    tail.rotation.z = -0.14;
-    sphere(0.075, coat, 0, 0.43, -0.82);
-  } else if (look.tail === "short") {
-    sphere(0.105, coat, 0, 0.43, -0.39);
-  }
+  // Soft pear-shaped body gives every species a friendly, believable centre of mass.
+  sphere(bodyRig, 0.43, coat, 0, 0.48, 0, 0.92, 1.18, 0.86);
+  sphere(bodyRig, 0.39, outfit, 0, 0.49, 0.055, 1.02, 1.02, 0.9);
+  sphere(bodyRig, 0.235, belly, 0, 0.43, 0.365, 0.93, 1.08, 0.31);
 
-  // Reference proportions: small round torso, oversized head, short arms and legs.
-  sphere(0.39, outfit, 0, 0.66, 0, 1.02, 1.13, 0.9);
-  sphere(0.23, belly, 0, 0.66, 0.31, 0.9, 1.05, 0.38);
-
-  for (const side of [-1, 1]) {
-    const leg = capsule("mascot-reference-leg", 0.09, 0.2, coat, side * 0.17, 0.27, 0.02);
-    animatedLegs.push(leg);
-    sphere(0.12, shoe, side * 0.18, 0.1, 0.13, 1.2, 0.58, 1.42);
-
-    const sleeve = capsule("mascot-reference-sleeve", 0.092, 0.18, outfit, side * 0.34, 0.81, 0.015);
-    sleeve.rotation.z = side * -0.33;
-    const arm = capsule("mascot-reference-arm", 0.079, 0.22, coat, side * 0.38, 0.67, 0.04);
-    arm.rotation.z = side * -0.33;
-    animatedArms.push(arm);
-    const cuff = new THREE.Mesh(
-      cachedGeometry("mascot-cuff-ring", () => new THREE.TorusGeometry(0.087, 0.018, 6, 14)),
-      accent,
-    );
-    cuff.position.set(side * 0.45, 0.62, 0.055);
-    cuff.rotation.y = Math.PI / 2;
-    cuff.rotation.z = side * -0.33;
-    group.add(cuff);
-    sphere(0.105, coat, side * 0.49, 0.54, 0.065);
-  }
-
-  if (look.special === "mane") {
-    const mane = mat("#a9672f", 0.96, 0);
-    sphere(0.62, mane, 0, 1.38, -0.06, 1.16, 1.08, 0.82);
-    for (let index = 0; index < 8; index++) {
-      const angle = (index / 8) * Math.PI * 2;
-      sphere(0.14, mane, Math.cos(angle) * 0.49, 1.38 + Math.sin(angle) * 0.43, -0.02, 0.9, 1.1, 0.8);
+  // A soft collar, front placket and pocket panels make outfits look tailored instead of painted on.
+  const collar = new THREE.Mesh(cachedGeometry("mascot-collar-ring", () => new THREE.TorusGeometry(0.255, 0.052, 8, 28)), outfit);
+  collar.rotation.x = Math.PI / 2;
+  collar.position.set(0, 0.88, 0.055);
+  bodyRig.add(collar);
+  if (detail === "full") {
+    addTube(bodyRig, [
+      new THREE.Vector3(0, 0.86, 0.39),
+      new THREE.Vector3(0, 0.62, 0.405),
+      new THREE.Vector3(0, 0.32, 0.35),
+    ], 0.012, accent);
+    for (const side of [-1, 1]) {
+      addBox(bodyRig, 0.2, 0.13, 0.025, mat(outfitOverride ? "#d4bc91" : "#f3e8d6", 0.82), side * 0.2, 0.44, 0.39, false);
+      addBox(bodyRig, 0.21, 0.018, 0.025, accent, side * 0.2, 0.515, 0.405, false);
+      sphere(bodyRig, 0.026, accent, side * 0.095, 0.68, 0.405, 1, 1, 0.55);
+      sphere(bodyRig, 0.026, accent, side * 0.095, 0.51, 0.405, 1, 1, 0.55);
     }
   }
-  sphere(0.57, coat, 0, 1.4, 0.025, 1.05, 1, 0.94);
 
+  // Legs are attached to proper hip pivots so they can swing naturally while walking.
+  for (const side of [-1, 1]) {
+    const legPivot = new THREE.Group();
+    legPivot.position.set(side * 0.155, 0.24, 0.015);
+    bodyRig.add(legPivot);
+    capsule(legPivot, "mascot-film-trouser", 0.105, 0.22, coat, 0, -0.12, 0);
+    const sock = capsule(legPivot, "mascot-film-sock", 0.092, 0.1, mat("#f3e7d2", 0.9), 0, -0.245, 0.025);
+    sock.castShadow = false;
+    sphere(legPivot, 0.145, shoe, 0, -0.31, 0.115, 1.25, 0.62, 1.6);
+    addBox(legPivot, 0.26, 0.045, 0.34, sole, 0, -0.39, 0.14, false);
+    if (detail === "full") {
+      addTube(legPivot, [
+        new THREE.Vector3(-0.055, -0.29, 0.23),
+        new THREE.Vector3(0, -0.26, 0.245),
+        new THREE.Vector3(0.055, -0.29, 0.23),
+      ], 0.009, teeth);
+    }
+    animatedLegs.push(legPivot);
+  }
+
+  // Shoulder pivots give the sleeves, forearms and hands a more natural range of motion.
+  for (const side of [-1, 1]) {
+    const armPivot = new THREE.Group();
+    armPivot.position.set(side * 0.355, 0.79, 0.015);
+    bodyRig.add(armPivot);
+    const sleeve = capsule(armPivot, "mascot-film-sleeve", 0.125, 0.22, outfit, 0, -0.13, 0);
+    sleeve.rotation.z = side * -0.1;
+    const forearm = capsule(armPivot, "mascot-film-forearm", 0.092, 0.19, coat, side * 0.015, -0.34, 0.025);
+    forearm.rotation.z = side * 0.08;
+    sphere(armPivot, 0.105, coat, side * 0.02, -0.47, 0.06, 1.04, 0.95, 0.9);
+    if (detail === "full") {
+      const cuff = new THREE.Mesh(cachedGeometry("mascot-cuff-ring-film", () => new THREE.TorusGeometry(0.091, 0.014, 6, 16)), accent);
+      cuff.position.set(side * 0.015, -0.255, 0.025);
+      cuff.rotation.z = Math.PI / 2;
+      armPivot.add(cuff);
+    }
+    animatedArms.push(armPivot);
+  }
+
+  // A softly rounded tail is visible behind the silhouette and remains species-specific.
+  const tailRig = new THREE.Group();
+  tailRig.position.set(0, 0.44, -0.34);
+  bodyRig.add(tailRig);
+  if (look.tail === "bushy") {
+    sphere(tailRig, 0.29, coat, 0, 0.02, -0.2, 1.05, 0.95, 1.42);
+    sphere(tailRig, 0.19, belly, 0, 0.025, -0.43, 1.02, 0.95, 0.88);
+  } else if (look.tail === "long") {
+    const tail = capsule(tailRig, "mascot-film-tail", 0.085, 0.52, coat, 0, 0.02, -0.3);
+    tail.rotation.x = -Math.PI / 2;
+    sphere(tailRig, 0.085, coat, 0, 0.02, -0.66, 1, 1, 1.1);
+  } else if (look.tail === "short") {
+    sphere(tailRig, 0.115, coat, 0, 0, -0.12, 1, 0.9, 1);
+  }
+
+  // The head is modelled as a layered sculpted silhouette with cheek volume and a clear muzzle.
+  if (look.special === "mane") {
+    const mane = mat("#ad7136", 0.94, 0);
+    sphere(headRig, 0.69, mane, 0, -0.005, -0.085, 1.14, 1.12, 0.9);
+    if (detail === "full") {
+      for (let tuft = 0; tuft < 12; tuft++) {
+        const angle = (tuft / 12) * Math.PI * 2;
+        sphere(headRig, 0.16, mane, Math.cos(angle) * 0.52, Math.sin(angle) * 0.48, -0.045, 0.94, 1.04, 0.9);
+      }
+    }
+  }
+  sphere(headRig, 0.59, coat, 0, 0, 0.04, 1.02, 1, 0.92);
+
+  // Ears are separate articulated pieces: pointed, floppy, round or long depending on species.
   for (const side of [-1, 1]) {
     if (look.ears === "point") {
-      const ear = new THREE.Mesh(cachedGeometry("mascot-point-ear", () => new THREE.ConeGeometry(0.145, 0.37, 10)), coat);
-      ear.position.set(side * 0.32, 1.86, -0.01);
-      ear.rotation.z = side * -0.18;
-      group.add(ear);
-      sphere(0.065, muzzle, side * 0.32, 1.85, 0.075, 0.9, 1.1, 0.5);
+      const earPivot = new THREE.Group();
+      earPivot.position.set(side * 0.34, 0.36, -0.035);
+      headRig.add(earPivot);
+      const ear = new THREE.Mesh(cachedGeometry("mascot-film-point-ear", () => new THREE.ConeGeometry(0.17, 0.46, 16)), coat);
+      ear.position.y = 0.12;
+      ear.rotation.z = side * -0.16;
+      ear.castShadow = detail === "full";
+      earPivot.add(ear);
+      sphere(earPivot, 0.075, muzzle, 0, 0.12, 0.12, 0.88, 1.2, 0.42);
+      animatedEars.push(earPivot);
     } else if (look.ears === "long") {
-      const ear = capsule("mascot-long-ear", 0.085, 0.48, coat, side * 0.2, 1.94, -0.02);
+      const earPivot = new THREE.Group();
+      earPivot.position.set(side * 0.22, 0.36, -0.025);
+      headRig.add(earPivot);
+      const ear = capsule(earPivot, "mascot-film-long-ear", 0.105, 0.47, coat, 0, 0.28, 0);
       ear.rotation.z = side * -0.1;
-      const inner = capsule("mascot-long-ear-inner", 0.04, 0.34, muzzle, side * 0.2, 1.95, 0.06);
+      const inner = capsule(earPivot, "mascot-film-long-ear-inner", 0.055, 0.35, muzzle, 0, 0.29, 0.067);
       inner.rotation.z = side * -0.1;
+      animatedEars.push(earPivot);
     } else if (look.ears === "floppy") {
-      const ear = capsule("mascot-floppy-ear", 0.1, 0.32, coat, side * 0.39, 1.53, -0.015);
-      ear.rotation.z = side * -0.72;
+      const earPivot = new THREE.Group();
+      earPivot.position.set(side * 0.42, 0.2, -0.015);
+      headRig.add(earPivot);
+      const ear = capsule(earPivot, "mascot-film-floppy-ear", 0.115, 0.3, coat, side * 0.11, -0.1, 0);
+      ear.rotation.z = side * -0.62;
+      sphere(earPivot, 0.095, muzzle, side * 0.2, -0.18, 0.04, 0.9, 0.78, 0.5);
+      animatedEars.push(earPivot);
     } else if (look.ears === "round" || look.ears === "antler") {
-      sphere(look.ears === "antler" ? 0.14 : 0.17, coat, side * 0.38, 1.78, -0.02, 1.05, 1, 0.8);
-      if (look.ears === "round") sphere(0.075, muzzle, side * 0.38, 1.78, 0.085, 1, 1, 0.45);
+      const earPivot = new THREE.Group();
+      earPivot.position.set(side * 0.4, 0.3, -0.025);
+      headRig.add(earPivot);
+      sphere(earPivot, 0.18, coat, 0, 0.05, 0, 1.08, 1, 0.7);
+      sphere(earPivot, 0.09, muzzle, 0, 0.05, 0.115, 1, 1, 0.34);
+      animatedEars.push(earPivot);
     }
   }
 
   if (look.ears === "antler") {
     for (const side of [-1, 1]) {
-      const antler = new THREE.Mesh(cachedGeometry("mascot-antler", () => new THREE.CylinderGeometry(0.025, 0.04, 0.34, 7)), accent);
-      antler.position.set(side * 0.22, 2.07, -0.02);
-      antler.rotation.z = side * 0.34;
-      group.add(antler);
-      const branch = new THREE.Mesh(cachedGeometry("mascot-antler-branch", () => new THREE.CylinderGeometry(0.018, 0.026, 0.2, 7)), accent);
-      branch.position.set(side * 0.33, 2.17, 0);
-      branch.rotation.z = side * -0.58;
-      group.add(branch);
+      const antler = new THREE.Group();
+      antler.position.set(side * 0.22, 0.48, -0.055);
+      headRig.add(antler);
+      const stem = new THREE.Mesh(cachedGeometry("mascot-antler-film", () => new THREE.CylinderGeometry(0.028, 0.045, 0.42, 10)), accent);
+      stem.position.y = 0.17;
+      stem.rotation.z = side * 0.25;
+      antler.add(stem);
+      const tine = new THREE.Mesh(cachedGeometry("mascot-antler-tine-film", () => new THREE.CylinderGeometry(0.018, 0.028, 0.22, 8)), accent);
+      tine.position.set(side * 0.1, 0.35, 0);
+      tine.rotation.z = side * -0.52;
+      antler.add(tine);
     }
   }
   if (look.face === "frog") {
-    for (const side of [-1, 1]) sphere(0.17, coat, side * 0.23, 1.79, 0.17);
+    for (const side of [-1, 1]) sphere(headRig, 0.19, coat, side * 0.23, 0.34, 0.22, 1, 1, 0.95);
   }
   if (look.special === "trunk") {
-    for (const side of [-1, 1]) sphere(0.23, coat, side * 0.43, 1.4, -0.02, 1, 1.08, 0.48);
+    sphere(headRig, 0.24, coat, -0.39, -0.06, -0.005, 1, 1.1, 0.56);
+    sphere(headRig, 0.24, coat, 0.39, -0.06, -0.005, 1, 1.1, 0.56);
+    addTube(headRig, [
+      new THREE.Vector3(0, -0.12, 0.51),
+      new THREE.Vector3(0, -0.31, 0.64),
+      new THREE.Vector3(0.02, -0.48, 0.61),
+      new THREE.Vector3(0.08, -0.52, 0.48),
+    ], 0.105, coat);
   }
   if (look.special === "wings") {
-    for (const side of [-1, 1]) sphere(0.22, coat, side * 0.42, 0.78, -0.08, 0.68, 1.25, 0.48);
+    for (const side of [-1, 1]) {
+      sphere(bodyRig, 0.24, coat, side * 0.43, 0.46, -0.13, 0.62, 1.12, 0.5);
+      if (detail === "full") {
+        for (let feather = 0; feather < 3; feather++) {
+          sphere(bodyRig, 0.1, belly, side * (0.45 + feather * 0.035), 0.31 - feather * 0.1, -0.12, 0.75, 0.95, 0.48);
+        }
+      }
+    }
   }
-
-  const eyeY = look.face === "frog" ? 1.82 : 1.48;
-  for (const side of [-1, 1]) {
-    if (look.face === "panda") sphere(0.13, dark, side * 0.2, eyeY, 0.48, 1.1, 1.14, 0.55);
-    if (look.face === "raccoon") sphere(0.13, dark, side * 0.2, eyeY, 0.48, 1.3, 0.84, 0.48);
-    sphere(0.105, eyeWhite, side * 0.205, eyeY, 0.49, 1, 1.05, 0.52);
-    sphere(0.06, pupil, side * 0.205, eyeY - 0.005, 0.545, 1, 1.08, 0.48);
-    sphere(0.022, eyeWhite, side * 0.18, eyeY + 0.028, 0.57);
-    sphere(0.009, eyeWhite, side * 0.235, eyeY - 0.025, 0.572, 1, 1, 0.6);
-    if (detail === "full") {
-      addTube(group, [
-        new THREE.Vector3(side * 0.31, eyeY + 0.16, 0.41),
-        new THREE.Vector3(side * 0.21, eyeY + 0.2, 0.46),
-        new THREE.Vector3(side * 0.1, eyeY + 0.17, 0.43),
-      ], 0.025, coat);
+  if (look.special === "spines") {
+    for (let index = 0; index < 9; index++) {
+      const x = (index - 4) * 0.095;
+      const spine = new THREE.Mesh(cachedGeometry("mascot-film-spine", () => new THREE.ConeGeometry(0.06, 0.22, 9)), mat("#775139", 0.9));
+      spine.position.set(x, 0.43 + (index % 2) * 0.035, -0.12);
+      spine.rotation.z = x * 0.35;
+      bodyRig.add(spine);
     }
   }
 
+  // Eyes use layered glossy geometry and large catchlights, giving the face an expressive animated-film look.
+  const eyeY = look.face === "frog" ? 0.35 : 0.13;
+  const eyeZ = look.face === "frog" ? 0.34 : 0.48;
+  for (const side of [-1, 1]) {
+    if (look.face === "panda") sphere(headRig, 0.16, dark, side * 0.22, eyeY, eyeZ - 0.005, 1.15, 1.25, 0.5);
+    if (look.face === "raccoon") sphere(headRig, 0.16, dark, side * 0.22, eyeY, eyeZ - 0.005, 1.28, 0.9, 0.48);
+    sphere(headRig, 0.118, eyeWhite, side * 0.205, eyeY, eyeZ, 1, 1.06, 0.66);
+    sphere(headRig, 0.078, iris, side * 0.205, eyeY - 0.005, eyeZ + 0.072, 1, 1.08, 0.68);
+    sphere(headRig, 0.046, pupil, side * 0.205, eyeY - 0.008, eyeZ + 0.11, 1, 1.08, 0.65);
+    sphere(headRig, 0.027, eyeWhite, side * 0.17, eyeY + 0.035, eyeZ + 0.16, 1, 1, 0.55);
+    sphere(headRig, 0.012, eyeWhite, side * 0.238, eyeY - 0.028, eyeZ + 0.155, 1, 1, 0.55);
+    if (detail === "full") {
+      addTube(headRig, [
+        new THREE.Vector3(side * 0.34, eyeY + 0.17, eyeZ - 0.045),
+        new THREE.Vector3(side * 0.22, eyeY + 0.205, eyeZ + 0.02),
+        new THREE.Vector3(side * 0.1, eyeY + 0.17, eyeZ - 0.035),
+      ], 0.022, coat);
+    }
+  }
+
+  // Cheeks, muzzle pads and nose soften the face; the open smile prevents the old blank, rigid expression.
+  sphere(headRig, 0.15, muzzle, -0.14, -0.17, 0.48, 1.1, 0.88, 0.7);
+  sphere(headRig, 0.15, muzzle, 0.14, -0.17, 0.48, 1.1, 0.88, 0.7);
+  sphere(headRig, 0.075, noseMaterial, 0, -0.115, 0.595, 1.15, 0.82, 0.7);
   if (look.special === "beak") {
-    sphere(0.13, mat("#e9a12e", 0.52), 0, 1.27, 0.51, 1.2, 0.68, 0.92);
-  } else if (look.special === "trunk") {
-    const trunk = capsule("mascot-trunk", 0.085, 0.4, coat, 0, 1.16, 0.53);
-    trunk.rotation.x = -0.12;
-    sphere(0.075, muzzle, 0, 0.94, 0.56, 1, 0.75, 0.9);
-  } else {
-    sphere(0.15, muzzle, -0.12, 1.27, 0.46, 1.05, 0.78, 0.8);
-    sphere(0.15, muzzle, 0.12, 1.27, 0.46, 1.05, 0.78, 0.8);
-    sphere(0.055, dark, 0, 1.36, 0.565, 1.15, 0.82, 0.65);
+    sphere(headRig, 0.16, mat("#e9a43a", 0.43, 0.02), 0, -0.19, 0.59, 1.36, 0.62, 0.95);
+    sphere(headRig, 0.09, mat("#f4bd50", 0.52), 0, -0.28, 0.58, 1.24, 0.38, 0.75);
+  } else if (look.special !== "trunk") {
+    sphere(headRig, 0.125, mouth, 0, -0.31, 0.5, 0.95, 0.66, 0.45);
+    sphere(headRig, 0.07, tongue, 0, -0.36, 0.535, 0.95, 0.4, 0.55);
+    sphere(headRig, 0.045, teeth, -0.045, -0.255, 0.55, 0.72, 0.45, 0.42);
+    sphere(headRig, 0.045, teeth, 0.045, -0.255, 0.55, 0.72, 0.45, 0.42);
     const smile = new THREE.Mesh(
-      cachedGeometry("mascot-smile-curve", () => new THREE.TorusGeometry(0.09, 0.012, 5, 14, Math.PI)),
+      cachedGeometry("mascot-film-smile", () => new THREE.TorusGeometry(0.13, 0.014, 6, 22, Math.PI)),
       dark,
     );
-    smile.position.set(0, 1.205, 0.55);
+    smile.position.set(0, -0.29, 0.57);
     smile.rotation.z = Math.PI;
-    group.add(smile);
+    headRig.add(smile);
   }
 
-  if (detail === "full") {
-    // Fine jacket details: stitched centre seam, pocket flaps and small metal buttons.
-    addTube(group, [
-      new THREE.Vector3(0, 0.96, 0.365),
-      new THREE.Vector3(0, 0.77, 0.385),
-      new THREE.Vector3(0, 0.48, 0.34),
-    ], 0.009, accent);
-    for (const side of [-1, 1]) {
-      addBox(group, 0.2, 0.012, 0.018, accent, side * 0.2, 0.82, 0.36, false);
-      sphere(0.025, accent, side * 0.09, 0.73, 0.385, 1, 1, 0.55);
-      sphere(0.025, accent, side * 0.09, 0.57, 0.35, 1, 1, 0.55);
-    }
-  }
-
+  // Species patterns remain recognisable and are sculpted into the coat rather than floating stickers.
   if (look.face === "tiger") {
     for (const side of [-1, 1]) {
-      for (let stripe = 0; stripe < 2; stripe++) {
-        const mark = addBox(group, 0.045, 0.15, 0.025, dark, side * (0.34 + stripe * 0.065), 1.72 - stripe * 0.08, 0.41, false);
-        mark.rotation.z = side * (0.16 + stripe * 0.08);
+      for (let stripe = 0; stripe < 3; stripe++) {
+        const mark = addBox(headRig, 0.045, 0.16, 0.028, mat("#3c2a22", 0.95), side * (0.36 + stripe * 0.055), 0.37 - stripe * 0.11, 0.4, false);
+        mark.rotation.z = side * (0.22 + stripe * 0.05);
       }
     }
   }
   if (look.face === "cow") {
-    sphere(0.13, dark, -0.31, 1.6, -0.05, 1, 1.2, 0.45);
-    sphere(0.1, dark, 0.29, 1.27, -0.06, 1.15, 0.8, 0.45);
+    sphere(headRig, 0.13, dark, -0.34, 0.27, -0.08, 1.1, 1.35, 0.42);
+    sphere(headRig, 0.11, dark, 0.34, -0.19, -0.07, 1.1, 0.92, 0.42);
+    sphere(headRig, 0.085, mat("#e9a8a5", 0.62), 0, -0.25, 0.53, 1.4, 0.72, 0.55);
   }
-  if (look.special === "spines") {
-    for (let index = 0; index < 7; index++) {
-      const x = (index - 3) * 0.1;
-      const spine = new THREE.Mesh(cachedGeometry("mascot-spine", () => new THREE.ConeGeometry(0.055, 0.18, 7)), mat("#65452f", 0.96, 0));
-      spine.position.set(x, 1.84 - Math.abs(3 - index) * 0.015, -0.16);
-      spine.rotation.z = x * 0.5;
-      group.add(spine);
+  if (look.face === "raccoon") {
+    for (const side of [-1, 1]) {
+      const mask = sphere(headRig, 0.15, mat("#4c4b47", 0.95), side * 0.25, 0.14, 0.455, 1.24, 0.78, 0.33);
+      mask.rotation.z = side * 0.12;
     }
   }
 
+  // Tailored accessories have real volume and sit on the body instead of floating on the silhouette.
   if (style.accessory === "cap") {
-    sphere(0.24, accent, 0, 1.91, 0.02, 1.22, 0.34, 1);
-    addBox(group, 0.48, 0.05, 0.22, mat("#b98d52", 0.52), 0, 1.89, 0.2, false);
+    sphere(headRig, 0.26, accent, 0, 0.48, 0.02, 1.18, 0.38, 0.98);
+    const brim = new THREE.Mesh(cachedGeometry("mascot-cap-brim", () => new THREE.CylinderGeometry(0.23, 0.27, 0.055, 24)), accent);
+    brim.scale.set(1.15, 1, 0.68);
+    brim.position.set(0, 0.43, 0.15);
+    headRig.add(brim);
+    sphere(headRig, 0.045, teeth, 0, 0.63, 0.03, 1, 0.45, 0.75);
   } else if (style.accessory === "scarf") {
-    addBox(group, 0.62, 0.11, 0.14, accent, 0, 1.08, 0.2, false);
-    addBox(group, 0.13, 0.27, 0.1, accent, 0.18, 0.91, 0.24, false);
+    const scarf = new THREE.Mesh(cachedGeometry("mascot-scarf-ring", () => new THREE.TorusGeometry(0.28, 0.075, 8, 28)), accent);
+    scarf.rotation.x = Math.PI / 2;
+    scarf.position.set(0, 0.93, 0.04);
+    bodyRig.add(scarf);
+    addBox(bodyRig, 0.12, 0.34, 0.075, accent, 0.17, 0.71, 0.34, false);
+    addBox(bodyRig, 0.13, 0.07, 0.08, mat("#f5e4c6", 0.8), 0.17, 0.58, 0.35, false);
   } else if (style.accessory === "backpack") {
-    addBox(group, 0.36, 0.42, 0.2, mat("#98633e"), 0, 0.72, -0.32, false);
+    const pack = new THREE.Group();
+    pack.position.set(0, 0.52, -0.34);
+    bodyRig.add(pack);
+    sphere(pack, 0.25, mat("#8c6547", 0.78), 0, 0.04, 0, 1.1, 1.25, 0.55);
+    addBox(pack, 0.31, 0.08, 0.035, accent, 0, 0.23, 0.13, false);
+    for (const side of [-1, 1]) capsule(pack, "mascot-backpack-strap", 0.035, 0.28, accent, side * 0.22, 0.05, 0.12);
   }
 
   group.userData.species = species;
@@ -582,6 +696,10 @@ function createMascot(group: THREE.Group, speciesName: string, style: AvatarStyl
   group.userData.outfitMaterial = outfit;
   group.userData.animatedArms = animatedArms;
   group.userData.animatedLegs = animatedLegs;
+  group.userData.animatedEars = animatedEars;
+  group.userData.headRig = headRig;
+  group.userData.bodyRig = bodyRig;
+  group.userData.tailRig = tailRig;
 }
 function makeTree(scene: THREE.Scene, x: number, z: number, size = 1) {
   const placements = (scene.userData.treePlacements ??= []) as { x: number; z: number; size: number }[];
