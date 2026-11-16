@@ -3,14 +3,15 @@ import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/authz";
 import { query } from "@/lib/db";
 import s from "./dashboard.module.css";
+import type { QueryResultRow } from "pg";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Vote = { option_key:string; total:number };
-type History = { vote_day:string; winning_option:string; winning_votes:number; total_votes:number };
-type Job = { job_type:string; job_status:string; last_error:string|null; created_at:string };
-type Comment = { platform:string; comment_text:string; moderation_status:string; received_at:string };
+type Vote = QueryResultRow & { option_key:string; total:number };
+type History = QueryResultRow & { vote_day:string; winning_option:string; winning_votes:number; total_votes:number };
+type Job = QueryResultRow & { job_type:string; job_status:string; last_error:string|null; created_at:string };
+type Comment = QueryResultRow & { platform:string; comment_text:string; moderation_status:string; received_at:string };
 type DashboardData = {
   schemaReady:boolean; votes:Vote[]; projects:number; housesAvailable:number; housesClaimed:number;
   history:History[]; comments:Comment[]; pendingComments:number; commentCount:number;
@@ -41,15 +42,15 @@ async function load():Promise<DashboardData> {
   data.socialConfigured = Boolean(process.env.VILLAGE_INSTAGRAM_ACCOUNT_ID &&
     process.env.VILLAGE_INSTAGRAM_MEDIA_IDS && process.env.VILLAGE_VOTE_INGEST_SECRET);
   try {
-    const existing=await query<{ok:boolean}>(
+    const existing=await query<{ok:boolean} & QueryResultRow>(
       "SELECT to_regclass('public.village_votes') IS NOT NULL AND to_regclass('public.village_epochs') IS NOT NULL AND to_regclass('public.village_objects') IS NOT NULL AND to_regclass('public.village_homes') IS NOT NULL AND to_regclass('public.village_vote_results') IS NOT NULL AS ok"
     );
     data.schemaReady = Boolean(existing.rows[0]?.ok);
     if(data.schemaReady){
       const [vote,building,home,history]=await Promise.all([
         query<Vote>("SELECT v.option_key,COUNT(*)::int AS total FROM village_votes v JOIN village_epochs e ON e.id=v.epoch_id WHERE e.slug='desa-nol' AND v.vote_day=$1::date GROUP BY v.option_key",[todayWIB()]),
-        query<{count:string}>("SELECT COUNT(*)::text AS count FROM village_objects o JOIN village_epochs e ON e.id=o.epoch_id WHERE e.slug='desa-nol'"),
-        query<{status:string;total:number}>("SELECT h.status,COUNT(*)::int AS total FROM village_homes h JOIN village_epochs e ON e.id=h.epoch_id WHERE e.slug='desa-nol' GROUP BY h.status"),
+        query<{count:string} & QueryResultRow>("SELECT COUNT(*)::text AS count FROM village_objects o JOIN village_epochs e ON e.id=o.epoch_id WHERE e.slug='desa-nol'"),
+        query<{status:string;total:number} & QueryResultRow>("SELECT h.status,COUNT(*)::int AS total FROM village_homes h JOIN village_epochs e ON e.id=h.epoch_id WHERE e.slug='desa-nol' GROUP BY h.status"),
         query<History>("SELECT r.vote_day::text,r.winning_option,r.winning_votes,r.total_votes FROM village_vote_results r JOIN village_epochs e ON e.id=r.epoch_id WHERE e.slug='desa-nol' ORDER BY r.vote_day DESC LIMIT 7")
       ]);
       data.votes=vote.rows;
@@ -61,11 +62,11 @@ async function load():Promise<DashboardData> {
   }catch{data.databaseError=true;}
   try{
     const [cm,jobs,approvals,drafts,worker,recent]=await Promise.all([
-      query<{total:string;pending:string}>("SELECT COUNT(*)::text AS total, COUNT(*) FILTER (WHERE moderation_status='pending')::text AS pending FROM social_comment_inbox"),
+      query<{total:string;pending:string} & QueryResultRow>("SELECT COUNT(*)::text AS total, COUNT(*) FILTER (WHERE moderation_status='pending')::text AS pending FROM social_comment_inbox"),
       query<Job>("SELECT job_type,job_status,LEFT(last_error,200) AS last_error,created_at::text FROM agent_jobs ORDER BY created_at DESC LIMIT 8"),
-      query<{total:string}>("SELECT COUNT(*)::text AS total FROM approval_requests WHERE approval_status='pending'"),
-      query<{total:string}>("SELECT COUNT(*)::text AS total FROM media_drafts"),
-      query<{last_seen_at:string}>("SELECT last_seen_at::text FROM worker_heartbeats WHERE worker_key='novaria-agent-worker'"),
+      query<{total:string} & QueryResultRow>("SELECT COUNT(*)::text AS total FROM approval_requests WHERE approval_status='pending'"),
+      query<{total:string} & QueryResultRow>("SELECT COUNT(*)::text AS total FROM media_drafts"),
+      query<{last_seen_at:string} & QueryResultRow>("SELECT last_seen_at::text FROM worker_heartbeats WHERE worker_key='novaria-agent-worker'"),
       query<Comment>("SELECT platform,LEFT(comment_text,180) AS comment_text,moderation_status,received_at::text FROM social_comment_inbox ORDER BY received_at DESC LIMIT 6")
     ]);
     data.commentCount=Number(cm.rows[0]?.total??0);
