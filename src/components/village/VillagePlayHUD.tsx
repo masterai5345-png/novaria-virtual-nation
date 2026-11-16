@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { MessageCircle, Hand, Armchair, Footprints, X, Send, LogIn, UserRound } from "lucide-react";
 
 type Entry={id:string;name:string;avatar:string;body:string;created_at:string};
@@ -118,7 +119,7 @@ export default function VillagePlayHUD(){
             </button>:
             <div key={i} style={{display:"grid",placeItems:"center",opacity:i===4?1:0}}>{i===4?<Footprints size={17}/>:null}</div>)}
         </div>
-      </>:<button onClick={()=>void signIn("google",{redirectTo:"/"})} style={smallButton}><LogIn size={17}/> Masuk untuk memainkan maskot</button>}
+      </>:<Link href="/masuk" style={{...smallButton,textDecoration:"none"}}><LogIn size={17}/> Masuk untuk memainkan maskot</Link>}
     </div>
 
     <div style={{position:"absolute",bottom:20,right:12,width:"min(360px,calc(100vw - 24px))",pointerEvents:"auto"}}>
@@ -144,7 +145,7 @@ export default function VillagePlayHUD(){
                 style={{flex:1,minWidth:0,background:"#ffffffef",borderRadius:11,padding:"11px",border:0,fontSize:13}}/>
               <button type="submit" disabled={sending||!text.trim()||!chatReady} aria-label="Kirim pesan" style={{padding:"10px 12px",borderRadius:11,border:0,color:"#fff",background:"#26845b",cursor:"pointer",opacity:sending?0.5:1}}><Send size={17}/></button>
             </form>:
-            <button onClick={()=>void signIn("google",{redirectTo:"/"})} style={{...smallButton,width:"100%",justifyContent:"center"}}>Masuk dengan Google untuk mengirim chat</button>}
+            <Link href="/masuk" style={{...smallButton,width:"100%",justifyContent:"center",textDecoration:"none"}}>Masuk dengan Google untuk mengirim chat</Link>}
         </div>
       </section>:
         <button onClick={()=>setChatOpen(true)} style={{...smallButton,float:"right",padding:"13px 16px",borderRadius:17}}>
