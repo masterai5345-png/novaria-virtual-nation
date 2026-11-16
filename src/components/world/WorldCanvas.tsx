@@ -1987,7 +1987,7 @@ function createShopKiosk(scene: THREE.Scene, x: number, z: number, label: string
   scene.add(shop);
 }
 
-function addDistrictLabel(scene: THREE.Scene, label: string, x: number, z: number, tint = "#183a3a") {
+function addDistrictLabel(scene: THREE.Scene, label: string, x: number, z: number, tint = "#ffffff") {
   const canvas = document.createElement("canvas");
   canvas.width = 768;
   canvas.height = 192;
@@ -2308,46 +2308,90 @@ function makeCity(scene: THREE.Scene, houseGroup: THREE.Group, lowPowerDevice = 
   createTreeForest(scene);
   createPalmForest(scene);
 
-  // Monumental civic hall with a glass entry, colonnade, steps and a gold city crest.
+  // A civic landmark with softened stone massing, a glass entry, layered roof and warm identity crest.
   const hall = new THREE.Group();
-  const limestone = mat("#e7e0d2", 0.82);
-  const civicTeal = mat("#205a59", 0.52, 0.16);
-  const civicGold = mat("#c9a36b", 0.34, 0.42);
-  const civicGlass = new THREE.MeshStandardMaterial({ color: "#9bc2c8", roughness: 0.15, metalness: 0.46 });
-  addBox(hall, 5.2, 0.26, 4.0, mat("#8f9388"), 0, 0.13, 0);
-  addBox(hall, 4.65, 2.0, 3.2, limestone, 0, 1.25, -0.08);
-  addBox(hall, 4.9, 0.2, 3.42, civicTeal, 0, 2.36, -0.08);
-  addBox(hall, 4.42, 0.09, 3.1, civicGold, 0, 2.5, -0.08);
-  addBox(hall, 2.3, 1.35, 0.05, civicGlass, 0, 1.05, 1.55, false);
-  addBox(hall, 0.13, 1.42, 0.1, civicGold, -1.2, 1.02, 1.59, false);
-  addBox(hall, 0.13, 1.42, 0.1, civicGold, 1.2, 1.02, 1.59, false);
-  for (const x of [-1.8, -0.9, 0, 0.9, 1.8]) {
-    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.1, 1.65, 16), limestone);
-    pillar.position.set(x, 0.96, 1.85);
+  const limestone = createStuccoMaterial("#e9e1d3", 41);
+  const civicTeal = mat("#245e5d", 0.42, 0.18);
+  const civicGold = mat("#c9a36b", 0.32, 0.55);
+  const civicGlass = cachedMaterial("civic-hall-glass", () => new THREE.MeshPhysicalMaterial({
+    color: "#a5cbd0", roughness: 0.12, metalness: 0.28, clearcoat: 1, clearcoatRoughness: 0.06,
+  }));
+  const civicStone = createStuccoMaterial("#aeb4a8", 17);
+
+  const hallBase = new THREE.Mesh(roundedPrismGeometry(5.55, 4.45, 0.34, 0.28), civicStone);
+  hallBase.position.y = 0.17;
+  hallBase.castShadow = true;
+  hallBase.receiveShadow = true;
+  hall.add(hallBase);
+  const mainVolume = new THREE.Mesh(roundedPrismGeometry(4.78, 3.45, 2.05, 0.3), limestone);
+  mainVolume.position.set(0, 0.34, -0.08);
+  mainVolume.castShadow = true;
+  mainVolume.receiveShadow = true;
+  hall.add(mainVolume);
+
+  // Layered roofline and a raised centre pavilion add a recognisable civic silhouette.
+  const roofCornice = new THREE.Mesh(roundedPrismGeometry(5.05, 3.72, 0.2, 0.24), civicTeal);
+  roofCornice.position.set(0, 2.38, -0.08);
+  roofCornice.castShadow = true;
+  hall.add(roofCornice);
+  const roofCap = new THREE.Mesh(roundedPrismGeometry(4.72, 3.42, 0.11, 0.2), civicGold);
+  roofCap.position.set(0, 2.54, -0.08);
+  hall.add(roofCap);
+  const pavilion = new THREE.Mesh(roundedPrismGeometry(1.85, 1.38, 0.62, 0.18), limestone);
+  pavilion.position.set(0, 2.88, -0.2);
+  pavilion.castShadow = true;
+  hall.add(pavilion);
+  const pavilionRoof = new THREE.Mesh(roundedPrismGeometry(2.05, 1.58, 0.12, 0.2), civicGold);
+  pavilionRoof.position.set(0, 3.24, -0.2);
+  hall.add(pavilionRoof);
+
+  // Deep blue-green glazed entrance with a warm metal frame and rounded arch detail.
+  addBox(hall, 2.72, 1.36, 0.08, civicTeal, 0, 1.15, 1.68, false);
+  addBox(hall, 2.48, 1.18, 0.055, civicGlass, 0, 1.17, 1.73, false);
+  addBox(hall, 0.075, 1.18, 0.06, civicGold, -0.82, 1.17, 1.77, false);
+  addBox(hall, 0.075, 1.18, 0.06, civicGold, 0.82, 1.17, 1.77, false);
+  addBox(hall, 0.055, 1.16, 0.06, civicGold, 0, 1.17, 1.78, false);
+  const entranceArch = new THREE.Mesh(
+    cachedGeometry("civic-entry-arch", () => new THREE.TorusGeometry(0.72, 0.055, 8, 32, Math.PI)),
+    civicGold,
+  );
+  entranceArch.position.set(0, 1.8, 1.76);
+  entranceArch.rotation.z = Math.PI;
+  hall.add(entranceArch);
+
+  // Five rounded columns sit in front of the glazed entry, with broad stone bases and capitals.
+  for (const x of [-1.92, -0.96, 0, 0.96, 1.92]) {
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.12, 18), civicGold);
+    base.position.set(x, 0.55, 1.92);
+    hall.add(base);
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.105, 1.52, 18), limestone);
+    pillar.position.set(x, 1.33, 1.92);
+    pillar.castShadow = true;
     hall.add(pillar);
-    const capital = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 16), civicGold);
-    capital.position.set(x, 1.78, 1.85);
+    const capital = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 0.1, 18), civicGold);
+    capital.position.set(x, 2.12, 1.92);
     hall.add(capital);
   }
-  for (const x of [-1.6, 0, 1.6]) {
-    addBox(hall, 0.68, 0.56, 0.035, civicGlass, x, 1.38, 1.61, false);
-    addBox(hall, 0.08, 0.6, 0.05, civicGold, x, 1.38, 1.64, false);
-  }
-  addBox(hall, 2.1, 0.13, 0.75, limestone, 0, 0.42, 2.02);
-  addBox(hall, 2.6, 0.13, 0.9, civicGold, 0, 0.25, 2.12);
-  addBox(hall, 3.0, 0.13, 1.05, limestone, 0, 0.08, 2.22);
-  const crest = new THREE.Mesh(new THREE.CircleGeometry(0.27, 32), civicGold);
-  crest.position.set(0, 2.08, 1.69);
+  addBox(hall, 2.85, 0.14, 0.82, limestone, 0, 0.42, 2.12);
+  addBox(hall, 3.25, 0.14, 1.0, civicGold, 0, 0.25, 2.24);
+  addBox(hall, 3.65, 0.14, 1.18, limestone, 0, 0.08, 2.36);
+
+  // A dimensional crest and a small flag make the building feel inhabited, not generic.
+  const crest = new THREE.Mesh(new THREE.SphereGeometry(0.25, 24, 18), civicGold);
+  crest.scale.set(1, 1, 0.32);
+  crest.position.set(0, 2.05, 1.82);
   hall.add(crest);
-  addSphere(hall, 0.14, mat("#f2e8cf", 0.38, 0.18), 0, 2.08, 1.72);
-  const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.6, 8), civicGold);
-  flagPole.position.set(0, 3.35, -0.08);
+  const crestCore = new THREE.Mesh(new THREE.SphereGeometry(0.11, 18, 14), mat("#f4e8cf", 0.28, 0.18));
+  crestCore.scale.set(1, 1, 0.5);
+  crestCore.position.set(0, 2.05, 1.91);
+  hall.add(crestCore);
+  const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.25, 9), civicGold);
+  flagPole.position.set(0, 3.95, -0.2);
   hall.add(flagPole);
-  addBox(hall, 0.68, 0.34, 0.035, civicTeal, 0.34, 3.87, -0.08);
+  addBox(hall, 0.72, 0.34, 0.045, civicTeal, 0.34, 4.24, -0.2, false);
   hall.position.set(0, 0.4, -7.8);
   scene.add(hall);
   addDistrictLabel(scene, "City Hall", 0, -5.1);
-
   for (let index = 0; index < (lowPowerDevice ? 2 : 5); index++) {
     const car = createCar(scene, -21 + index * 10, 2.75, ["#d94b43", "#2f8295", "#d5a43e", "#e8e6de", "#3e505d"][index]);
     car.userData.speed = 1.4 + (index % 3) * 0.35;
