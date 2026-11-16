@@ -355,7 +355,7 @@ function novariaRefreshPresence(){
  .then(function(v){
   if(!v||!Array.isArray(v.players))return;
   var seen={};
-  v.players.slice(0,25).forEach(function(p){
+  v.players.slice(0,15).forEach(function(p){
    if(!p||typeof p.id!=="string"||p.id===NOVARIA_PRESENCE_ID)return;
    var x=Number(p.x),z=Number(p.z);
    if(!Number.isFinite(x)||!Number.isFinite(z)||Math.abs(x)>48||Math.abs(z)>48)return;
@@ -376,7 +376,7 @@ function novariaRefreshPresence(){
  }).catch(function(){});
 }
 novariaRefreshPresence();
-setInterval(function(){novariaPushPresence();novariaRefreshPresence()},4500);
+setInterval(function(){novariaPushPresence();novariaRefreshPresence()},7000);
 function novariaTickGhosts(dt,t){
  Object.keys(NOVARIA_GHOSTS).forEach(function(id){
   var g=NOVARIA_GHOSTS[id],d=g.userData;
