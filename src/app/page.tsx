@@ -11,7 +11,7 @@ export default function HomePage() {
         referrerPolicy="same-origin" allow="fullscreen"
         style={{position:"absolute",inset:0,width:"100%",height:"100%",border:0,display:"block"}}/>
       <VillagePlayHUD />
-      <Link href="/citizen" style={{position:"absolute",right:14,top:70,padding:"11px 15px",
+      <Link href="/masuk" style={{position:"absolute",right:14,top:70,padding:"11px 15px",
         borderRadius:15,background:"rgba(255,255,255,.94)",color:"#1a5541",fontWeight:800,
         textDecoration:"none",fontSize:13,boxShadow:"0 9px 28px rgba(18,43,34,.22)",
         fontFamily:"system-ui,sans-serif"}}>🐾 Jadi Warga</Link>
