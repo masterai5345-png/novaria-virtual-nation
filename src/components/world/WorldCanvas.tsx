@@ -52,6 +52,12 @@ const OUTFIT_COLORS: Record<string, string> = {
   explorer: "#65794c",
   builder: "#d18a3e",
   "harbor-guard": "#314c70",
+  "citizen-coral": "#d96955",
+  "citizen-lavender": "#8870b7",
+  "citizen-sky": "#4b91b8",
+  "citizen-gold": "#c49a42",
+  "citizen-rose": "#c66e8a",
+  "citizen-mint": "#66a58d",
 };
 const COAT_COLORS: Record<string, string> = {
   "river-brown": "#8d654b",
@@ -712,10 +718,10 @@ function createTreeForest(scene: THREE.Scene) {
   const dummy = new THREE.Object3D();
 
   const trunkMaterial = createBarkMaterial();
-  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.19, 1, 10), trunkMaterial, placements.length);
+  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.2, 1, 10), trunkMaterial, placements.length);
   placements.forEach((tree, index) => {
-    dummy.position.set(tree.x, 0.4 + tree.size * 0.5, tree.z);
-    dummy.scale.set(tree.size, tree.size, tree.size);
+    dummy.position.set(tree.x, 0.4 + tree.size * 0.58, tree.z);
+    dummy.scale.set(tree.size, tree.size * 1.16, tree.size);
     dummy.rotation.set(0, 0, 0);
     dummy.updateMatrix();
     trunk.setMatrixAt(index, dummy.matrix);
@@ -725,14 +731,14 @@ function createTreeForest(scene: THREE.Scene) {
   trunk.receiveShadow = true;
   scene.add(trunk);
 
-  const branchGeometry = new THREE.CylinderGeometry(0.055, 0.075, 0.68, 7);
+  const branchGeometry = new THREE.CylinderGeometry(0.045, 0.075, 0.78, 8);
   const branch = new THREE.InstancedMesh(branchGeometry, mat("#886547", 0.96), placements.length * 2);
   let branchIndex = 0;
   placements.forEach((tree) => {
     for (const side of [-1, 1]) {
-      dummy.position.set(tree.x + side * 0.22 * tree.size, 0.4 + 0.84 * tree.size, tree.z);
+      dummy.position.set(tree.x + side * 0.24 * tree.size, 0.4 + 0.93 * tree.size, tree.z);
       dummy.scale.set(tree.size, tree.size, tree.size);
-      dummy.rotation.set(0, 0, side * -0.7);
+      dummy.rotation.set(0, 0, side * -0.72);
       dummy.updateMatrix();
       branch.setMatrixAt(branchIndex++, dummy.matrix);
     }
@@ -741,44 +747,42 @@ function createTreeForest(scene: THREE.Scene) {
   branch.castShadow = false;
   scene.add(branch);
 
-  const foliageMaterial = cachedMaterial("instanced-tree-foliage", () => new THREE.MeshPhysicalMaterial({
+  const foliageMaterial = cachedMaterial("instanced-tree-foliage", () => new THREE.MeshStandardMaterial({
     color: "#ffffff",
-    roughness: 0.9,
+    roughness: 0.96,
     metalness: 0,
-    sheen: 0.28,
-    sheenColor: new THREE.Color("#b9d8a0"),
-    sheenRoughness: 0.96,
-    bumpMap: getFurNoiseTexture(),
-    bumpScale: 0.008,
   }));
   const foliage = new THREE.InstancedMesh(
-    cachedGeometry("reference-tree-crown", () => new THREE.SphereGeometry(1, 16, 12)),
+    cachedGeometry("reference-tree-faceted-crown", () => new THREE.IcosahedronGeometry(1, 1)),
     foliageMaterial,
-    placements.length * 5,
+    placements.length * 8,
   );
-  const colorOptions = ["#4f9961", "#61a96d", "#3f8855", "#79b77b"].map((color) => new THREE.Color(color));
+  const colorOptions = ["#3f8d52", "#55a261", "#69ae70", "#347a49", "#79b878"].map((color) => new THREE.Color(color));
   const clusters: [number, number, number, number, number, number][] = [
-    [-0.34, 1.28, 0.02, 0.55, 0.52, 0.52],
-    [0.34, 1.3, -0.04, 0.56, 0.52, 0.54],
-    [-0.08, 1.72, -0.08, 0.54, 0.53, 0.52],
-    [0.27, 1.65, 0.16, 0.5, 0.48, 0.5],
-    [0.0, 2.02, 0.0, 0.46, 0.44, 0.46],
+    [-0.38, 1.25, 0.02, 0.5, 0.49, 0.48],
+    [0.38, 1.28, -0.08, 0.52, 0.48, 0.5],
+    [-0.12, 1.68, -0.12, 0.51, 0.49, 0.5],
+    [0.28, 1.74, 0.11, 0.5, 0.48, 0.5],
+    [-0.47, 1.57, 0.2, 0.42, 0.4, 0.45],
+    [0.49, 1.46, -0.2, 0.43, 0.43, 0.45],
+    [0.0, 2.04, 0.02, 0.42, 0.42, 0.42],
+    [0.03, 1.32, -0.34, 0.4, 0.42, 0.42],
   ];
   let leafIndex = 0;
   placements.forEach((tree, treeIndex) => {
     clusters.forEach(([cx, cy, cz, sx, sy, sz], index) => {
       dummy.position.set(tree.x + cx * tree.size, 0.4 + cy * tree.size, tree.z + cz * tree.size);
-      dummy.scale.set(sx * 0.9 * tree.size, sy * 0.9 * tree.size, sz * 0.9 * tree.size);
-      dummy.rotation.set(index * 0.23, index * 0.41 + treeIndex * 0.17, index * 0.17);
+      dummy.scale.set(sx * tree.size, sy * tree.size, sz * tree.size);
+      dummy.rotation.set(index * 0.2, index * 0.37 + treeIndex * 0.17, index * 0.13);
       dummy.updateMatrix();
       foliage.setMatrixAt(leafIndex, dummy.matrix);
-      foliage.setColorAt(leafIndex, colorOptions[(treeIndex + index) % colorOptions.length]);
+      foliage.setColorAt(leafIndex, colorOptions[(treeIndex + index * 2) % colorOptions.length]);
       leafIndex++;
     });
   });
   foliage.instanceMatrix.needsUpdate = true;
   if (foliage.instanceColor) foliage.instanceColor.needsUpdate = true;
-  foliage.castShadow = false;
+  foliage.castShadow = true;
   foliage.receiveShadow = true;
   scene.add(foliage);
   placements.length = 0;
@@ -1076,204 +1080,187 @@ function makeTower(scene: THREE.Scene, x: number, z: number, width: number, dept
   const height = floors * floorHeight;
   const seed = Math.round(Math.abs(x * 7 + z * 11)) % 19;
   const style = seed % 4;
-  const baseY = 1.35;
-  const darkFrame = mat("#2d4149", 0.42, 0.38);
-  const bronze = cachedMaterial("architectural-warm-bronze", () => new THREE.MeshPhysicalMaterial({
-    color: "#c5a16b", roughness: 0.28, metalness: 0.72, clearcoat: 0.4,
+  const baseY = 2.82;
+  const darkFrame = mat("#263a43", 0.46, 0.38);
+  const bronze = cachedMaterial("tower-gold-trim", () => new THREE.MeshPhysicalMaterial({
+    color: "#c6a16a", roughness: 0.3, metalness: 0.76, clearcoat: 0.45,
   }));
-  const paleStone = createStuccoMaterial("#d8c9ad", seed + 4);
-  const podium = createStuccoMaterial("#66787a", seed + 8);
-  const glass = cachedMaterial("architectural-film-glass", () => new THREE.MeshPhysicalMaterial({
-    color: "#85aebe",
-    roughness: 0.14,
-    metalness: 0.28,
-    clearcoat: 1,
-    clearcoatRoughness: 0.06,
-    envMapIntensity: 1.22,
-    ior: 1.48,
-    specularIntensity: 0.95,
+  const stone = createStuccoMaterial("#777e79", seed + 4);
+  const paleStone = createStuccoMaterial("#d3c4a8", seed + 8);
+  const glass = cachedMaterial("tower-retail-glass", () => new THREE.MeshPhysicalMaterial({
+    color: "#87b3c5", roughness: 0.13, metalness: 0.42, clearcoat: 1, clearcoatRoughness: 0.08,
+    envMapIntensity: 1.05, transparent: true, opacity: 0.98,
   }));
-  const shadedGlass = cachedMaterial("architectural-film-glass-shaded", () => new THREE.MeshPhysicalMaterial({
-    color: "#385967",
-    roughness: 0.18,
-    metalness: 0.32,
-    clearcoat: 0.9,
-    clearcoatRoughness: 0.08,
-    envMapIntensity: 1.08,
+  const warmInterior = cachedMaterial("tower-warm-interior", () => new THREE.MeshStandardMaterial({
+    color: "#f4d7a1", emissive: "#d69a4e", emissiveIntensity: 0.34, roughness: 0.6,
   }));
 
-  // Wide, layered podiums and a rounded plinth remove the hard "box on a box" look.
-  const lowerPodium = new THREE.Mesh(roundedPrismGeometry(width + 1.1, depth + 1.1, 0.52, 0.28), podium);
-  lowerPodium.position.y = 0.14;
-  lowerPodium.castShadow = true;
-  lowerPodium.receiveShadow = true;
-  group.add(lowerPodium);
-  const upperPodium = new THREE.Mesh(roundedPrismGeometry(width + 0.52, depth + 0.52, 0.46, 0.22), paleStone);
-  upperPodium.position.y = 0.62;
-  upperPodium.castShadow = true;
-  upperPodium.receiveShadow = true;
-  group.add(upperPodium);
-  addBox(group, width + 0.34, 0.12, depth + 0.34, bronze, 0, 1.14, 0, false);
+  // Heavy charcoal podium and two gold-edged stone steps anchor each high-rise.
+  addBox(group, width + 1.25, 0.48, depth + 1.25, darkFrame, 0, 0.24, 0);
+  addBox(group, width + 0.82, 0.4, depth + 0.82, stone, 0, 0.66, 0);
+  addBox(group, width + 0.52, 0.13, depth + 0.52, bronze, 0, 0.91, 0, false);
+  addBox(group, width + 0.34, 1.72, depth + 0.34, darkFrame, 0, 1.84, 0);
+  addBox(group, width + 0.52, 0.15, depth + 0.52, bronze, 0, 2.72, 0, false);
+
+  // Warm storefronts, full-height glass, slim brass mullions and lit interior display bays.
+  const podiumWidth = width + 0.34;
+  const frontZ = (depth + 0.34) / 2 + 0.045;
+  const shopCount = Math.max(3, Math.min(6, Math.floor(width / 0.78)));
+  const shopWidth = podiumWidth / shopCount;
+  for (let shop = 0; shop < shopCount; shop++) {
+    const sx = -podiumWidth / 2 + shopWidth * (shop + 0.5);
+    addBox(group, shopWidth * 0.72, 1.16, 0.055, glass, sx, 1.82, frontZ, false);
+    addBox(group, shopWidth * 0.72, 0.62, 0.025, warmInterior, sx, 1.55, frontZ - 0.05, false);
+    for (const edge of [-1, 1]) {
+      addBox(group, 0.055, 1.28, 0.09, bronze, sx + edge * shopWidth * 0.39, 1.82, frontZ + 0.035, false);
+    }
+    addBox(group, shopWidth * 0.76, 0.065, 0.1, bronze, sx, 1.22, frontZ + 0.04, false);
+    addBox(group, shopWidth * 0.76, 0.05, 0.1, paleStone, sx, 2.43, frontZ + 0.04, false);
+    // Tiny shelves and warm display blocks create visible activity at street level.
+    addBox(group, shopWidth * 0.46, 0.07, 0.22, paleStone, sx, 1.44, frontZ - 0.2, false);
+    addBox(group, shopWidth * 0.18, 0.28, 0.12, mat(["#c78a58", "#6d9e92", "#d4b875", "#a18ac5"][shop % 4], 0.68), sx - shopWidth * 0.16, 1.7, frontZ - 0.2);
+    addBox(group, shopWidth * 0.16, 0.2, 0.12, mat(["#6d9e92", "#d4b875", "#a18ac5", "#c78a58"][shop % 4], 0.68), sx + shopWidth * 0.13, 1.66, frontZ - 0.2);
+  }
+
+  const signNames = ["LUXE TOWER", "SKY LOUNGE", "MASKOT MALL", "GRAND HOTEL", "CITY BANK", "KOTA MASKOT"];
+  const signColors = ["#ff62ae", "#4fe2f1", "#ffd34a", "#a98bff", "#70e9b2", "#ff8a59"];
+  const signIndex = seed % signNames.length;
+  const signKey = "tower-neon-sign:" + signIndex;
+  const signMaterial = cachedMaterial(signKey, () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 128;
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.clearRect(0, 0, 512, 128);
+      context.fillStyle = "rgba(12,18,27,.94)";
+      context.fillRect(0, 0, 512, 128);
+      context.strokeStyle = "#d5b47e";
+      context.lineWidth = 5;
+      context.strokeRect(3, 3, 506, 122);
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = "900 58px Arial";
+      context.shadowColor = signColors[signIndex];
+      context.shadowBlur = 22;
+      context.fillStyle = signColors[signIndex];
+      context.fillText(signNames[signIndex], 256, 65);
+      context.fillText(signNames[signIndex], 256, 65);
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 4;
+    return new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, side: THREE.DoubleSide });
+  });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.94, 0.48), signMaterial);
+  sign.position.set(0, 2.57, frontZ + 0.1);
+  group.add(sign);
 
   if (rounded) {
-    // Cylindrical signature towers use curved glass, slim vertical fins and champagne floor rings.
-    const radius = Math.max(width, depth) * 0.51;
+    // Signature cylindrical glass tower with curved window bays, champagne rings and vertical mullions.
+    const radius = Math.max(width, depth) * 0.54;
+    const cylinderMaterial = createFacadeMaterial(hue, seed + 5, true);
     const body = new THREE.Mesh(
-      cachedGeometry("sculpted-round-tower:" + radius.toFixed(2) + ":" + height.toFixed(2), () => new THREE.CylinderGeometry(radius, radius * 1.02, height, 56, 1, false)),
-      style % 2 === 0 ? shadedGlass : glass,
+      cachedGeometry("reference-cylinder-tower:" + radius.toFixed(2) + ":" + height.toFixed(2), () => new THREE.CylinderGeometry(radius, radius * 1.02, height, 48, 1, false)),
+      cylinderMaterial,
     );
     body.position.y = baseY + height / 2;
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
-
-    const ringGeometry = cachedGeometry("tower-champagne-ring:" + radius.toFixed(2), () => new THREE.TorusGeometry(radius + 0.015, 0.065, 9, 56));
-    const ringCount = Math.ceil(floors / 2) + 1;
+    const ringGeometry = cachedGeometry("tower-copper-ring:" + radius.toFixed(2), () => new THREE.TorusGeometry(radius + 0.02, 0.075, 8, 52));
+    const ringCount = Math.floor(floors / 3) + 1;
     const rings = new THREE.InstancedMesh(ringGeometry, bronze, ringCount);
     const dummy = new THREE.Object3D();
-    for (let index = 0; index < ringCount; index++) {
-      dummy.position.set(0, baseY + Math.min(floors, index * 2) * floorHeight, 0);
-      dummy.rotation.set(Math.PI / 2, 0, 0);
+    for (let ring = 0; ring < ringCount; ring++) {
+      dummy.position.set(0, baseY + Math.min(floors, ring * 3) * floorHeight, 0);
+      dummy.rotation.x = Math.PI / 2;
       dummy.updateMatrix();
-      rings.setMatrixAt(index, dummy.matrix);
+      rings.setMatrixAt(ring, dummy.matrix);
     }
     rings.instanceMatrix.needsUpdate = true;
     group.add(rings);
-
-    const windows: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
-    const fins: { position: [number, number, number]; scale: [number, number, number]; rotation: [number, number, number] }[] = [];
-    const panels = 18;
-    for (let floor = 0; floor < floors; floor++) {
-      const y = baseY + floor * floorHeight + floorHeight * 0.53;
-      for (let panel = 0; panel < panels; panel++) {
-        const angle = (panel / panels) * Math.PI * 2;
-        const panelWidth = (Math.PI * 2 * radius / panels) * 0.68;
-        windows.push({
-          position: [Math.sin(angle) * (radius + 0.028), y, Math.cos(angle) * (radius + 0.028)],
-          scale: [panelWidth, floorHeight * 0.58, 0.045],
-          rotation: [0, angle, 0],
-        });
-      }
+    const finGeometry = new THREE.BoxGeometry(0.055, height, 0.08);
+    const fins = new THREE.InstancedMesh(finGeometry, darkFrame, 12);
+    for (let fin = 0; fin < 12; fin++) {
+      const angle = (fin / 12) * Math.PI * 2;
+      dummy.position.set(Math.sin(angle) * (radius + 0.04), baseY + height / 2, Math.cos(angle) * (radius + 0.04));
+      dummy.rotation.set(0, angle, 0);
+      dummy.updateMatrix();
+      fins.setMatrixAt(fin, dummy.matrix);
     }
-    for (let fin = 0; fin < panels; fin++) {
-      const angle = (fin / panels) * Math.PI * 2;
-      fins.push({
-        position: [Math.sin(angle) * (radius + 0.04), baseY + height / 2, Math.cos(angle) * (radius + 0.04)],
-        scale: [0.045, height, 0.055],
-        rotation: [0, angle, 0],
-      });
-    }
-    addInstancedBoxes(group, glass, windows);
-    addInstancedBoxes(group, bronze, fins);
-
-    // A curved upper crown and a small planted terrace complete the cylindrical silhouette.
-    const crown = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.96, radius * 1.04, 0.22, 48), bronze);
-    crown.position.y = baseY + height + 0.1;
+    fins.instanceMatrix.needsUpdate = true;
+    group.add(fins);
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.96, radius * 1.04, 0.24, 48), bronze);
+    crown.position.y = baseY + height + 0.12;
     group.add(crown);
-    const roofGarden = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.76, radius * 0.78, 0.16, 40), paleStone);
-    roofGarden.position.y = baseY + height + 0.28;
-    group.add(roofGarden);
-    for (let plant = 0; plant < 8; plant++) {
-      const angle = (plant / 8) * Math.PI * 2;
-      addSphere(group, 0.18, mat(plant % 2 ? "#6f9d69" : "#83ad75", 0.96), Math.sin(angle) * radius * 0.64, baseY + height + 0.46, Math.cos(angle) * radius * 0.64, 1, 0.72, 1);
-    }
   } else {
-    // Rounded rectangular towers have soft corners and more distinctive architectural profiles.
     const stepped = style === 0 && floors >= 11;
-    const lowerFloors = stepped ? Math.ceil(floors * 0.72) : floors;
-    const lowerHeight = lowerFloors * floorHeight;
-    const upperHeight = height - lowerHeight;
-    const upperWidth = width * 0.78;
-    const upperDepth = depth * 0.8;
-    const bodyMaterial = style === 2 ? createFacadeMaterial(hue, seed + 5, false) : createFacadeMaterial(hue, seed, false);
-    const core = new THREE.Mesh(roundedPrismGeometry(width, depth, lowerHeight, Math.min(width, depth) * 0.12), bodyMaterial);
-    core.position.y = baseY;
-    core.castShadow = true;
-    core.receiveShadow = true;
-    group.add(core);
-
-    if (stepped && upperHeight > 0.1) {
-      const crownBody = new THREE.Mesh(roundedPrismGeometry(upperWidth, upperDepth, upperHeight, 0.3), createFacadeMaterial(hue, seed + 9, false));
-      crownBody.position.set(width * 0.075, baseY + lowerHeight, -depth * 0.035);
-      crownBody.castShadow = true;
-      crownBody.receiveShadow = true;
-      group.add(crownBody);
-    }
-
-    const windowPanels: { position: [number, number, number]; scale: [number, number, number]; rotation?: [number, number, number] }[] = [];
-    const floorBands: { position: [number, number, number]; scale: [number, number, number] }[] = [];
-    const mullions: { position: [number, number, number]; scale: [number, number, number]; rotation?: [number, number, number] }[] = [];
-    const balconies: { position: [number, number, number]; scale: [number, number, number] }[] = [];
-    const columns = Math.max(4, Math.min(8, Math.floor(width / 0.52)));
-
-    for (let floor = 0; floor < floors; floor++) {
-      const upper = stepped && floor >= lowerFloors;
-      const activeWidth = upper ? upperWidth : width;
-      const activeDepth = upper ? upperDepth : depth;
-      const offsetX = upper ? width * 0.075 : 0;
-      const offsetZ = upper ? -depth * 0.035 : 0;
-      const y = baseY + floor * floorHeight + floorHeight * 0.54;
-      const frontZ = offsetZ + activeDepth / 2 + 0.035;
-      const backZ = offsetZ - activeDepth / 2 - 0.035;
-      const sideX = offsetX + activeWidth / 2 + 0.035;
-      const paneWidth = activeWidth / columns;
-      for (let column = 0; column < columns; column++) {
-        const px = offsetX - activeWidth / 2 + paneWidth * (column + 0.5);
-        windowPanels.push({ position: [px, y, frontZ], scale: [paneWidth * 0.72, floorHeight * 0.62, 0.048] });
-        windowPanels.push({ position: [px, y, backZ], scale: [paneWidth * 0.72, floorHeight * 0.62, 0.048] });
-        const pz = offsetZ - activeDepth / 2 + activeDepth * (column + 0.5) / columns;
-        windowPanels.push({ position: [sideX, y, pz], scale: [paneWidth * 0.7, floorHeight * 0.62, 0.048], rotation: [0, Math.PI / 2, 0] });
-        windowPanels.push({ position: [-sideX + offsetX * 2, y, pz], scale: [paneWidth * 0.7, floorHeight * 0.62, 0.048], rotation: [0, Math.PI / 2, 0] });
+    const bodyMaterial = createFacadeMaterial(hue, seed, false);
+    if (stepped) {
+      const tiers = [
+        { width, depth, height: height * 0.54 },
+        { width: width * 0.81, depth: depth * 0.84, height: height * 0.29 },
+        { width: width * 0.63, depth: depth * 0.66, height: height * 0.17 },
+      ];
+      let cursor = baseY;
+      tiers.forEach((tier, index) => {
+        const segment = new THREE.Mesh(new THREE.BoxGeometry(tier.width, tier.height, tier.depth), index === 0 ? bodyMaterial : createFacadeMaterial(hue, seed + index * 3, false));
+        segment.position.set(index === 0 ? 0 : width * 0.035, cursor + tier.height / 2, 0);
+        segment.castShadow = true;
+        segment.receiveShadow = true;
+        group.add(segment);
+        addBox(group, tier.width + 0.16, 0.13, tier.depth + 0.16, bronze, index === 0 ? 0 : width * 0.035, cursor + tier.height, 0, false);
+        cursor += tier.height;
+      });
+    } else {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), bodyMaterial);
+      body.position.y = baseY + height / 2;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+      const columns = Math.max(4, Math.min(8, Math.floor(width / 0.55)));
+      const frames: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+      for (let column = 0; column <= columns; column++) {
+        const px = -width / 2 + (column / columns) * width;
+        frames.push({ position: [px, baseY + height / 2, depth / 2 + 0.08], scale: [0.05, height, 0.075] });
+        frames.push({ position: [px, baseY + height / 2, -depth / 2 - 0.08], scale: [0.05, height, 0.075] });
+        const pz = -depth / 2 + (column / columns) * depth;
+        frames.push({ position: [width / 2 + 0.08, baseY + height / 2, pz], scale: [0.075, height, 0.05] });
+        frames.push({ position: [-width / 2 - 0.08, baseY + height / 2, pz], scale: [0.075, height, 0.05] });
       }
-      const bandY = baseY + (floor + 1) * floorHeight;
-      floorBands.push({ position: [0, bandY, frontZ - 0.018], scale: [activeWidth + 0.09, 0.06, 0.1] });
-      floorBands.push({ position: [0, bandY, backZ + 0.018], scale: [activeWidth + 0.09, 0.06, 0.1] });
-      floorBands.push({ position: [sideX - 0.02, bandY, offsetZ], scale: [0.1, 0.06, activeDepth + 0.08] });
-      floorBands.push({ position: [-sideX + offsetX * 2 + 0.02, bandY, offsetZ], scale: [0.1, 0.06, activeDepth + 0.08] });
-
-      if ((style === 1 || style === 3) && floor > 1 && floor < floors - 1 && floor % 4 === 1) {
-        balconies.push({ position: [0, baseY + floor * floorHeight + 0.1, frontZ + 0.18], scale: [activeWidth * 0.82, 0.085, 0.48] });
-        balconies.push({ position: [0, baseY + floor * floorHeight + 0.29, frontZ + 0.4], scale: [activeWidth * 0.82, 0.32, 0.035] });
+      addInstancedBoxes(group, darkFrame, frames);
+      const ledges: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+      for (let floor = 3; floor < floors; floor += 4) {
+        const y = baseY + floor * floorHeight;
+        ledges.push({ position: [0, y, depth / 2 + 0.02], scale: [width + 0.1, 0.055, 0.11] });
+        ledges.push({ position: [0, y, -depth / 2 - 0.02], scale: [width + 0.1, 0.055, 0.11] });
+        ledges.push({ position: [width / 2 + 0.02, y, 0], scale: [0.11, 0.055, depth + 0.1] });
+        ledges.push({ position: [-width / 2 - 0.02, y, 0], scale: [0.11, 0.055, depth + 0.1] });
       }
+      addInstancedBoxes(group, bronze, ledges);
     }
-
-    for (let column = 0; column <= columns; column++) {
-      const px = -width / 2 + (column / columns) * width;
-      mullions.push({ position: [px, baseY + lowerHeight / 2, depth / 2 + 0.065], scale: [0.045, lowerHeight, 0.07] });
-      mullions.push({ position: [px, baseY + lowerHeight / 2, -depth / 2 - 0.065], scale: [0.045, lowerHeight, 0.07] });
-      const pz = -depth / 2 + (column / columns) * depth;
-      mullions.push({ position: [width / 2 + 0.065, baseY + lowerHeight / 2, pz], scale: [0.07, lowerHeight, 0.045], rotation: [0, Math.PI / 2, 0] });
-      mullions.push({ position: [-width / 2 - 0.065, baseY + lowerHeight / 2, pz], scale: [0.07, lowerHeight, 0.045], rotation: [0, Math.PI / 2, 0] });
-    }
-    addInstancedBoxes(group, glass, windowPanels);
-    addInstancedBoxes(group, bronze, floorBands);
-    addInstancedBoxes(group, darkFrame, mullions);
-    if (balconies.length) addInstancedBoxes(group, style === 1 ? bronze : mat("#536b68", 0.58, 0.2), balconies);
-
-    // Soft corner pilasters, a sculpted cornice and a rooftop garden break up the flat grid.
-    const cornerRadius = 0.09;
-    for (const sx of [-1, 1]) {
-      for (const sz of [-1, 1]) {
-        const pillar = new THREE.Mesh(
-          new THREE.CylinderGeometry(cornerRadius, cornerRadius * 1.12, lowerHeight, 12),
-          style === 2 ? bronze : darkFrame,
-        );
-        pillar.position.set(sx * (width / 2 - cornerRadius * 0.5), baseY + lowerHeight / 2, sz * (depth / 2 - cornerRadius * 0.5));
-        group.add(pillar);
-      }
-    }
-    const crownY = baseY + height;
-    addBox(group, width + 0.32, 0.2, depth + 0.32, bronze, 0, crownY + 0.08, 0);
-    addBox(group, width * 0.5, 0.34, depth * 0.48, style === 2 ? paleStone : darkFrame, width * 0.08, crownY + 0.34, -depth * 0.08);
-    addBox(group, width * 0.22, 0.08, depth * 0.22, mat("#72917c", 0.95), -width * 0.22, crownY + 0.25, depth * 0.18, false);
-    for (const plantX of [-width * 0.27, width * 0.27]) {
-      addSphere(group, 0.15, mat("#719d72", 0.98), plantX, crownY + 0.4, depth * 0.19, 1, 0.76, 1);
-    }
-    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.035, 0.78, 10), bronze);
-    antenna.position.set(width * 0.13, crownY + 0.85, 0);
-    group.add(antenna);
-    addSphere(group, 0.07, mat("#e4b969", 0.34, 0.36), width * 0.13, crownY + 1.26, 0, 1, 1, 1);
   }
+
+  // Sculpted crown, rooftop machinery, a helipad ring and blinking red aviation beacons.
+  const roofY = baseY + height;
+  addBox(group, width + 0.34, 0.18, depth + 0.34, paleStone, 0, roofY + 0.08, 0);
+  addBox(group, width * 0.42, 0.48, depth * 0.4, darkFrame, width * 0.08, roofY + 0.38, -depth * 0.08);
+  for (let unit = 0; unit < 3; unit++) {
+    const ux = (unit - 1) * width * 0.24;
+    addBox(group, width * 0.16, 0.035, depth * 0.15, bronze, ux, roofY + 0.64, -depth * 0.08, false);
+  }
+  const pad = new THREE.Mesh(new THREE.TorusGeometry(width * 0.2, 0.028, 7, 32), bronze);
+  pad.rotation.x = Math.PI / 2;
+  pad.position.set(0, roofY + 0.19, 0);
+  group.add(pad);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.85, 8), bronze);
+  mast.position.set(width * 0.12, roofY + 0.76, 0);
+  group.add(mast);
+  const beaconMaterial = cachedMaterial("tower-red-beacon", () => new THREE.MeshStandardMaterial({
+    color: "#f2e1d1", emissive: "#cf2525", emissiveIntensity: 1.2, roughness: 0.22,
+  }));
+  addSphere(group, 0.085, beaconMaterial, width * 0.12, roofY + 1.22, 0, 1, 1, 1);
 
   group.position.set(x, 0.35, z);
   scene.add(group);
@@ -1323,144 +1310,73 @@ function createStuccoMaterial(color: string, seed: number) {
 
 function makeHouse(parent: THREE.Object3D, x: number, z: number, variant: number, detail: "full" | "simple" = "full") {
   const group = new THREE.Group();
-  const wallColors = ["#f3e9d9", "#e4efea", "#eadac4", "#eee7dc"];
-  const roofColors = ["#a95f48", "#4f7777", "#796b5a", "#bc8055"];
-  const wall = createStuccoMaterial(wallColors[variant % wallColors.length], variant + 17);
-  const roof = cachedMaterial("neighbourhood-roof:" + variant % 4, () => new THREE.MeshPhysicalMaterial({
-    color: roofColors[variant % roofColors.length],
-    roughness: 0.72,
-    metalness: 0.015,
-    clearcoat: 0.18,
-    clearcoatRoughness: 0.62,
+  const walls = ["#e9e4d9", "#dbe8df", "#ead7bf", "#d8e5e8"];
+  const roofs = ["#303b43", "#445558", "#665b4f", "#4d6268"];
+  const wall = createStuccoMaterial(walls[variant % walls.length], variant + 11);
+  const roof = cachedMaterial("reference-home-flat-roof:" + variant % 4, () => new THREE.MeshStandardMaterial({
+    color: roofs[variant % roofs.length], roughness: 0.72, metalness: 0.12,
   }));
-  const darkTrim = mat("#405657", 0.5, 0.18);
-  const warmWood = mat("#8a6145", 0.78, 0);
-  const stone = mat("#c8c4b6", 0.84, 0);
-  const brass = mat("#bd925a", 0.32, 0.62);
-  const glass = cachedMaterial("neighbourhood-window-glass", () => new THREE.MeshPhysicalMaterial({
-    color: "#8bb9c4",
-    roughness: 0.14,
-    metalness: 0.2,
-    clearcoat: 1,
-    clearcoatRoughness: 0.075,
-    envMapIntensity: 1.08,
+  const trim = mat("#364e50", 0.48, 0.24);
+  const glass = cachedMaterial("reference-home-windows", () => new THREE.MeshPhysicalMaterial({
+    color: "#86b6c4", roughness: 0.12, metalness: 0.36, clearcoat: 1, clearcoatRoughness: 0.1,
   }));
-  const width = 2.55 + (variant % 2) * 0.22;
-  const depth = 2.05;
-  const twoStorey = variant === 2;
-  const height = twoStorey ? 1.82 : 1.38;
-  const floorTop = 0.18 + height;
-  const gabledRoof = variant !== 1;
-  const roofRise = gabledRoof ? 0.62 : 0.22;
+  const warmWood = mat("#8f6545", 0.76);
+  const brass = mat("#c4a16a", 0.32, 0.62);
+  const width = 2.35 + (variant % 2) * 0.3;
+  const depth = 1.9;
+  const height = detail === "full" && variant === 2 ? 1.7 : 1.35;
 
-  // Stone footing, damp-proof course and softly textured walls.
-  const footing = new THREE.Mesh(roundedPrismGeometry(width + 0.42, depth + 0.42, 0.2, 0.18), stone);
-  footing.position.y = 0.04;
-  footing.castShadow = true;
-  group.add(footing);
-  const plinth = new THREE.Mesh(roundedPrismGeometry(width + 0.16, depth + 0.16, 0.16, 0.12), darkTrim);
-  plinth.position.y = 0.18;
-  group.add(plinth);
+  addBox(group, width + 0.38, 0.16, depth + 0.38, mat("#8b9387", 0.92), 0, 0.08, 0);
+  addBox(group, width + 0.1, 0.1, depth + 0.1, brass, 0, 0.2, 0, false);
   addBox(group, width, height, depth, wall, 0, 0.18 + height / 2, 0, true);
 
-  // A gable front gives the small homes a real roofline; modern homes use a deep floating parapet.
-  if (gabledRoof) {
-    const gableShape = new THREE.Shape();
-    gableShape.moveTo(-width / 2, 0);
-    gableShape.lineTo(width / 2, 0);
-    gableShape.lineTo(0, roofRise);
-    gableShape.closePath();
-    const gableGeometry = cachedGeometry("home-gable:" + variant + ":" + width.toFixed(2), () => new THREE.ShapeGeometry(gableShape));
-    const frontGable = new THREE.Mesh(gableGeometry, wall);
-    frontGable.position.set(0, floorTop - 0.03, depth / 2 + 0.025);
-    frontGable.castShadow = true;
-    group.add(frontGable);
-    const backGable = frontGable.clone();
-    backGable.position.z = -depth / 2 - 0.025;
-    backGable.rotation.y = Math.PI;
-    group.add(backGable);
+  // Flat parapet roof, roof cap, raised utility box and a small blue-tinted rooftop window.
+  addBox(group, width + 0.36, 0.2, depth + 0.36, roof, 0, 0.18 + height + 0.08, 0, true);
+  addBox(group, width + 0.16, 0.06, depth + 0.16, brass, 0, 0.18 + height + 0.2, 0, false);
+  addBox(group, width * 0.4, 0.19, depth * 0.34, trim, 0.32, 0.18 + height + 0.32, -0.16, false);
+  addBox(group, width * 0.3, 0.055, depth * 0.25, glass, 0.32, 0.18 + height + 0.45, -0.16, false);
 
-    const panelDepth = depth * 0.72;
-    const frontRoof = addBox(group, width + 0.36, 0.15, panelDepth, roof, 0, floorTop + roofRise * 0.58, depth * 0.22, true);
-    frontRoof.rotation.x = 0.48;
-    const backRoof = addBox(group, width + 0.36, 0.15, panelDepth, roof, 0, floorTop + roofRise * 0.58, -depth * 0.22, true);
-    backRoof.rotation.x = -0.48;
-    const ridge = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, width + 0.42, 12), darkTrim);
-    ridge.rotation.z = Math.PI / 2;
-    ridge.position.set(0, floorTop + roofRise + 0.03, 0);
-    group.add(ridge);
-    if (detail === "full") {
-      for (let tileLine = 0; tileLine < 3; tileLine++) {
-        const zFront = depth * 0.08 + tileLine * 0.22;
-        const frontTile = addBox(group, width + 0.22, 0.025, 0.028, brass, 0, floorTop + roofRise * 0.9 - tileLine * 0.16, zFront, false);
-        frontTile.rotation.x = 0.48;
-        const backTile = addBox(group, width + 0.22, 0.025, 0.028, brass, 0, floorTop + roofRise * 0.9 - tileLine * 0.16, -zFront, false);
-        backTile.rotation.x = -0.48;
-      }
-    }
-  } else {
-    addBox(group, width + 0.42, 0.2, depth + 0.42, roof, 0, floorTop + 0.12, 0, true);
-    addBox(group, width + 0.2, 0.08, depth + 0.2, brass, 0, floorTop + 0.25, 0, false);
-    addBox(group, width * 0.42, 0.18, depth * 0.38, darkTrim, 0.25, floorTop + 0.33, -0.12, false);
-    addBox(group, width * 0.32, 0.08, depth * 0.27, glass, 0.25, floorTop + 0.45, -0.12, false);
-    addBox(group, width * 0.2, 0.12, depth * 0.25, mat("#78957d", 0.96), -0.7, floorTop + 0.25, 0.3, false);
+  // Tall storefront glazing, dark mullions and warm interior display panels.
+  const windowY = 0.18 + Math.min(height - 0.48, 0.73);
+  for (const px of [-0.62, 0.58]) {
+    addBox(group, 0.66, 0.58, 0.075, trim, px, windowY, depth / 2 + 0.03, false);
+    addBox(group, 0.55, 0.47, 0.04, glass, px, windowY + 0.02, depth / 2 + 0.078, false);
+    addBox(group, 0.035, 0.47, 0.025, brass, px, windowY + 0.02, depth / 2 + 0.105, false);
+    addBox(group, 0.58, 0.06, 0.18, warmWood, px, windowY - 0.32, depth / 2 + 0.1, false);
+    addBox(group, 0.045, 0.39, 0.02, trim, px, windowY + 0.02, depth / 2 + 0.13, false);
   }
-
-  // Front windows are deep-set with metal frames, warm timber sills and vertical mullions.
-  const windowY = 0.18 + Math.min(height - 0.45, 0.76);
-  for (const px of [-0.68, 0.62]) {
-    addBox(group, 0.68, 0.58, 0.085, darkTrim, px, windowY, depth / 2 + 0.02, false);
-    addBox(group, 0.56, 0.46, 0.045, glass, px, windowY + 0.015, depth / 2 + 0.075, false);
-    addBox(group, 0.027, 0.46, 0.028, brass, px, windowY + 0.015, depth / 2 + 0.105, false);
-    addBox(group, 0.65, 0.05, 0.17, warmWood, px, windowY - 0.31, depth / 2 + 0.09, false);
-    addBox(group, 0.64, 0.035, 0.055, brass, px, windowY + 0.315, depth / 2 + 0.085, false);
-  }
-  // Side glazing adds real depth when seen from the isometric camera.
+  // Side windows help each home read as a three-dimensional object from above.
   for (const side of [-1, 1]) {
-    addBox(group, 0.075, 0.47, 0.7, darkTrim, side * (width / 2 + 0.025), windowY, -0.26, false);
-    addBox(group, 0.045, 0.37, 0.58, glass, side * (width / 2 + 0.075), windowY, -0.26, false);
-    addBox(group, 0.025, 0.37, 0.58, brass, side * (width / 2 + 0.105), windowY, -0.26, false);
+    addBox(group, 0.07, 0.46, 0.62, trim, side * (width / 2 + 0.02), windowY, -0.25, false);
+    addBox(group, 0.04, 0.37, 0.53, glass, side * (width / 2 + 0.07), windowY, -0.25, false);
   }
 
-  // A timber front door has a glazed inset, a brass handle and a two-step stone porch.
-  addBox(group, 0.48, 0.91, 0.1, warmWood, -0.92, 0.64, depth / 2 + 0.06, true);
-  addBox(group, 0.32, 0.69, 0.04, glass, -0.92, 0.68, depth / 2 + 0.12, false);
-  addBox(group, 0.035, 0.7, 0.045, brass, -0.92, 0.68, depth / 2 + 0.15, false);
-  const handle = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 10), brass);
-  handle.position.set(-0.75, 0.66, depth / 2 + 0.17);
+  // Recessed timber front door, brass handle, canopy and two-step entrance.
+  addBox(group, 0.43, 0.83, 0.09, warmWood, -0.88, 0.61, depth / 2 + 0.055, true);
+  addBox(group, 0.28, 0.63, 0.04, glass, -0.88, 0.64, depth / 2 + 0.11, false);
+  const handle = new THREE.Mesh(new THREE.SphereGeometry(0.032, 10, 8), brass);
+  handle.position.set(-0.72, 0.63, depth / 2 + 0.16);
   group.add(handle);
-  addBox(group, 0.72, 0.12, 0.46, stone, -0.92, 0.22, depth / 2 + 0.22);
-  addBox(group, 0.86, 0.12, 0.54, warmWood, -0.92, 0.1, depth / 2 + 0.28);
-
-  // A small porch canopy, slim columns and a warm wall sconce create a lived-in entrance.
-  const porchRoof = addBox(group, 1.02, 0.1, 0.72, roof, -0.92, 1.16, depth / 2 + 0.27, true);
-  porchRoof.rotation.x = -0.035;
+  addBox(group, 0.72, 0.1, 0.42, warmWood, -0.88, 0.22, depth / 2 + 0.22);
+  addBox(group, 0.86, 0.1, 0.5, mat("#aaa99c", 0.86), -0.88, 0.1, depth / 2 + 0.27);
+  addBox(group, 0.9, 0.08, 0.7, roof, -0.88, 1.12, depth / 2 + 0.24, true);
   for (const side of [-1, 1]) {
-    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.82, 10), stone);
-    column.position.set(-0.92 + side * 0.42, 0.71, depth / 2 + 0.52);
-    group.add(column);
-    addSphere(group, 0.065, brass, -0.92 + side * 0.42, 1.14, depth / 2 + 0.52, 1, 0.5, 1);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.75, 8), brass);
+    post.position.set(-0.88 + side * 0.38, 0.7, depth / 2 + 0.48);
+    group.add(post);
   }
-  const sconce = cachedMaterial("home-porch-light", () => new THREE.MeshStandardMaterial({
-    color: "#fff0ca", emissive: "#e1a958", emissiveIntensity: 0.62, roughness: 0.28,
-  }));
-  addBox(group, 0.105, 0.2, 0.07, darkTrim, -1.2, 1.16, depth / 2 + 0.08, false);
-  addBox(group, 0.065, 0.13, 0.045, sconce, -1.2, 1.16, depth / 2 + 0.13, false);
-
-  if (twoStorey && detail === "full") {
-    // A shallow upper balcony with a glass balustrade makes the premium home visibly different.
-    addBox(group, 1.22, 0.1, 0.68, stone, 0.9, 1.65, depth / 2 + 0.28, true);
-    addBox(group, 1.18, 0.34, 0.045, glass, 0.9, 1.87, depth / 2 + 0.59, false);
-    for (const side of [-1, 1]) addBox(group, 0.055, 0.34, 0.055, brass, 0.9 + side * 0.57, 1.87, depth / 2 + 0.59, false);
+  if (variant === 2 && detail === "full") {
+    addBox(group, 1.1, 0.09, 0.52, mat("#b8b7aa", 0.82), 0.88, 1.64, depth / 2 + 0.25, true);
+    addBox(group, 1.06, 0.28, 0.04, glass, 0.88, 1.82, depth / 2 + 0.5, false);
+    for (const side of [-1, 1]) addBox(group, 0.04, 0.3, 0.04, brass, 0.88 + side * 0.52, 1.82, depth / 2 + 0.52, false);
   }
 
-  // Compact landscaping gives every home a personal front garden without crowding the walkways.
-  addBox(group, 0.58, 0.22, 0.38, mat("#8eaa79", 0.98), width / 2 + 0.19, 0.29, depth / 2 + 0.18, false);
+  // Front yard: low hedge, flowering planter and one small ornamental tree.
+  addBox(group, 0.56, 0.22, 0.36, mat("#829b76", 0.98), width / 2 + 0.2, 0.28, depth / 2 + 0.18, false);
   for (let leaf = 0; leaf < 4; leaf++) {
-    addSphere(group, 0.14, mat(["#5f8e63", "#79a975", "#4e8358", "#8caf75"][leaf], 0.96), width / 2 + 0.19 + (leaf - 1.5) * 0.1, 0.49 + (leaf % 2) * 0.035, depth / 2 + 0.18, 1, 1.08, 0.92);
+    addSphere(group, 0.13, mat(["#52895b", "#6d9c68", "#4b7f52", "#7eac76"][leaf], 0.97), width / 2 + 0.2 + (leaf - 1.5) * 0.1, 0.48 + (leaf % 2) * 0.03, depth / 2 + 0.18, 1, 1.1, 0.92);
   }
-  addBox(group, 0.7, 0.08, 0.42, stone, 0.88, floorTop + 0.25, -0.2, false);
-  addBox(group, 0.42, 0.09, 0.32, mat("#809b7d", 0.98), 0.88, floorTop + 0.33, -0.2, false);
+  addBox(group, 0.45, 0.06, 0.38, brass, -0.85, 0.22, depth / 2 + 0.16, false);
 
   group.position.set(x, 0.42, z);
   parent.add(group);
@@ -1738,7 +1654,7 @@ function createPlanter(scene: THREE.Scene, x: number, z: number, width = 1.25) {
 function createPlanterBatch(scene: THREE.Scene) {
   const placements = (scene.userData.planterPlacements ?? []) as { x: number; z: number; width: number }[];
   if (!placements.length) return;
-  const base = new THREE.InstancedMesh(unitBoxGeometry(), mat("#b8b7a9", 0.95), placements.length);
+  const base = new THREE.InstancedMesh(unitBoxGeometry(), mat("#c9c4b7", 0.9), placements.length);
   const soil = new THREE.InstancedMesh(unitBoxGeometry(), mat("#594a3a", 1), placements.length);
   const dummy = new THREE.Object3D();
   placements.forEach((item, index) => {
@@ -1753,22 +1669,21 @@ function createPlanterBatch(scene: THREE.Scene) {
   });
   base.instanceMatrix.needsUpdate = true;
   soil.instanceMatrix.needsUpdate = true;
+  base.castShadow = true;
+  base.receiveShadow = true;
   scene.add(base, soil);
 
-  const plantGeometry = unitSphereGeometry();
+  const greenGeometry = unitSphereGeometry();
   const plantMaterial = cachedMaterial("planter-greenery", () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.98 }));
-  const plantCount = placements.length * 5;
-  const plants = new THREE.InstancedMesh(plantGeometry, plantMaterial, plantCount);
-  const greens = ["#56865d", "#679467", "#477e57"].map((color) => new THREE.Color(color));
+  const plantCount = placements.length * 9;
+  const plants = new THREE.InstancedMesh(greenGeometry, plantMaterial, plantCount);
+  const greens = ["#56865d", "#679467", "#477e57", "#80a96f"].map((color) => new THREE.Color(color));
   let index = 0;
   placements.forEach((item, planterIndex) => {
-    for (let plant = 0; plant < 5; plant++) {
-      dummy.position.set(
-        item.x + (plant - 2) * (item.width - 0.28) / 4,
-        1.04 + (plant % 2) * 0.06,
-        item.z + Math.sin(plant) * 0.13,
-      );
-      dummy.scale.set(0.19, 0.1425, 0.1615);
+    for (let plant = 0; plant < 9; plant++) {
+      const offset = (plant - 4) * (item.width - 0.28) / 8;
+      dummy.position.set(item.x + offset, 1.02 + (plant % 2) * 0.045, item.z + Math.sin(plant * 1.3) * 0.13);
+      dummy.scale.set(0.17, 0.14, 0.16);
       dummy.updateMatrix();
       plants.setMatrixAt(index, dummy.matrix);
       plants.setColorAt(index, greens[(plant + planterIndex) % greens.length]);
@@ -1778,9 +1693,30 @@ function createPlanterBatch(scene: THREE.Scene) {
   plants.instanceMatrix.needsUpdate = true;
   if (plants.instanceColor) plants.instanceColor.needsUpdate = true;
   scene.add(plants);
+
+  const flowerColors = ["#f0a1b5", "#ffd36d", "#f4efe0", "#c7a4e7", "#e88b68"].map((color) => new THREE.Color(color));
+  const flowerGeometry = cachedGeometry("planter-flower-head", () => new THREE.IcosahedronGeometry(0.095, 1));
+  const flowers = new THREE.InstancedMesh(flowerGeometry, plantMaterial, placements.length * 12);
+  let flowerIndex = 0;
+  placements.forEach((item, planterIndex) => {
+    for (let flower = 0; flower < 12; flower++) {
+      const offset = (flower - 5.5) * (item.width - 0.22) / 11;
+      const height = 1.08 + (flower % 3) * 0.045;
+      dummy.position.set(item.x + offset, height, item.z + Math.cos(flower * 1.6 + planterIndex) * 0.16);
+      dummy.scale.set(0.75, 0.82 + (flower % 2) * 0.2, 0.75);
+      dummy.rotation.set(flower * 0.3, flower * 0.7, flower * 0.2);
+      dummy.updateMatrix();
+      flowers.setMatrixAt(flowerIndex, dummy.matrix);
+      flowers.setColorAt(flowerIndex, flowerColors[(flower + planterIndex * 2) % flowerColors.length]);
+      flowerIndex++;
+    }
+  });
+  flowers.instanceMatrix.needsUpdate = true;
+  if (flowers.instanceColor) flowers.instanceColor.needsUpdate = true;
+  flowers.castShadow = false;
+  scene.add(flowers);
   placements.length = 0;
 }
-
 function createStreetLamp(scene: THREE.Scene, x: number, z: number, height = 2.9) {
   const lamp = new THREE.Group();
   const iron = mat("#34494a", 0.48, 0.38);
@@ -1987,40 +1923,31 @@ function createShopKiosk(scene: THREE.Scene, x: number, z: number, label: string
   scene.add(shop);
 }
 
-function addDistrictLabel(scene: THREE.Scene, label: string, x: number, z: number, tint = "#ffffff") {
+function addDistrictLabel(scene: THREE.Scene, label: string, x: number, z: number, tint = "#2b2a33") {
   const canvas = document.createElement("canvas");
   canvas.width = 768;
   canvas.height = 192;
   const context = canvas.getContext("2d");
   if (!context) return;
-
-  // Floating sign typography follows the city reference: clean, readable and integrated into the world.
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.font = "900 76px Arial";
   context.lineJoin = "round";
-  context.strokeStyle = "rgba(39, 48, 48, .72)";
-  context.lineWidth = 16;
-  context.shadowColor = "rgba(23, 32, 35, .38)";
-  context.shadowBlur = 16;
-  context.shadowOffsetY = 8;
+  context.strokeStyle = "rgba(255,255,255,.96)";
+  context.lineWidth = 22;
+  context.shadowColor = "rgba(30,24,21,.22)";
+  context.shadowBlur = 8;
+  context.shadowOffsetY = 3;
   context.strokeText(label, 384, 92);
   context.shadowColor = "transparent";
-  context.fillStyle = "#fff8e9";
+  context.fillStyle = tint;
   context.fillText(label, 384, 92);
-
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: texture,
-    transparent: true,
-    depthWrite: false,
-    color: tint,
-    toneMapped: false,
-  }));
-  sprite.position.set(x, 3.35, z);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }));
+  sprite.position.set(x, 3.8, z);
   sprite.scale.set(5.8, 1.45, 1);
   scene.add(sprite);
 }
@@ -2029,44 +1956,45 @@ function createSkyDome(scene: THREE.Scene) {
   canvas.width = 1024;
   canvas.height = 512;
   const context = canvas.getContext("2d");
-  if (context) {
-    const gradient = context.createLinearGradient(0, 0, 0, 512);
-    gradient.addColorStop(0, "#5d9be8");
-    gradient.addColorStop(0.38, "#a5c8e8");
-    gradient.addColorStop(0.68, "#e8d3bb");
-    gradient.addColorStop(1, "#f6dcc0");
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, 1024, 512);
-    // A warm, low sun and layered high-altitude cloud banks give the city a cinematic horizon.
-    const sunGlow = context.createRadialGradient(765, 260, 10, 765, 260, 210);
-    sunGlow.addColorStop(0, "rgba(255,245,216,.96)");
-    sunGlow.addColorStop(0.18, "rgba(255,225,177,.46)");
-    sunGlow.addColorStop(1, "rgba(255,225,177,0)");
-    context.fillStyle = sunGlow;
-    context.fillRect(535, 30, 460, 460);
-    context.globalAlpha = 0.24;
-    for (let index = 0; index < 9; index++) {
-      const x = 55 + index * 118;
-      const y = 145 + (index % 4) * 24;
-      context.fillStyle = index % 2 ? "#fff8e8" : "#e9f1ed";
-      context.beginPath();
-      context.ellipse(x, y, 68 + (index % 3) * 13, 11 + (index % 2) * 5, -0.06, 0, Math.PI * 2);
-      context.fill();
-      context.beginPath();
-      context.ellipse(x + 25, y + 6, 40, 8, 0.04, 0, Math.PI * 2);
-      context.fill();
-    }
-    context.globalAlpha = 0.14;
-    const haze = context.createLinearGradient(0, 260, 0, 512);
-    haze.addColorStop(0, "rgba(246,223,186,0)");
-    haze.addColorStop(1, "rgba(249,225,190,.92)");
-    context.fillStyle = haze;
-    context.fillRect(0, 260, 1024, 252);
-    context.globalAlpha = 1;
-  }
   if (!context) return;
+  const gradient = context.createLinearGradient(0, 0, 0, 512);
+  gradient.addColorStop(0, "#c88f70");
+  gradient.addColorStop(0.28, "#dba27d");
+  gradient.addColorStop(0.58, "#eab58e");
+  gradient.addColorStop(0.82, "#f2cba4");
+  gradient.addColorStop(1, "#f8dfbd");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 1024, 512);
+
+  // Broad apricot sun bloom, very soft clouds and low city haze create the reference golden-hour atmosphere.
+  const sunGlow = context.createRadialGradient(775, 285, 8, 775, 285, 235);
+  sunGlow.addColorStop(0, "rgba(255,246,217,.98)");
+  sunGlow.addColorStop(0.13, "rgba(255,220,169,.52)");
+  sunGlow.addColorStop(0.52, "rgba(255,202,148,.16)");
+  sunGlow.addColorStop(1, "rgba(255,202,148,0)");
+  context.fillStyle = sunGlow;
+  context.fillRect(525, 35, 490, 490);
+
+  for (let index = 0; index < 12; index++) {
+    const x = 30 + index * 92;
+    const y = 160 + (index % 4) * 21;
+    context.fillStyle = index % 2 ? "rgba(255,244,222,.18)" : "rgba(173,112,82,.09)";
+    context.beginPath();
+    context.ellipse(x, y, 82 + (index % 3) * 15, 10 + (index % 2) * 5, -0.04, 0, Math.PI * 2);
+    context.fill();
+    context.beginPath();
+    context.ellipse(x + 26, y + 6, 47, 7, 0.03, 0, Math.PI * 2);
+    context.fill();
+  }
+  const haze = context.createLinearGradient(0, 245, 0, 512);
+  haze.addColorStop(0, "rgba(242,196,151,0)");
+  haze.addColorStop(1, "rgba(250,221,187,.62)");
+  context.fillStyle = haze;
+  context.fillRect(0, 245, 1024, 267);
+
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(145, 36, 24),
     new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, depthWrite: false }),
@@ -2076,7 +2004,6 @@ function createSkyDome(scene: THREE.Scene) {
   scene.add(sky);
   return texture;
 }
-
 function createWaterfrontPier(scene: THREE.Scene) {
   const pier = new THREE.Group();
   const decking = mat("#947858", 0.78);
@@ -2453,10 +2380,10 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
 
     acquireSharedSceneResources();
     const scene = new THREE.Scene();
-    const daySky = new THREE.Color("#f6dcc0");
+    const daySky = new THREE.Color("#eab991");
     const nightSky = new THREE.Color("#17243a");
     scene.background = daySky.clone();
-    scene.fog = new THREE.Fog(daySky, 58, 118);
+    scene.fog = new THREE.Fog(daySky, 82, 172);
 
     const camera = new THREE.PerspectiveCamera(39, 1, 0.1, 220);
     camera.position.set(0, 26, 34);
@@ -2481,7 +2408,7 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 1.12;
     renderer.domElement.className = "world-canvas";
     host.appendChild(renderer.domElement);
 
@@ -2490,25 +2417,27 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
     const roomEnvironment = new RoomEnvironment();
     const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
     scene.environment = environmentTarget.texture;
-    scene.environmentIntensity = lowPowerDevice ? 0.5 : 0.82;
+    scene.environmentIntensity = lowPowerDevice ? 0.38 : 0.58;
     pmremGenerator.dispose();
     roomEnvironment.dispose();
 
-    const hemisphere = new THREE.HemisphereLight("#fff6e9", "#647178", 1.85);
+    const hemisphere = new THREE.HemisphereLight("#e9f3f0", "#786e5f", 0.86);
     scene.add(hemisphere);
-    const ambient = new THREE.AmbientLight("#f0e9db", 0.26);
+    const ambient = new THREE.AmbientLight("#f4d8b8", 0.08);
     scene.add(ambient);
-    const sun = new THREE.DirectionalLight("#ffe7c9", 3.0);
-    sun.position.set(-15, 28, 16);
+    const sun = new THREE.DirectionalLight("#ffe5bd", 1.55);
+    sun.position.set(-45, 36, 30);
     sun.castShadow = !lowPowerDevice;
-    sun.shadow.mapSize.set(lowPowerDevice ? 512 : reducedQuality ? 1024 : 1536, lowPowerDevice ? 512 : reducedQuality ? 1024 : 1536);
-    sun.shadow.bias = -0.00016;
-    sun.shadow.normalBias = 0.035;
-    sun.shadow.radius = 4;
-    sun.shadow.camera.left = -32;
-    sun.shadow.camera.right = 32;
-    sun.shadow.camera.top = 32;
-    sun.shadow.camera.bottom = -32;
+    sun.shadow.mapSize.set(lowPowerDevice ? 512 : reducedQuality ? 1024 : 2048, lowPowerDevice ? 512 : reducedQuality ? 1024 : 2048);
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.025;
+    sun.shadow.radius = 5;
+    sun.shadow.camera.left = -75;
+    sun.shadow.camera.right = 75;
+    sun.shadow.camera.top = 75;
+    sun.shadow.camera.bottom = -75;
+    sun.shadow.camera.near = 10;
+    sun.shadow.camera.far = 140;
     scene.add(sun);
 
     const houseGroup = new THREE.Group();
@@ -2558,7 +2487,7 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
     visibleNpcSpots.forEach(([x, z], index) => {
       const npc = new THREE.Group();
       createMascot(npc, npcSpecies[index % npcSpecies.length], {
-        outfit: ["citizen-teal", "explorer", "builder", "harbor-guard"][index % 4],
+        outfit: ["citizen-teal", "explorer", "builder", "harbor-guard", "citizen-coral", "citizen-lavender", "citizen-sky", "citizen-gold", "citizen-rose", "citizen-mint"][index % 10],
         accessory: ["none", "scarf", "cap", "backpack"][index % 4],
       }, undefined, "crowd");
       const size = 0.68 + (index % 4) * 0.035;
@@ -2745,11 +2674,11 @@ export default function WorldCanvas({ isNight, quality, focusResident }: WorldCa
         scene.fog?.color.copy(target);
         const skyDome = scene.userData.skyDome as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> | undefined;
         if (skyDome?.material) skyDome.material.color.set(activeNight ? "#344064" : "#ffffff");
-        sun.color.set(activeNight ? "#a9c4ff" : "#ffe3bb");
-        sun.intensity = activeNight ? 0.78 : 3.0;
-        hemisphere.intensity = activeNight ? 0.85 : 1.85;
-        ambient.intensity = activeNight ? 0.52 : 0.26;
-        scene.environmentIntensity = activeNight ? (lowPowerDevice ? 0.3 : 0.42) : (lowPowerDevice ? 0.5 : 0.82);
+        sun.color.set(activeNight ? "#a9c4ff" : "#ffe5bd");
+        sun.intensity = activeNight ? 0.52 : 1.55;
+        hemisphere.intensity = activeNight ? 0.72 : 0.86;
+        ambient.intensity = activeNight ? 0.24 : 0.08;
+        scene.environmentIntensity = activeNight ? (lowPowerDevice ? 0.24 : 0.34) : (lowPowerDevice ? 0.38 : 0.58);
       }
 
       if (qualityRef.current !== activeQuality) {
