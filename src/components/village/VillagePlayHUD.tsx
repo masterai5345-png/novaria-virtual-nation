@@ -38,7 +38,16 @@ export default function VillagePlayHUD(){
     }catch{if(mounted)setNotice("Belum bisa mengambil karakter warga.");}};
     void load();return()=>{mounted=false};
   },[status,broadcast]);
-  const refresh=useCallback(async()=>{
+  useEffect(()=>{
+    function onReady(e:MessageEvent){
+      const target=(document.getElementById("novaria-game-frame") as HTMLIFrameElement|null)?.contentWindow;
+      if(e.origin!==window.location.origin || e.source!==target || e.data?.type!=="NOVARIA_WORLD_READY")return;
+      if(me.authenticated)broadcast("spawn",{animal:me.animal||"fox",name:me.name||"Warga"});
+    }
+    window.addEventListener("message",onReady);
+    return()=>window.removeEventListener("message",onReady);
+  },[me,broadcast]);
+    const refresh=useCallback(async()=>{
     try{const r=await fetch("/api/village-zero/chat",{cache:"no-store"});
       const d=await r.json() as {online:boolean;messages:Entry[]};
       setChatReady(Boolean(r.ok&&d.online));setMessages(d.messages||[]);
