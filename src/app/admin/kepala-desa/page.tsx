@@ -118,7 +118,7 @@ export default async function DashboardKepalaDesa(){
         ["Pembangunan Desa Nol",data.schemaReady?data.projects:"—",data.schemaReady?"Objek dari voting resmi":"Menunggu integrasi"],
         ["Rumah dapat diklaim",data.schemaReady?data.housesAvailable:"—",data.schemaReady?String(data.housesClaimed)+" rumah telah dimiliki":"Belum tersedia"],
         ["Komentar perlu ditinjau",data.pendingComments,data.commentCount+" komentar masuk tercatat"],
-      ].map(([label,value,note])=><article key={String(label)} className={s.metric}><label>{label}</label><strong>{value}</strong><small>{note}</small></article>)}
+      ].map(([label,value,note])=><article key={String(label)} className={s.metric}><span style={{fontSize:12,color:"#71877b",fontWeight:700}}>{label}</span><strong>{value}</strong><small>{note}</small></article>)}
     </section>
     <div className={s.grid}>
       <section className={s.card}><div className={s.head}><div><h2>🗳️ Voting Pembangunan Instagram</h2>
@@ -161,8 +161,8 @@ export default async function DashboardKepalaDesa(){
           <p>{job.last_error||"Tidak ada pesan error"} • {readableDate(job.created_at)}</p></div><span className={job.job_status==="failed"?s.pill+" "+s.red:s.pill}>{job.job_status}</span></div>):<div className={s.empty}>Belum ada riwayat job atau data tidak dapat dibaca.</div>}
       </section>
       <section className={s.card}><div className={s.head}><div><h2>🎬 Konten & Pertumbuhan</h2><p>Semua akun sosial media dikelola dari satu pusat pengawasan.</p></div><span className={s.pill}>4 platform</span></div>
-        <div className={s.metric} style={{boxShadow:"none",background:"#f6f8f4",marginBottom:12}}><label>Draft konten</label><strong>{data.drafts}</strong><small>Draft tidak sama dengan video MP4 selesai</small></div>
-        <div className={s.metric} style={{boxShadow:"none",background:"#f6f8f4"}}><label>Menunggu persetujuan</label><strong>{data.approvals}</strong><small>Periksa rincian di Pusat AI</small></div>
+        <div className={s.metric} style={{boxShadow:"none",background:"#f6f8f4",marginBottom:12}}><span style={{fontSize:12,color:"#71877b",fontWeight:700}}>Draft konten</span><strong>{data.drafts}</strong><small>Draft tidak sama dengan video MP4 selesai</small></div>
+        <div className={s.metric} style={{boxShadow:"none",background:"#f6f8f4"}}><span style={{fontSize:12,color:"#71877b",fontWeight:700}}>Menunggu persetujuan</span><strong>{data.approvals}</strong><small>Periksa rincian di Pusat AI</small></div>
         <ul className={s.list}><li>Instagram: voting resmi dan konten</li><li>YouTube: Shorts dan mengajak penonton berkunjung</li><li>TikTok: promosi video perjalanan desa</li><li>Facebook: Reels dan pertumbuhan komunitas</li></ul>
         <p className={s.muted}>Belum tersedia data follower asli sampai API masing-masing platform terhubung.</p>
       </section>
