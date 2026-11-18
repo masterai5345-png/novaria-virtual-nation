@@ -1,0 +1,10 @@
+{
+  "name": "NOVARIA — A Living Virtual Nation",
+  "short_name": "NOVARIA",
+  "description": "Explore a living virtual town and help shape its future.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f3ed",
+  "theme_color": "#081b20",
+  "icons": []
+}
